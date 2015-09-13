@@ -1,0 +1,6 @@
+./xorg_correct
+xset m 10/1 1
+# dolphin /media/bez/HDD/DATA/
+feh --no-xinerama --bg-scale /media/bez/HDD/Download2/widescreen_3.jpeg
+cinnamon-sound-applet
+# dmenu vlc ~/Music
