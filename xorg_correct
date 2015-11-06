@@ -3,5 +3,6 @@ xrandr --output VGA-1 --right-of HDMI-0
 xrandr --output DVI-1-0 --auto --left-of HDMI-0
 xrandr --output CRT1 --auto --right-of DFP1 --auto
 xrandr --output DFP2 --auto --left-of DFP1 --auto
+xrandr --output DP1 --auto --right-of eDP1
 
 # in /etc/X11/ for VirtualBox ONLY!!

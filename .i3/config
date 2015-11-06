@@ -40,7 +40,7 @@ bindsym $mod+s exec dmenu_run
 # installed.
 # bindsym $mod+d exec --no-startup-id i3-dmenu-desktop
 
-bindsym $mod+a exec "i3lock -i ~/Pictures/Wallpaper/Technology-Wallpapers.png"
+bindsym $mod+a exec "i3lock -ti ~/Pictures/Wallpaper/Technology-Wallpapers.png"
 
 # change focus
 bindsym $mod+n focus left
