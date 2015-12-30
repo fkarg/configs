@@ -1,8 +1,10 @@
-# this is just a little script to rebase-pulling all git-directorys from their respective sources in your ~/Coding dir, but you can change that
+# this is just a little script to rebase-pulling all git-directories from their respective sources in your ~/Coding dir, but you can change that
+# You can push too or any other command you wanna execute in such a directory
 
 find ~/Coding/ -type d -name .git \
 | xargs -n 1 dirname \
 | sort \
 | while read line; do echo ' ' && echo "---- ----  --- -- Next -- ---  ---- ----" && echo ' ' &&
-    echo $line && echo ' ' && cd $line && git stash && git pull --rebase && git stash apply; done
+    echo $line && echo ' ' && cd $line && git fetch && git stash && git pull --rebase && git stash pop; done
+#    echo $line && echo ' ' && cd $line && get fetch && git stash && git push && git stash pop; done
 
