@@ -7,5 +7,7 @@ feh --no-xinerama --bg-scale /media/bez/HDD/Download2/widescreen_3.jpeg
 # cinnamon-sound-applet
 # dmenu vlc ~/Music
 
+# redshift -l 48.27:10.85
+
 xset -dpms
 xset s off
