@@ -32,6 +32,7 @@ bindsym $mod+q kill
 
 # sets neo with just a restart
 bindsym $mod+b exec setxkbmap de neo
+bindsym $mod+z exec setxkbmap de
 
 # start dmenu (a program launcher)
 bindsym $mod+s exec dmenu_run
