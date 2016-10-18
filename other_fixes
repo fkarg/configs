@@ -1,13 +1,16 @@
+#!/bin/sh
 ./home/bez/Coding/.dotfiles/xorg_correct
 ./Coding/.dotfiles/xorg_correct
 ./xorg_correct
 xset m 10/1 1
 # dolphin /media/bez/HDD/DATA/
-feh --no-xinerama --bg-scale /media/bez/HDD/Download2/widescreen_3.jpeg
+feh --no-xinerama --bg-scale /home/bz/Pictures/Alle/ghost_dream-wallpaper-1920x1080.jpg
 # cinnamon-sound-applet
 # dmenu vlc ~/Music
 
-# redshift -l 48.27:10.85
-
 xset -dpms
 xset s off
+
+cinnamon-sound-applet &
+nm-applet &
+redshift -l 48.455467:11.329369 &
