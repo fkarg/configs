@@ -1,3 +1,4 @@
+#!/bin/sh
 # a little script supposed to run as root,
 # updating the system, showing current status
 # and shuts down automatically as htop is quit.

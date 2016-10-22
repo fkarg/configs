@@ -239,6 +239,7 @@ nnoremap <C-L> :nohl<CR><C-L>
 " remapping f5 for buffers:
 nnoremap <F5> :buffers<CR>:buffer<Space>
 map <F9> :make<CR>
+map <F8> :Interactive<CR>
 
 " http://www.makeuseof.com/tag/5-things-need-put-vim-config-file/
 "
@@ -339,7 +340,16 @@ endfu
 
 com! IP call IPython()
 
+func! Interactive()
+    let extension = expand('%:e')
+    if extension == 'hs'
+        R
+    elseif extension == 'py'
+        IP
+    endif
+endfu
 
+com! Interactive call Interactive()
 
 
 " Saving when switching buffers or making
@@ -353,3 +363,7 @@ set autowriteall
 " Tipp: CTRL^a increases the underlying number,
 " CTRL-x decreases the underlying number
 
+
+
+
+" colorscheme darkblue
