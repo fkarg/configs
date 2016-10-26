@@ -1,19 +1,37 @@
 filetype plugin indent on  " more complex indentation
-set shiftwidth=2
-set softtabstop=2
+set shiftwidth=4
+set softtabstop=4
 set expandtab   " tabs to spaces ?
 set smarttab
+set shiftround
 set smartcase
 set incsearch     " highlight while searching?
 set autoindent    " newline at current indent
-set cursorline " highlights current line of cursor
+set cursorline    " highlights (e.g. underlines) current line of cursor
+
+autocmd Filetype haskell setlocal ts=2 sts=2 sw=2
+autocmd Filetype python setlocal ts=4 sts=4 sw=4
+autocmd Filetype txt,tex call NoEditMode()
+autocmd FileType make set noexpandtab
 
 highlight colorcolumn ctermbg=red
 highlight warn ctermbg=black
-" call matchadd('colorcolumn', '\%101v', 100) " highlighting lines longer than 100 characters in red
-call matchadd('colorcolumn', '\%>100v.') "for it is better that way: highlighting lines longer than 100 characters in red
-call matchadd('warn', '\s\+$') " highlighting trailing whitespaces in black
 
+" set listchars=tab:>.,trail:.,extends:#,nbsp:.
+
+" call matchadd('colorcolumn', '\%101v', 100) " highlighting lines longer than 100 characters in red
+call matchadd('colorcolumn', '\%>100v.', 0) "for it is better that way: highlighting lines longer than 100 characters in red
+call matchadd('warn', '\s\+$', 0) " highlighting trailing whitespaces in black
+
+
+" func! NoEditMode()
+"     call matchdelete(g:mc)
+"     call matchdelete(g:ms)
+" endfu
+" com! NoEditMode call NoEditMode()
+
+
+" set listchars=tab:>.,trail:.,extends:#,nbsp:.
 
 "set smartindent
 "
@@ -47,7 +65,7 @@ syntax on
 
 
 "------------------------------------------------------------
-" Must have options {{{1
+" Must have options
 "
 " These are highly recommended options.
 "
@@ -87,6 +105,7 @@ syntax on
 "" Better command-line completion
 set wildmenu
 " set wildmode=list:longest
+set wildignore=*.swp,*.bak,*.pyc,*.class,.*,*.hi,*.o
 "
 " Show partial commands in the last line of the screen
 set showcmd
@@ -169,7 +188,7 @@ set visualbell
 "" Set the command window height to 2 lines, to
 "avoid many cases of having to
 ""press <Enter> to continue"
-"set cmdheight=2
+set cmdheight=2
 "
 " Display line numbers on the left
 set number
@@ -180,10 +199,10 @@ set number
 
 "" Use <F11> to toggle between 'paste' and
 "'nopaste'
-"set pastetoggle=<F11>
+set pastetoggle=<F12>
 
 ""------------------------------------------------------------
-"" Indentation options {{{1
+"" Indentation options
 ""
 "" Indentation settings according to personal
 "preference.
@@ -239,6 +258,7 @@ nnoremap <C-L> :nohl<CR><C-L>
 " remapping f5 for buffers:
 nnoremap <F5> :buffers<CR>:buffer<Space>
 map <F9> :make<CR>
+map <F10> :!cmake<CR>
 map <F8> :Interactive<CR>
 
 " http://www.makeuseof.com/tag/5-things-need-put-vim-config-file/
@@ -281,8 +301,8 @@ map <F8> :Interactive<CR>
 nnoremap <silent> <Leader>l ml:execute 'match Search /\%'.line('.').'l/'<CR>
 
 " http://usevim.com/2014/12/03/conoline/
-" autocmd WinEnter * setlocal cursorline
-" autocmd WinLeave * setlocal nocursorline
+" autocmd WinEnter * setlocal cursorcolumn
+" autocmd WinLeave * setlocal nocursorcolumn
 
 
 
@@ -294,58 +314,64 @@ func! WordProcessorMode()
 "   setlocal spell spelllang=de_de
    setlocal noexpandtab
 endfu
-
 com! WP call WordProcessorMode()
 
 
 func! WordProcessorModeOFF()
    setlocal textwidth&
    setlocal smartindent&
-   setlocal spell&
+   setlocal nospell
 "   setlocal spell spelllang=de_de
    setlocal noexpandtab&
 endfu
-
 com! WO call WordProcessorModeOFF()
 
 func! Trim()
     %s/\s\+$//e
 endfu
-
 com! Trim call Trim()
 
 func! Ghci()
-    !ghci %
+    silent !ghci %
 endfu
-
 com! G call Ghci()
 
 func! Ghci2()
-    !cabal-1.24 exec -- ghci %
+    silent !cabal-1.24 exec -- ghci %
 endfu
-
 com! R call Ghci2()
 
 
 func! Python()
-    !python %
+    silent !python %
 endfu
-
 com! P call Python()
 
 
 func! IPython()
-    !ipython --colors=LightBG -i %
+    silent !ipython --colors=LightBG -i %
 endfu
-
 com! IP call IPython()
 
+func! Tex()
+    silent !pdflatex --output-directory='%:h'  %
+    let newfile = './' . expand('%:h') . '/' . expand('%:t:r') . ".pdf"
+        " returns the current filename (without suffix), relatively speaking
+    execute "silent !evince-previewer " newfile " &"
+endfu
+com! Tex call Tex()
+
+
 func! Interactive()
-    let extension = expand('%:e')
+    let extension = expand('%:e') " returns the extension (without dot) only
     if extension == 'hs'
         R
     elseif extension == 'py'
         IP
+    elseif extension == 'tex'
+        Tex
+    else
+        echo "No Interactive default for extension \"" . extension . "\" yet"
     endif
 endfu
 
