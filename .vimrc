@@ -1,4 +1,4 @@
-filetype plugin indent on  " more complex indentation
+" filetype plugin indent on  " more complex indentation
 set shiftwidth=4
 set softtabstop=4
 set expandtab   " tabs to spaces ?
@@ -11,7 +11,6 @@ set cursorline    " highlights (e.g. underlines) current line of cursor
 
 autocmd Filetype haskell setlocal ts=2 sts=2 sw=2
 autocmd Filetype python setlocal ts=4 sts=4 sw=4
-autocmd Filetype txt,tex call NoEditMode()
 autocmd FileType make set noexpandtab
 
 highlight colorcolumn ctermbg=red
@@ -337,9 +336,9 @@ endfu
 com! G call Ghci()
 
 func! Ghci2()
-    silent !cabal-1.24 exec -- ghci %
+    silent !cabal exec -- ghci %
 endfu
-com! R call Ghci2()
+com! Hask call Ghci2()
 
 
 func! Python()
@@ -365,7 +364,7 @@ com! Tex call Tex()
 func! Interactive()
     let extension = expand('%:e') " returns the extension (without dot) only
     if extension == 'hs'
-        R
+        Hask
     elseif extension == 'py'
         IP
     elseif extension == 'tex'
@@ -373,6 +372,8 @@ func! Interactive()
     else
         echo "No Interactive default for extension \"" . extension . "\" yet"
     endif
+    sleep 1
+    redraw!
 endfu
 
 com! Interactive call Interactive()
