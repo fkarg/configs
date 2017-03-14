@@ -1,7 +1,7 @@
-" filetype plugin indent on  " more complex indentation
+filetype plugin indent on  " more complex indentation
 set shiftwidth=4
 set softtabstop=4
-set expandtab   " tabs to spaces ?
+set expandtab     " tabs to spaces ?
 set smarttab
 set shiftround
 set smartcase
@@ -10,6 +10,7 @@ set autoindent    " newline at current indent
 set cursorline    " highlights (e.g. underlines) current line of cursor
 
 autocmd Filetype haskell setlocal ts=2 sts=2 sw=2
+autocmd Filetype arduino setlocal ts=2 sts=2 sw=2
 autocmd Filetype python setlocal ts=4 sts=4 sw=4
 autocmd FileType make set noexpandtab
 
@@ -19,7 +20,7 @@ highlight warn ctermbg=black
 " set listchars=tab:>.,trail:.,extends:#,nbsp:.
 
 " call matchadd('colorcolumn', '\%101v', 100) " highlighting lines longer than 100 characters in red
-call matchadd('colorcolumn', '\%>100v.', 0) "for it is better that way: highlighting lines longer than 100 characters in red
+" call matchadd('colorcolumn', '\%>100v.', 0) "for it is better that way: highlighting lines longer than 100 characters in red
 call matchadd('warn', '\s\+$', 0) " highlighting trailing whitespaces in black
 
 
@@ -252,17 +253,10 @@ nnoremap <C-L> :nohl<CR><C-L>
 "  CTRL-] jumps to function definition
 "  CTRL-T jumps back one level
 "
-"
-"
-" remapping f5 for buffers:
-nnoremap <F5> :buffers<CR>:buffer<Space>
-map <F9> :make<CR>
-map <F10> :!cmake<CR>
-map <F8> :Interactive<CR>
-
 " http://www.makeuseof.com/tag/5-things-need-put-vim-config-file/
 "
 " set textwidth=100 " do not allow lines to be longer than 100
+
 
 " Turn Vim into a Distraction-Free Word Processor
 " While Vim is a great text editor for developers, it’s also great for those
@@ -280,21 +274,21 @@ map <F8> :Interactive<CR>
 "
 " func! WordProcessorMode()
 "  setlocal textwidth=80
-"   setlocal smartindent
-"    setlocal spell spelllang=en_us
-"     setlocal noexpandtab
-"     endfu
-"     Then, you’re going to need to define how you’ll activate it. The
-"     following line of code allows you to create a command. When in command
-"     mode, if you call “WP”, it will activate word processor mode.
+"  setlocal smartindent
+"  setlocal spell spelllang=en_us
+"  setlocal noexpandtab
+" endfu
+" Then, you’re going to need to define how you’ll activate it. The
+" following line of code allows you to create a command. When in command
+" mode, if you call “WP”, it will activate word processor mode.
 "
-"     vim-callwordprocessormode
+" vim-callwordprocessormode
 "
-"     com! WP call WordProcessorMode()
-"     To test that it works, open a new text file in VIM, and press escape.
-"     Then type “WP”, and hit enter. Then, type some text, with some words
-"     intentionally spelled incorrectly. If VIM highlights them as incorrect,
-"     then you know you've installed it correctly.
+" com! WP call WordProcessorMode()
+" To test that it works, open a new text file in VIM, and press escape.
+" Then type “WP”, and hit enter. Then, type some text, with some words
+" intentionally spelled incorrectly. If VIM highlights them as incorrect,
+" then you know you've installed it correctly.
 
 " http://vim.wikia.com/wiki/Highlight_current_line
 nnoremap <silent> <Leader>l ml:execute 'match Search /\%'.line('.').'l/'<CR>
@@ -304,26 +298,31 @@ nnoremap <silent> <Leader>l ml:execute 'match Search /\%'.line('.').'l/'<CR>
 " autocmd WinLeave * setlocal nocursorcolumn
 
 
+nnoremap <F5> :buffers<CR>:buffer<Space>
+map <F8> :Interactive<CR>
+map <F9> :make<CR>
+map <F10> :Test<CR>
+map <F11> :!cmake<CR>
 
 
-func! WordProcessorMode()
-   setlocal textwidth=120
-   setlocal smartindent
-   setlocal spell spelllang=en_us
-"   setlocal spell spelllang=de_de
-   setlocal noexpandtab
-endfu
-com! WP call WordProcessorMode()
+" func! WordProcessorMode()
+"    setlocal textwidth=120
+"    setlocal smartindent
+"    setlocal spell spelllang=en_us
+" "   setlocal spell spelllang=de_de
+"    setlocal noexpandtab
+" endfu
+" com! WP call WordProcessorMode()
 
 
-func! WordProcessorModeOFF()
-   setlocal textwidth&
-   setlocal smartindent&
-   setlocal nospell
-"   setlocal spell spelllang=de_de
-   setlocal noexpandtab&
-endfu
-com! WO call WordProcessorModeOFF()
+" func! WordProcessorModeOFF()
+"    setlocal textwidth&
+"    setlocal smartindent&
+"    setlocal nospell
+" "   setlocal spell spelllang=de_de
+"    setlocal noexpandtab&
+" endfu
+" com! WO call WordProcessorModeOFF()
 
 func! Trim()
     %s/\s\+$//e
@@ -348,7 +347,7 @@ com! P call Python()
 
 
 func! IPython()
-    silent !ipython --colors=LightBG -i %
+    silent !ipython3 --colors=LightBG -i %
 endfu
 com! IP call IPython()
 
@@ -360,6 +359,10 @@ func! Tex()
 endfu
 com! Tex call Tex()
 
+fun! NXC()
+    !nbc -S$(nexttool -listbricks) -r %
+endfu
+com! NXC call NXC()
 
 func! Interactive()
     let extension = expand('%:e') " returns the extension (without dot) only
@@ -369,6 +372,8 @@ func! Interactive()
         IP
     elseif extension == 'tex'
         Tex
+    elseif extension == 'nxc'
+        NXC
     else
         echo "No Interactive default for extension \"" . extension . "\" yet"
     endif
@@ -378,6 +383,27 @@ endfu
 
 com! Interactive call Interactive()
 
+
+func! Test()
+    write
+    let extension = expand('%:e') " returns the extension (without dot) only
+    if extension == 'hs'
+        Hask
+    elseif extension == 'py'
+        echo "\n"
+        silent !pep8 %
+        !flake8 %
+    elseif extension == 'tex'
+        silent !pdflatex --output-directory='%:h'  %
+    elseif extension == 'nxc'
+        ownsyntax c
+    else
+        echo "No Test default for extension\"" . extension . "\" yet"
+    endif
+    redraw!
+endfu
+
+com! Test call Test()
 
 " Saving when switching buffers or making
 set autowriteall
