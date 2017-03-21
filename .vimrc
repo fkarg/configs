@@ -199,7 +199,7 @@ set number
 
 "" Use <F11> to toggle between 'paste' and
 "'nopaste'
-set pastetoggle=<F12>
+" set pastetoggle=<F7>
 
 ""------------------------------------------------------------
 "" Indentation options
@@ -237,6 +237,19 @@ set pastetoggle=<F12>
 " off search highlighting until the
 " " next search
 nnoremap <C-L> :nohl<CR><C-L>
+
+
+" For multi line version you can do this after selecting the text:
+"
+" :'<,'>:w !command<CR>
+" You can map it to simple visual mode shortcut like this:
+"
+
+xnoremap <leader>c <esc>:'<,'>:w !fish<CR>
+" Hit leader key + c in visual mode to send the selected text to a stdin of the command. stdout of the command will be printed below vim's statusbar.
+"
+" link:  https://stackoverflow.com/questions/2575545/vim-pipe-selected-text-to-shell-cmd-and-receive-output-on-vim-info-command-line
+
 
 "
 "  "------------------------------------------------------------
@@ -298,11 +311,14 @@ nnoremap <silent> <Leader>l ml:execute 'match Search /\%'.line('.').'l/'<CR>
 " autocmd WinLeave * setlocal nocursorcolumn
 
 
+nnoremap <F2> :buffers<CR>:buffer<Space>
 nnoremap <F5> :buffers<CR>:buffer<Space>
+set pastetoggle=<F6>
+map <F7> :!cmake<CR>
 map <F8> :Interactive<CR>
-map <F9> :make<CR>
+map <F9> :Show<CR>
 map <F10> :Test<CR>
-map <F11> :!cmake<CR>
+map <F12> :make<CR>
 
 
 " func! WordProcessorMode()
@@ -355,7 +371,8 @@ func! Tex()
     silent !pdflatex --output-directory='%:h'  %
     let newfile = './' . expand('%:h') . '/' . expand('%:t:r') . ".pdf"
         " returns the current filename (without suffix), relatively speaking
-    execute "silent !evince-previewer " newfile " &"
+    execute "silent !evince -s " newfile " &"
+        " starting evince in presentation mode
 endfu
 com! Tex call Tex()
 
@@ -409,6 +426,21 @@ com! Test call Test()
 set autowriteall
 
 
+func! Show()
+    write
+    let extension = expand('%:e') " returns the extension (without dot) only
+    if extension == 'tex'
+        let newfile = './' . expand('%:h') . '/' . expand('%:t:r') . ".pdf"
+        execute "silent !evince -s " newfile " &"
+            " starting evince in presentation mode on page 1
+    else
+        echo "No Show default for extension\"" . extension . "\" yet"
+    endif
+
+endfu
+
+com! Show call Show()
+
 " colorscheme darkblue
 
 
@@ -417,6 +449,10 @@ set autowriteall
 " CTRL-x decreases the underlying number
 
 
+
+" Macros:
+let @f = 'i\begin{frame}€kd\end{frame}€ku	'
+let @i = 'a\begin{itemize}\item\end{itemize}€ku '
 
 
 " colorscheme darkblue
