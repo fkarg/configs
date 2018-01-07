@@ -1,25 +1,38 @@
 filetype plugin indent on  " more complex indentation
 set shiftwidth=4
 set softtabstop=4
-set expandtab     " tabs to spaces ?
+set expandtab     " tabs to spaces
 set smarttab
 set shiftround
 set smartcase
 set incsearch     " highlight while searching?
 set autoindent    " newline at current indent
 set cursorline    " highlights (e.g. underlines) current line of cursor
+set tabpagemax=20 " still testing this. probably setting it way lower soon.
+
+
+autocmd! BufNewFile,BufRead *.rs setlocal ft=rust
 
 autocmd Filetype haskell setlocal ts=2 sts=2 sw=2
 autocmd Filetype arduino setlocal ts=2 sts=2 sw=2
 autocmd Filetype python setlocal ts=4 sts=4 sw=4
-autocmd FileType make set noexpandtab
+autocmd Filetype cpp setlocal ts=4 sts=4 sw=4
+autocmd Filetype c++ setlocal ts=4 sts=4 sw=4
+autocmd FileType make setlocal noexpandtab
+autocmd FileType rust setlocal ts=4 sts=4 sw=4
+
+" http://stackoverflow.com/questions/4521818/automatically-insert-a-matching-brace-in-vim
+autocmd FileType java,cpp,c++,arduino,c  inoremap <buffer> { {<CR>}<Esc>ko
+
+" autocmd FileType java ! '/datadisk/java-stuff/eclipse/plugins/org.eclim_2.6.0/eclimd'
+autocmd FileType java PingEclim
 
 highlight colorcolumn ctermbg=red
 highlight warn ctermbg=black
 
 " set listchars=tab:>.,trail:.,extends:#,nbsp:.
 
-" call matchadd('colorcolumn', '\%101v', 100) " highlighting lines longer than 100 characters in red
+call matchadd('colorcolumn', '\%81v', 80) " highlighting lines longer than 80 characters in red
 " call matchadd('colorcolumn', '\%>100v.', 0) "for it is better that way: highlighting lines longer than 100 characters in red
 call matchadd('warn', '\s\+$', 0) " highlighting trailing whitespaces in black
 
@@ -32,6 +45,9 @@ call matchadd('warn', '\s\+$', 0) " highlighting trailing whitespaces in black
 
 
 " set listchars=tab:>.,trail:.,extends:#,nbsp:.
+
+" Saving when switching buffers or making
+set autowriteall
 
 "set smartindent
 "
@@ -312,11 +328,13 @@ nnoremap <silent> <Leader>l ml:execute 'match Search /\%'.line('.').'l/'<CR>
 
 
 nnoremap <F2> :buffers<CR>:buffer<Space>
+map <F3> :Run<CR>
+map <silent> <F4> :call ToggleBetweenHeaderAndSourceFile()<CR>
 nnoremap <F5> :buffers<CR>:buffer<Space>
-set pastetoggle=<F6>
+" set pastetoggle=<F6>
 map <F7> :!cmake<CR>
 map <F8> :Interactive<CR>
-map <F9> :Show<CR>
+map <F9> :Build<CR>
 map <F10> :Test<CR>
 map <F12> :make<CR>
 
@@ -339,6 +357,37 @@ map <F12> :make<CR>
 "    setlocal noexpandtab&
 " endfu
 " com! WO call WordProcessorModeOFF()
+
+
+
+
+" http://ad-wiki.informatik.uni-freiburg.de/teaching/ProgrammierenCplusplusSS2010/Editor?action=AttachFile&do=view&target=vimrc.txt
+"" Toggle between .h and .cpp with F4.
+function! ToggleBetweenHeaderAndSourceFile()
+  write
+  let bufname = bufname("%")
+  let ext = fnamemodify(bufname, ":e")
+  if ext == "h"
+    let ext = "cpp"
+  elseif ext == "cpp"
+    let ext = "h"
+  else
+    return
+  endif
+  let bufname_new = fnamemodify(bufname, ":r") . "." . ext
+  let bufname_alt = bufname("#")
+  if bufname_new == bufname_alt
+    execute ":e#"
+  else
+    execute ":e " . bufname_new
+  endif
+endfunction
+
+set showmatch
+"" No blinking cursor please.
+set gcr=a:blinkon0
+
+
 
 func! Trim()
     %s/\s\+$//e
@@ -368,7 +417,7 @@ endfu
 com! IP call IPython()
 
 func! Tex()
-    silent !pdflatex --output-directory='%:h'  %
+    silent !pdflatex -shell-escape --output-directory='%:h'  %
     let newfile = './' . expand('%:h') . '/' . expand('%:t:r') . ".pdf"
         " returns the current filename (without suffix), relatively speaking
     execute "silent !evince -s " newfile " &"
@@ -381,6 +430,23 @@ fun! NXC()
 endfu
 com! NXC call NXC()
 
+
+
+
+
+func! Run()
+    let extension = expand('%:e') " returns the extension (without dot) only
+    if extension == 'rs' || extension == 'toml'
+        !cargo run
+    else
+        make run
+    endif
+    sleep 1
+    redraw!
+endfu
+
+com! Run call Run()
+
 func! Interactive()
     let extension = expand('%:e') " returns the extension (without dot) only
     if extension == 'hs'
@@ -391,6 +457,12 @@ func! Interactive()
         Tex
     elseif extension == 'nxc'
         NXC
+    elseif extension == 'java'
+        JavaCorrect
+    elseif extension == 'cpp' || extension == 'h'
+        make test
+    elseif extension == 'rs' || extension == 'toml'
+        !cargo run
     else
         echo "No Interactive default for extension \"" . extension . "\" yet"
     endif
@@ -399,6 +471,34 @@ func! Interactive()
 endfu
 
 com! Interactive call Interactive()
+
+
+func! Build()
+    write
+    let extension = expand('%:e') " returns the extension (without dot) only
+    if extension == 'tex'
+        let newfile = './' . expand('%:h') . '/' . expand('%:t:r') . ".pdf"
+        execute "silent !evince -s " newfile " &"
+            " starting evince in presentation mode on page 1
+    elseif extension == 'java'
+        " Java
+        " quit
+        let thisfile = %
+        !javac list-operations/src/listoperations/Main.java -d list-operations/bin/
+        !java -cp list-operations/bin/ listoperations.Main
+    elseif extension == 'cpp' || extension == 'h'
+        make plot
+    elseif extension == 'rs' || extension == 'toml'
+        !cargo build
+    else
+        echo "No Build default for extension \"" . extension . "\" yet"
+    endif
+    sleep 1
+
+endfu
+
+com! Build call Build()
+
 
 
 func! Test()
@@ -414,32 +514,21 @@ func! Test()
         silent !pdflatex --output-directory='%:h'  %
     elseif extension == 'nxc'
         ownsyntax c
+    elseif extension == 'java'
+        Checkstyle
+    elseif extension == 'cpp' || extension == 'h'
+        make checkstyle
+    elseif extension == 'rs' || extension == 'toml'
+"        !cargo check
+        !cargo test
     else
-        echo "No Test default for extension\"" . extension . "\" yet"
+        echo "No Test default for extension \"" . extension . "\" yet"
     endif
+    sleep 1
     redraw!
 endfu
 
 com! Test call Test()
-
-" Saving when switching buffers or making
-set autowriteall
-
-
-func! Show()
-    write
-    let extension = expand('%:e') " returns the extension (without dot) only
-    if extension == 'tex'
-        let newfile = './' . expand('%:h') . '/' . expand('%:t:r') . ".pdf"
-        execute "silent !evince -s " newfile " &"
-            " starting evince in presentation mode on page 1
-    else
-        echo "No Show default for extension\"" . extension . "\" yet"
-    endif
-
-endfu
-
-com! Show call Show()
 
 " colorscheme darkblue
 
@@ -451,8 +540,8 @@ com! Show call Show()
 
 
 " Macros:
-let @f = 'i\begin{frame}€kd\end{frame}€ku	'
+let @f = 'i\begin{frame}[c]€kd\end{frame}€ku	'
 let @i = 'a\begin{itemize}\item\end{itemize}€ku '
 
 
-" colorscheme darkblue
+

@@ -11,6 +11,7 @@ function fish_greeting
 end
 
 if status --is-interactive
+  echo "-- (tux) --"
   echo "Think about reading a page or more today!"
 end
 
@@ -34,6 +35,7 @@ end
 
 # set -gx PATH "~/.local/bin:~/.cabal/bin:~/.local/bin:/opt/cabal/1.20/bin:/opt/ghc/*/bin:/opt/ghc/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games/"
 set -x PATH ~/.local/bin $PATH
+set -x PATH ~/.cargo/bin $PATH
 
 
 # set for factis-environment
