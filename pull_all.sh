@@ -9,3 +9,5 @@ find ~/Coding/ -type d -name .git \
     echo $line && echo ' ' && cd $line && git fetch && git stash && git pull --rebase && git stash pop; done
 #    echo $line && echo ' ' && cd $line && get fetch && git stash && git push && git stash pop; done
 
+# removing all local branches that have been fully merged in
+# git branch -D `git branch --merged origin/master | grep "^  " | xargs`
