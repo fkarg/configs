@@ -6,12 +6,13 @@ set smarttab
 set shiftround
 set smartcase
 set incsearch     " highlight while searching?
-set autoindent    " newline at current indent
+set autoindent
 set cursorline    " highlights (e.g. underlines) current line of cursor
 set tabpagemax=20 " still testing this. probably setting it way lower soon.
-
+set number relativenumber
 
 autocmd! BufNewFile,BufRead *.rs setlocal ft=rust
+autocmd! BufNewFile,BufRead *.lhs setlocal ft=haskell
 
 autocmd Filetype haskell setlocal ts=2 sts=2 sw=2
 autocmd Filetype arduino setlocal ts=2 sts=2 sw=2
@@ -330,7 +331,8 @@ nnoremap <silent> <Leader>l ml:execute 'match Search /\%'.line('.').'l/'<CR>
 nnoremap <F2> :buffers<CR>:buffer<Space>
 map <F3> :Run<CR>
 map <silent> <F4> :call ToggleBetweenHeaderAndSourceFile()<CR>
-nnoremap <F5> :buffers<CR>:buffer<Space>
+map <F5> :!git stash; git pull -r; git stash pop<CR>
+map <F6> :!git add %<CR>
 " set pastetoggle=<F6>
 map <F7> :!cmake<CR>
 map <F8> :Interactive<CR>
@@ -391,11 +393,12 @@ set gcr=a:blinkon0
 
 func! Trim()
     %s/\s\+$//e
+    %s/\^I/    /e
 endfu
 com! Trim call Trim()
 
 func! Ghci()
-    silent !ghci %
+    silent !stack ghci %
 endfu
 com! G call Ghci()
 
@@ -417,9 +420,11 @@ endfu
 com! IP call IPython()
 
 func! Tex()
-    silent !pdflatex -shell-escape --output-directory='%:h'  %
-    let newfile = './' . expand('%:h') . '/' . expand('%:t:r') . ".pdf"
+    let texfile = expand('%:h') . '/main.tex'
+    execute "!pdflatex --output-directory='%:h' " texfile
+    " let newfile = './' . expand('%:h') . '/' . expand('%:t:r') . ".pdf"
         " returns the current filename (without suffix), relatively speaking
+    let newfile = './' . expand('%:h') . "/main.pdf"
     execute "silent !evince -s " newfile " &"
         " starting evince in presentation mode
 endfu
@@ -449,8 +454,8 @@ com! Run call Run()
 
 func! Interactive()
     let extension = expand('%:e') " returns the extension (without dot) only
-    if extension == 'hs'
-        Hask
+    if extension == 'hs' || extension == 'lhs'
+        G
     elseif extension == 'py'
         IP
     elseif extension == 'tex'
@@ -477,9 +482,10 @@ func! Build()
     write
     let extension = expand('%:e') " returns the extension (without dot) only
     if extension == 'tex'
-        let newfile = './' . expand('%:h') . '/' . expand('%:t:r') . ".pdf"
+        " let newfile = './' . expand('%:h') . '/' . expand('%:t:r') . ".pdf"
+        let newfile = './' . expand('%:h') . "/main.pdf"
         execute "silent !evince -s " newfile " &"
-            " starting evince in presentation mode on page 1
+        " starting evince in presentation mode on page n
     elseif extension == 'java'
         " Java
         " quit
@@ -490,6 +496,11 @@ func! Build()
         make plot
     elseif extension == 'rs' || extension == 'toml'
         !cargo build
+    elseif extension == 'hs'
+        !stack build
+    elseif extension == 'cs'
+        !mdtool build "Singularity/Singularity.csproj"
+        !mdtool build "Singularity/Singularity/Singularity.csproj"
     else
         echo "No Build default for extension \"" . extension . "\" yet"
     endif
@@ -505,7 +516,8 @@ func! Test()
     write
     let extension = expand('%:e') " returns the extension (without dot) only
     if extension == 'hs'
-        Hask
+        "Hask
+        !stack test
     elseif extension == 'py'
         echo "\n"
         silent !pep8 %
@@ -521,6 +533,8 @@ func! Test()
     elseif extension == 'rs' || extension == 'toml'
 "        !cargo check
         !cargo test
+    elseif extension == 'cs'
+        !git blame %
     else
         echo "No Test default for extension \"" . extension . "\" yet"
     endif
@@ -530,18 +544,23 @@ endfu
 
 com! Test call Test()
 
-" colorscheme darkblue
-
 
 
 " Tipp: CTRL^a increases the underlying number,
 " CTRL-x decreases the underlying number
 
+" macros can be saved like this:
+" "<macrobuffer>p
 
 
 " Macros:
 let @f = 'i\begin{frame}[c]€kd\end{frame}€ku	'
 let @i = 'a\begin{itemize}\item\end{itemize}€ku '
+let @t = 'ABei fragen einfach eine Mail schreiben:Felix Karg <kargf@informatik.uni-freiburg.de>'
+let @m = 'a (-1)'
 
 
+
+colorscheme koehler
+hi Normal guibg=NONE ctermbg=NONE " makes the background transparent
 
