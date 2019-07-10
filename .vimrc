@@ -1,17 +1,19 @@
-filetype plugin indent on  " more complex indentation
+" filetype plugin indent on  " more complex indentation
 set shiftwidth=4
 set softtabstop=4
 set expandtab     " tabs to spaces
 set smarttab
 set shiftround
 set smartcase
-set incsearch     " highlight while searching?
-set autoindent
+set autoindent    " redundant in nvim
+set incsearch     " highlight while searching
 set cursorline    " highlights (e.g. underlines) current line of cursor
-set tabpagemax=20 " still testing this. probably setting it way lower soon.
-set number relativenumber
+set number relativenumber " showing the current line number only in this line,
+                          " and relative line numbers everywhere else.
+set tabpagemax=100
 
 autocmd! BufNewFile,BufRead *.rs setlocal ft=rust
+autocmd! BufNewFile,BufRead *.tex setlocal ft=tex
 autocmd! BufNewFile,BufRead *.lhs setlocal ft=haskell
 
 autocmd Filetype haskell setlocal ts=2 sts=2 sw=2
@@ -23,10 +25,10 @@ autocmd FileType make setlocal noexpandtab
 autocmd FileType rust setlocal ts=4 sts=4 sw=4
 
 " http://stackoverflow.com/questions/4521818/automatically-insert-a-matching-brace-in-vim
-autocmd FileType java,cpp,c++,arduino,c  inoremap <buffer> { {<CR>}<Esc>ko
+autocmd FileType java,cpp,c++,arduino,c,tex,python,rust  inoremap <buffer> { {<CR>}<Esc>ko
 
 " autocmd FileType java ! '/datadisk/java-stuff/eclipse/plugins/org.eclim_2.6.0/eclimd'
-autocmd FileType java PingEclim
+" autocmd FileType java PingEclim
 
 highlight colorcolumn ctermbg=red
 highlight warn ctermbg=black
@@ -34,7 +36,7 @@ highlight warn ctermbg=black
 " set listchars=tab:>.,trail:.,extends:#,nbsp:.
 
 call matchadd('colorcolumn', '\%81v', 80) " highlighting lines longer than 80 characters in red
-" call matchadd('colorcolumn', '\%>100v.', 0) "for it is better that way: highlighting lines longer than 100 characters in red
+call matchadd('colorcolumn', '\%>100v.', 0) "for it is better that way: highlighting lines longer than 100 characters in red
 call matchadd('warn', '\s\+$', 0) " highlighting trailing whitespaces in black
 
 
@@ -255,6 +257,14 @@ set number
 " " next search
 nnoremap <C-L> :nohl<CR><C-L>
 
+" explanation: do the following when 'l' is pressed:
+" - search in this line for occurences of more than one space, and replace
+"   them with one. Do not explicitly error when this is not possible.
+" - shorten line respectively, unmatch the two spaces (would be highlighted
+"   otherwise)
+" - correctly re-indent from last line to end of paragraph
+noremap l mk:.s# # #ge<CR>gql<C-L>:nohl<CR>k=}jj={'kj
+
 
 " For multi line version you can do this after selecting the text:
 "
@@ -322,6 +332,7 @@ xnoremap <leader>c <esc>:'<,'>:w !fish<CR>
 
 " http://vim.wikia.com/wiki/Highlight_current_line
 nnoremap <silent> <Leader>l ml:execute 'match Search /\%'.line('.').'l/'<CR>
+nnoremap <silent> <Leader>c :exec '!'.getline('.')<CR>
 
 " http://usevim.com/2014/12/03/conoline/
 " autocmd WinEnter * setlocal cursorcolumn
@@ -393,7 +404,7 @@ set gcr=a:blinkon0
 
 func! Trim()
     %s/\s\+$//e
-    %s/\^I/    /e
+    %s/\    /    /e
 endfu
 com! Trim call Trim()
 
@@ -546,21 +557,18 @@ com! Test call Test()
 
 
 
-" Tipp: CTRL^a increases the underlying number,
+" Tipp: CTRL-a increases the underlying number,
 " CTRL-x decreases the underlying number
 
 " macros can be saved like this:
 " "<macrobuffer>p
 
 
-" Macros:
-let @f = 'i\begin{frame}[c]€kd\end{frame}€ku	'
+" LaTeX Macros:
+let @f = 'i\begin{frame}[c]€kd\end{frame}€ku    '
 let @i = 'a\begin{itemize}\item\end{itemize}€ku '
-let @t = 'ABei fragen einfach eine Mail schreiben:Felix Karg <kargf@informatik.uni-freiburg.de>'
-let @m = 'a (-1)'
 
 
 
 colorscheme koehler
 hi Normal guibg=NONE ctermbg=NONE " makes the background transparent
-
