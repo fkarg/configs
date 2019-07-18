@@ -13,9 +13,12 @@ alert = 10.0
 
 
 # Add for mouse and keyboard for desktop, for mouse for laptop
-# [[block]]
-# block = "bluetooth"
-# mac = "A0:8A:F5:B8:01:FD"
+[[block]]
+block = "custom"
+command = "upower --dump | rg percentage | grep -Eo '[0-9]+%$' | tr '\n' ' ' | awk '{print \"M: \"$1\" K: \"$2\" O: \"$3}'"
+interval = 1
+
+
 
 
 # [[block]]
