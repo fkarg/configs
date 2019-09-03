@@ -8,17 +8,17 @@ alias = "/"
 info_type = "available"
 unit = "GB"
 interval = 200
-warning = 20.0
-alert = 10.0
+warning = 10.0
+alert = 5.0
 
 
 # Add for mouse and keyboard for desktop, for mouse for laptop
 [[block]]
 block = "custom"
 # for tower:
-command = "upower --dump | rg percentage | grep -Eo '[0-9]+%$' | tr '\n' ' ' | awk '{print \"M: \"$1\" K: \"$2\" O: \"$3}'"
+# command = "upower --dump | rg percentage | grep -Eo '[0-9]+%$' | tr '\n' ' ' | awk '{print \"M: \"$1\" K: \"$2\" O: \"$3}'"
 # for laptop: (first two are battery for some reason)
-# command = "upower --dump | rg percentage | grep -Eo '[0-9]+%$' | tr '\n' ' ' | awk '{print \"O: \"$3}'"
+command = "upower --dump | rg percentage | grep -Eo '[0-9]+%$' | tr '\n' ' ' | awk '{print \"O: \"$3}'"
 interval = 1800
 
 
