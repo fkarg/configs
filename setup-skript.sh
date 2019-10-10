@@ -11,7 +11,7 @@ curl https://sh.rustup.rs -sSf | sh
 
 # download uni-stuff
 cd ~/Coding
-git clone https://github.com/blueburningcoder/uni-stuff
+git clone https://github.com/fkarg/uni-stuff
 
 
 
