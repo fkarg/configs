@@ -1,4 +1,4 @@
-install i3 i3status i3lock vim git python-pip chromium-browser quassel-client htop rsync dolphin4 feh evince dmenu build-essential python-dev haskell-platform tree python-matplotlib python-tk ipython ipython3 sublime-text xaos cmake g++ wine winetricks msttcorefonts hddtemp lm-sensors redshift youtube-dl openssh-server traceroute calibre fish texlive-full imagemagick memstat cowsay fortune fortunes fortunes-off subversion -y
+i3 i3status i3lock vim git python-pip chromium-browser htop rsync dolphin4 feh evince dmenu build-essential python-dev python-matplotlib python-tk ipython ipython3 xaos cmake g++ hddtemp lm-sensors redshift youtube-dl openssh-server traceroute calibre fish texlive-full imagemagick memstat cowsay fortune fortunes fortunes-off -y
 
 
 
