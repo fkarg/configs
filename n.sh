@@ -1,3 +1,3 @@
-#!/usr/bin/bash
+#!/bin/sh
 
 nmcli d w "$@"
