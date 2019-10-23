@@ -12,6 +12,14 @@ warning = 10.0
 alert = 5.0
 
 
+# Show Entropia club status
+[[block]]
+block = "custom"
+command = "timeout 0.5 curl -sSf http://club.entropia.de"
+interval = 1800
+
+
+
 # Add for mouse and keyboard for desktop, for mouse for laptop
 [[block]]
 block = "custom"
