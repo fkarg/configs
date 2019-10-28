@@ -15,7 +15,7 @@ alert = 5.0
 # Show Entropia club status
 [[block]]
 block = "custom"
-command = "timeout 0.5 curl -sSf http://club.entropia.de"
+command = "/home/ced/Coding/.dotfiles/status.sh"
 interval = 1800
 
 
@@ -43,15 +43,11 @@ interval = 1800
 # on_click = "/home/ced/Coding/.dotfiles/multiscreens.sh"
 
 
+
+# showing the current state of an external display (and switch, if necessary)
 [[block]]
-# block = "toggle"
 block = "custom"
 command = "/home/ced/Coding/.dotfiles/multiscreens.sh"
-# text = "" # External Screen
-# command_state = "~/Coding/.dotfiles/multiscreens.sh check"
-# command = "echo TEST"
-# command_on = "~/Coding/.dotfiles/multiscreens.sh on"
-# command_off = "~/Coding/.dotfiles/multiscreens.sh off"
 interval = 10
 
 
