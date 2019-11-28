@@ -172,15 +172,15 @@ bar {
     font pango:DejaVu Sans Mono, FontAwesome 9
 #    position top
     status_command i3status-rs ~/Coding/.dotfiles/i3status-rust/config.toml
-    colors {
-        separator #666666
-        background #222222
-        statusline #dddddd
-        focused_workspace #0088CC #0088CC #ffffff
-        active_workspace #333333 #333333 #ffffff
-        inactive_workspace #333333 #333333 #888888
-        urgent_workspace #2f343a #900000 #ffffff
-    }
+#     colors {
+#         separator #666666
+#         background #222222
+#         statusline #dddddd
+#         focused_workspace #0088CC #0088CC #ffffff
+#         active_workspace #333333 #333333 #ffffff
+#         inactive_workspace #333333 #333333 #888888
+#         urgent_workspace #2f343a #900000 #ffffff
+#     }
 }
 
 
@@ -195,6 +195,11 @@ bar {
 bindsym XF86AudioRaiseVolume exec --no-startup-id pactl set-sink-volume alsa_output.pci-0000_00_1f.3.analog-stereo +5% #increase sound volume
 bindsym XF86AudioLowerVolume exec --no-startup-id pactl set-sink-volume alsa_output.pci-0000_00_1f.3.analog-stereo -5% #decrease sound volume
 bindsym XF86AudioMute exec --no-startup-id pactl set-sink-mute alsa_output.pci-0000_00_1f.3.analog-stereo toggle # mute sound
+
+
+bindsym $mod+y exec --no-startup-id pactl set-sink-volume alsa_output.pci-0000_00_1f.3.hdmi-stereo-extra1 +5% #increase sound volume
+bindsym $mod+t exec --no-startup-id pactl set-sink-volume alsa_output.pci-0000_00_1f.3.hdmi-stereo-extra1 -5% #decrease sound volume
+# bindsym XF86AudioMute exec --no-startup-id pactl set-sink-mute alsa_output.pci-0000_00_1f.3.hdmi-stereo-extra1 toggle # mute sound
 
 
 # bindsym XF86AudioRaiseVolume exec --no-startup-id pactl set-sink-volume alsa_output.pci-0000_00_1f.3.hdmi-stereo-extra1 +5% #increase sound volume
@@ -218,6 +223,6 @@ exec ~/other_fixes
 exec chromium-browser
 
 # setting the mouse not to be followed by active windows (default?)
-focus_follows_mouse no
+focus_follows_mouse yes
 
-
+hide_edge_borders smart
