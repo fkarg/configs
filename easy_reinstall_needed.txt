@@ -1,4 +1,6 @@
-i3 i3status i3lock vim git python-pip chromium-browser htop rsync dolphin4 feh evince dmenu build-essential python-dev python-matplotlib python-tk ipython ipython3 xaos cmake g++ hddtemp lm-sensors redshift youtube-dl openssh-server traceroute calibre fish texlive-full imagemagick memstat cowsay fortune fortunes fortunes-off -y
+i3-wm i3 i3status i3lock vim git python-pip chromium-browser quassel-client htop rsync dolphin feh evince dmenu build-essential python-dev haskell-platform tree python-matplotlib python-tk ipython ipython3 xaos cmake g++ wine winetricks msttcorefonts hddtemp lm-sensors redshift youtube-dl openssh-server traceroute calibre fish texlive-full fortune-mod cowsay vlc ghc cabal-install sensors
+
+pkg-config libxcb1 libpam-dev libcairo-dev libxcb-xinerama0-dev libev-dev libx11-dev libx11-xcb-dev libxkbcommon0 libxkbcommon-x11-0 libxcb-dpms0-dev libxcb-image0-dev libxcb-util0-dev libxcb-xkb-dev libxkbcommon-x11-dev libxkbcommon-dev scrot xcompmgr x11-apps transset wifite fortune fortunes fortunes-off python-support warzone2100 llvm-3.5 llvm subversion fp-compiler fp-units-fcl fp-units-base libusb-dev dolphin4 filezilla -y
 
 
-
+silversearcher-ag
