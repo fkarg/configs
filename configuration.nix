@@ -47,7 +47,55 @@
   # List packages installed in system profile. To search, run:
   # $ nix search wget
   environment.systemPackages = with pkgs; [
-    wget neovim git curl ripgrep fish htop thunderbird
+      # 'basic os functionality'
+      wget
+      git
+      curl
+      fish
+      htop
+      unzip
+      xorg.xkill
+      # misc productivity
+      neovim
+      ripgrep
+      broot
+      redshift
+      feh
+      vlc
+      # global python
+      python37Packages.ipython
+      python3
+      # rust
+      gcc
+      rustup
+      # E-mail program
+      thunderbird
+      # viewing pdfs
+      kdeApplications.okular
+      evince
+      pdfpc
+      # browsers
+      firefox
+      chromium
+      # audio
+      pavucontrol
+      # backlight
+      light
+      # 'better' terminal
+      kitty
+      alacritty
+      # composer for transparent terminal
+      xcompmgr
+      # tex
+      texlive.combined.scheme-full
+      # image editing
+      inkscape
+      pstoedit
+      # office
+      libreoffice-fresh
+      # fun
+      cowsay
+      fortune
   ];
 
   # Some programs need SUID wrappers, can be configured further or are
@@ -70,8 +118,8 @@
   # services.printing.enable = true;
 
   # Enable sound.
-  # sound.enable = true;
-  # hardware.pulseaudio.enable = true;
+  sound.enable = true;
+  hardware.pulseaudio.enable = true;
 
   # Enable the X11 windowing system.
   services.xserver = {
@@ -99,6 +147,8 @@
     };
     displayManager.auto.enable = true;
     displayManager.auto.user = "root";
+
+    libinput.enable = true;
   };
 
 
@@ -115,10 +165,18 @@
   #   extraGroups = [ "wheel" ]; # Enable ‘sudo’ for the user.
   # };
 
+  users.users.pars = {
+    isNormalUser = true;
+    home = "/home/pars";
+    extraGroups = [ "wheel" "networkmanager" ];
+    uid = 1000;
+  };
+
   # This value determines the NixOS release with which your system is to be
   # compatible, in order to avoid breaking some software such as database
   # servers. You should change this only after NixOS release notes say you
   # should.
+
   system.stateVersion = "19.09"; # Did you read the comment?
 
 }
