@@ -62,6 +62,7 @@
       redshift
       feh
       vlc
+      jq
       # global python
       python37Packages.ipython
       python3
@@ -97,6 +98,21 @@
       cowsay
       fortune
   ];
+
+  # fonts.
+  fonts.fonts = with pkgs; [
+    noto-fonts
+    noto-fonts-cjk
+    noto-fonts-emoji
+    liberation_ttf
+    fira-code
+    fira-code-symbols
+    mplus-outline-fonts
+    dina-font
+    proggyfonts
+    font-awesome_4
+  ];
+
 
   # Some programs need SUID wrappers, can be configured further or are
   # started in user sessions.
@@ -141,8 +157,9 @@
       enable = true;
       extraPackages = with pkgs; [
         dmenu
-        i3status
-        i3lock
+        sysfsutils
+        i3status-rust
+        i3lock-fancy
       ];
     };
     displayManager.auto.enable = true;
