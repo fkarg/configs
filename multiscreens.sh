@@ -5,9 +5,10 @@
 # execution should toggle between states: multi-display (external above normal)
 # and only normal one.
 
-MONITOR=eDP1
-EXTERN1=HDMI2
-EXTERN2=DP1
+MONITOR=eDP-1
+EXTERN1=HDMI-1
+# EXTERN2=DP1
+EXTERN2=DP-1
 
 EXTERN=None
 
