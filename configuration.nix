@@ -19,6 +19,10 @@
   # Define on which hard drive you want to install Grub.
   boot.loader.grub.device = "/dev/sdb"; # or "nodev" for efi only
 
+  # Optional:
+  boot.kernelPackages = pkgs.linuxPackages_latest;
+
+
   networking.hostName = "tux"; # Define your hostname.
   # networking.wireless.enable = true;  # Enables wireless support via wpa_supplicant.
   networking.networkmanager.enable = true;
@@ -41,8 +45,18 @@
   #   defaultLocale = "en_US.UTF-8";
   # };
 
+
   # Set your time zone.
   time.timeZone = "Europe/Berlin";
+
+
+  # # might require a 'systemctl daemon-reload' before working ... ?
+  # fileSystems."/datadisk" = {
+  #   device = "/dev/disk/by-uuid/380cc99d-0a5c-43a3-b2a6-76b6ce4ad904";
+  #   fsType = "ext4";
+  #   options = [ "defaults" "nofail" ];
+  # };
+
 
   # List packages installed in system profile. To search, run:
   # $ nix search wget
@@ -53,8 +67,13 @@
       curl
       fish
       htop
+      iftop
       unzip
+      screen
+      xclip
       xorg.xkill
+      xorg.xinit
+      inetutils
       # misc productivity
       neovim
       ripgrep
@@ -63,12 +82,40 @@
       feh
       vlc
       jq
+      lsof
+      screen-message
+      klavaro
+      baobab
+      pdftk
+      ghostscript
+      scrot
+      tokei
+      # wireshark
+      # filezilla
+
+      # for building i3status-rs
+      pkg-config
+      dbus.dev
+      # for building in general
+      binutils-unwrapped
+      # gui open zip archives
+      gnome3.file-roller
+      # spellchecking
+      aspell
+      aspellDicts.de
+      aspellDicts.en
+      aspellDicts.en-science
+      aspellDicts.en-computers
+      # unstable.etcher
       # global python
       python37Packages.ipython
       python3
       # rust
       gcc
       rustup
+      # haskell
+      ghc
+      cabal-install
       # E-mail program
       thunderbird
       # viewing pdfs
@@ -78,13 +125,16 @@
       # browsers
       firefox
       chromium
+      tor-browser-bundle-bin
       # audio
       pavucontrol
       # backlight
       light
+      xorg.xbacklight
       # 'better' terminal
       kitty
       alacritty
+      tmux
       # composer for transparent terminal
       xcompmgr
       # tex
@@ -97,7 +147,13 @@
       # fun
       cowsay
       fortune
+      # messaging
+      mumble
+      skype
   ];
+  nixpkgs.config.allowUnfree = true;
+
+  programs.light.enable = true;
 
   # fonts.
   fonts.fonts = with pkgs; [
@@ -145,7 +201,7 @@
     layout = "de";
     xkbVariant = "neo";
 
-    xkbOptions = "eurosign:e";
+    # xkbOptions = "eurosign:e";
 
     desktopManager = {
       default = "none";
@@ -162,8 +218,9 @@
         i3lock-fancy
       ];
     };
-    displayManager.auto.enable = true;
-    displayManager.auto.user = "root";
+
+    displayManager.auto.enable = false;
+    displayManager.auto.user = "pars";
 
     libinput.enable = true;
   };
@@ -184,10 +241,27 @@
 
   users.users.pars = {
     isNormalUser = true;
-    home = "/home/pars";
-    extraGroups = [ "wheel" "networkmanager" ];
     uid = 1000;
+    shell = "${pkgs.fish}/bin/fish";
+    extraGroups = [ "wheel" "networkmanager" ];
+    home = "/home/pars";
   };
+
+
+
+  # systemd.services.startup = {
+  #   wantedBy = [ "multi-user.target" ];
+  #   description = "Initialization of environment";
+  #   serviceConfig = {
+  #       Type = "forking";
+  #       User = "root";
+  #       ExecStart = ''${pkgs.mount}/bin/mount /dev/sda1 /datadisk/ ; ${pkgs.pulseaudio}/bin/pulseaudio &; ${pkgs.xcompmgr}/bin/xcompmgr &; ${pkgs.redshift} -l 48.455467:11.329369 &'';
+  #       ExecStop = ''umount /datadisk; pkill pulseaudio; pkill xcompmgr; pkill redshift'';
+  #   };
+  # };
+
+
+
 
   # This value determines the NixOS release with which your system is to be
   # compatible, in order to avoid breaking some software such as database
@@ -196,5 +270,7 @@
 
   system.stateVersion = "19.09"; # Did you read the comment?
 
+  system.autoUpgrade.enable = true;
+  # system.autoUpgrade.channel = https://nixos.org/channels/nixos-19.09;
 }
 
