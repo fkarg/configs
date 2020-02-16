@@ -1,33 +1,33 @@
 theme = "plain"
 icons = "awesome"
 
-[[block]]
-block = "disk_space"
-path = "/"
-alias = "/"
-info_type = "available"
-unit = "GB"
-interval = 200
-warning = 10.0
-alert = 5.0
+# [[block]]
+# block = "disk_space"
+# path = "/"
+# alias = "/"
+# info_type = "available"
+# unit = "GB"
+# interval = 200
+# warning = 10.0
+# alert = 5.0
 
 
 # Show Entropia club status
 [[block]]
 block = "custom"
-command = "/home/ced/Coding/.dotfiles/status.sh"
+command = "/home/pars/Coding/.dotfiles/status.sh"
 interval = 1800
 
 
 
-# Add for mouse and keyboard for desktop, for mouse for laptop
-[[block]]
-block = "custom"
-# for tower:
-# command = "upower --dump | rg percentage | grep -Eo '[0-9]+%$' | tr '\n' ' ' | awk '{print \"M: \"$1\" K: \"$2\" O: \"$3}'"
-# for laptop: (first two are battery for some reason)
-command = "upower --dump | rg percentage | grep -Eo '[0-9]+%$' | tr '\n' ' ' | awk '{print \"O: \"$3}'"
-interval = 1800
+# # Add for mouse and keyboard for desktop, for mouse for laptop
+# [[block]]
+# block = "custom"
+# # for tower:
+# # command = "upower --dump | rg percentage | grep -Eo '[0-9]+%$' | tr '\n' ' ' | awk '{print \"M: \"$1\" K: \"$2\" O: \"$3}'"
+# # for laptop: (first two are battery for some reason)
+# command = "upower --dump | rg percentage | grep -Eo '[0-9]+%$' | tr '\n' ' ' | awk '{print \"O: \"$3}'"
+# interval = 1800
 
 
 
@@ -40,14 +40,14 @@ interval = 1800
 # [[block]]
 # block = "custom"
 # cycle = ["echo ON", "echo OFF"]
-# on_click = "/home/ced/Coding/.dotfiles/multiscreens.sh"
+# on_click = "/home/pars/Coding/.dotfiles/multiscreens.sh"
 
 
 
 # showing the current state of an external display (and switch, if necessary)
 [[block]]
 block = "custom"
-command = "/home/ced/Coding/.dotfiles/multiscreens.sh"
+command = "/home/pars/Coding/.dotfiles/multiscreens.sh"
 interval = 10
 
 
@@ -106,9 +106,9 @@ format = "{1m} {5m} {15m}"
 
 [[block]]
 block = "battery"
-driver = "upower"
+driver = "sysfs"
 interval = 5
-format = "{percentage}% {time}h ({power}W)"
+format = "{percentage}% {time}h"
 
 [[block]]
 block = "time"
