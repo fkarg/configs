@@ -15,7 +15,7 @@ icons = "awesome"
 # Show Entropia club status
 [[block]]
 block = "custom"
-command = "/home/pars/Coding/.dotfiles/status.sh"
+command = "/home/pars/Coding/.dotfiles/scripts/status.sh"
 interval = 1800
 
 
@@ -47,7 +47,7 @@ interval = 1800
 # showing the current state of an external display (and switch, if necessary)
 [[block]]
 block = "custom"
-command = "/home/pars/Coding/.dotfiles/multiscreens.sh"
+command = "/home/pars/Coding/.dotfiles/scripts/multiscreens.sh"
 interval = 10
 
 
