@@ -584,30 +584,31 @@ let @i = 'a\begin{itemize}[<+(1)->]\item\end{itemize}€ku '
 colorscheme koehler
 
 
-
-"------------------------- RUST RLS ------------------------------
-
-call plug#begin('~/.local/share/nvim/plugged')
-Plug 'autozimu/LanguageClient-neovim', {
-    \ 'branch': 'next',
-    \ 'do': 'bash install.sh',
-    \ }
-call plug#end()
-
-" Required for operations modifying multiple buffers like rename.
-" set hidden
-
-let g:LanguageClient_serverCommands = {
-    \ 'rust': ['~/.cargo/bin/rustup', 'run', 'nightly', 'rls'],
-    \ }
-
-nnoremap <F16> :call LanguageClient_contextMenu()<CR>
-" Or map each action separately
-" Maps K to hover, gd to goto definition, F2 to rename
-nnoremap <silent> K :call LanguageClient#textDocument_hover()<CR>
-nnoremap <silent> gd :call LanguageClient#textDocument_definition()<CR>
-nnoremap <silent> <F14> :call LanguageClient#textDocument_rename()<CR>
-
+" deactivate initially unloaded RUST RLS
+"
+" "------------------------- RUST RLS ------------------------------
+"
+" call plug#begin('~/.local/share/nvim/plugged')
+" Plug 'autozimu/LanguageClient-neovim', {
+"     \ 'branch': 'next',
+"     \ 'do': 'bash install.sh',
+"     \ }
+" call plug#end()
+"
+" " Required for operations modifying multiple buffers like rename.
+" " set hidden
+"
+" let g:LanguageClient_serverCommands = {
+"     \ 'rust': ['~/.cargo/bin/rustup', 'run', 'nightly', 'rls'],
+"     \ }
+"
+" nnoremap <F16> :call LanguageClient_contextMenu()<CR>
+" " Or map each action separately
+" " Maps K to hover, gd to goto definition, F2 to rename
+" nnoremap <silent> K :call LanguageClient#textDocument_hover()<CR>
+" nnoremap <silent> gd :call LanguageClient#textDocument_definition()<CR>
+" nnoremap <silent> <F14> :call LanguageClient#textDocument_rename()<CR>
+"
 
 
 
