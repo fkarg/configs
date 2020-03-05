@@ -5,10 +5,10 @@
 #
 # modify startup script:
 # - setting background
-{ configs, pkgs, ... }:
+{ config, pkgs, ... }: with pkgs; rec
 
 {
-  boot.loader.grub.device = "/dev/sdb"
+  boot.loader.grub.device = "/dev/sdb";
 
   networking.hostName = "tux";
 
@@ -17,5 +17,12 @@
 
   # enable touchpad support
   services.xserver.libinput.enable = true;
+
+  environment.systemPackages = [
+    # xbacklight:
+    acpilight
+  ];
+
+  hardware.brightnessctl.enable = true; # for xbacklight
 }
 

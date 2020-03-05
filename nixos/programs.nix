@@ -70,9 +70,6 @@
       tor-browser-bundle-bin
       # audio
       pavucontrol
-      # backlight
-      light
-      xorg.xbacklight
       # 'better' terminal
       kitty
       alacritty
@@ -94,8 +91,6 @@
       # skype
   ];
   nixpkgs.config.allowUnfree = true;
-
-  programs.light.enable = true;
 
   # fonts.
   fonts.fonts = with pkgs; [

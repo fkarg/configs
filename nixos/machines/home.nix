@@ -7,7 +7,7 @@
 # modify startup script:
 # - setting background
 # - second screen config
-{ configs, pkgs, ... }:
+{ config, pkgs, ... }:
 {
   boot.loader.grub.device = ???
 

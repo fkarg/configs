@@ -7,7 +7,7 @@
 # - xset -s off
 # - xset m 10/1 1
 
-{ configs, pkgs, ... }:
+{ config, pkgs, ... }:
 
 {
   # Use the GRUB 2 boot loader.

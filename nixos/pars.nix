@@ -30,13 +30,13 @@
 # - upStat.sh
 # - thunderbird signatures
 
-{ configs, pkgs, ... }: with pkgs;
+{ config, pkgs, ... }: with pkgs;
 {
   users.users.pars = {
     isNormalUser = true;
     uid = 1000;
     shell = "${pkgs.fish}/bin/fish";
-    extraGroups = [ "wheel" "networkmanager" ];
+    extraGroups = [ "wheel" "networkmanager" "video"];
     home = "/home/pars";
   };
 }

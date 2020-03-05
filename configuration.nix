@@ -4,10 +4,11 @@
   imports =
     [ # Include the results of the hardware scan.
       ./hardware-configuration.nix
-      ./programs.nix
-      ./machines/default.nix
+      ./nixos/programs.nix
+      ./nixos/machines/default.nix
       # ./machines/(tux|home).nix
-      ./pars.nix
+      ./nixos/machines/tux.nix
+      ./nixos/pars.nix
     ];
 
   # Enable the OpenSSH daemon.
@@ -15,7 +16,6 @@
 
   system.stateVersion = "19.09";
   system.autoUpgrade.enable = true;
-  system.dates = "12:00"
 }
 
 # open questions:
