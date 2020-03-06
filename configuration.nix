@@ -4,10 +4,11 @@
   imports =
     [ # Include the results of the hardware scan.
       ./hardware-configuration.nix
+      # does this really import them the way I think? import the higher ones
+      # 'first', and override sub-parts based on the lower ones?
       ./nixos/programs.nix
       ./nixos/machines/default.nix
       # ./machines/(tux|home).nix
-      ./nixos/machines/tux.nix
       ./nixos/pars.nix
     ];
 
