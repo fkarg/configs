@@ -1,4 +1,6 @@
 configuration.nix
 hardware-configuration.nix
 
+# after nixos-rebuild build, a 'result' link is created
+result
 
