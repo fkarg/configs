@@ -21,7 +21,9 @@
   environment.systemPackages = [
     # xbacklight:
     acpilight
+    lxd
   ];
+  virtualisation.lxd.enable = true;
 
   hardware.brightnessctl.enable = true; # for xbacklight
 }
