@@ -17,6 +17,7 @@
       xorg.xkill
       xorg.xinit
       inetutils
+      gparted
       # misc productivity
       neovim
       ripgrep
@@ -33,6 +34,8 @@
       ghostscript
       scrot
       tokei
+      # todo\.txt-cli
+      anki
       # wireshark
       # filezilla
 
@@ -86,8 +89,11 @@
       # fun
       cowsay
       fortune
+      sl
+      doge
       # messaging
       mumble
+      tdesktop
       # skype
   ];
   nixpkgs.config.allowUnfree = true;
