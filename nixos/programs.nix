@@ -95,6 +95,8 @@
       mumble
       tdesktop
       # skype
+      # setting up other configs
+      ansible
   ];
   nixpkgs.config.allowUnfree = true;
 

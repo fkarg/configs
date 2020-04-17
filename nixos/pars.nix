@@ -1,18 +1,9 @@
-# # put here:
+# # still missing parts:
 # git config for fkarg
 # - mail
 # - name
 # - editor
-# - always pull
-#
-# user config for pars
-# - groups
-# - home directory
-# - environment.variables = {
-#     EDITOR = "vim";
-#     BROWSER = "links";
-#     PAGER = "less";
-#   };
+# - always pull with rebase
 #
 # .config settings
 # - nvim/init.vim
