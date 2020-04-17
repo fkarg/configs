@@ -1,0 +1,125 @@
+---
+- hosts: local
+  connection: local
+  vars:
+    git_username: fkarg
+    configs_repo: configs
+    dotconfigdir: dotconfig
+    todotxtrepo: gtd
+
+
+  tasks:
+    # - debug: var=ansible_facts
+
+    - name: Check if .ssh present
+      stat:
+        path: ~/.ssh/id_rsa.pub
+      register: ssh
+
+    - name: Sync ~/configs/ directory
+      git:
+        repo: "git@github.com:{{ git_username }}/{{ configs_repo }}.git"
+        dest: "~/{{ configs_repo }}"
+      register: repo
+      when: ssh is succeeded
+
+      # tasks:
+    # git config
+    - name: link .gitconfig
+      file:
+        src: "~/{{ configs_repo }}/.gitconfig"
+        dest: ~/.gitconfig
+        state: link
+      when: repo is succeeded
+
+    # .config files
+    - name: link vim directory
+      file:
+        src: "~/{{ configs_repo }}/{{ dotconfigdir }}/nvim"
+        dest: ~/.config/vim
+        state: link
+      when: repo is succeeded
+
+    - name: link nvim directory
+      file:
+        src: "~/{{ configs_repo }}/{{ dotconfigdir }}/nvim"
+        dest: ~/.config/nvim
+        state: link
+      when: repo is succeeded
+
+    - name: link i3 directory
+      file:
+        src: "~/{{ configs_repo }}/{{ dotconfigdir }}/i3"
+        dest: ~/.config/i3
+        state: link
+      when: repo is succeeded
+
+    - name: link fish directory
+      file:
+        src: "~/{{ configs_repo }}/{{ dotconfigdir }}/fish"
+        dest: ~/.config/fish
+        state: link
+      when: repo is succeeded
+
+    - name: link broot directory
+      file:
+        src: "~/{{ configs_repo }}/{{ dotconfigdir }}/broot"
+        dest: ~/.config/broot
+        state: link
+      when: repo is succeeded
+
+    - name: link i3status-rs config
+      file:
+        src: "~/{{ configs_repo }}/{{ dotconfigdir }}/i3status-rust"
+        dest: ~/.config/i3status-rust
+        state: link
+      when: repo is succeeded
+
+    - name: link kitty config
+      file:
+        src: "~/{{ configs_repo }}/{{ dotconfigdir }}/kitty"
+        dest: ~/.config/kitty
+        state: link
+      when: repo is succeeded
+
+    # Background picture
+    - name: create folder for background picture
+      command: mkdir -p ~/Pictures/Space
+
+    - name: copy initial background picture
+      copy:
+        src: "~/{{ configs_repo }}/background_picture/IMAG7297.JPG"
+        dest: "~/Pictures/Space/IMAG7297.JPG"
+
+        # - name: Make sure to start redshift on startup
+
+    # gtd todo files
+    - name: link todo.sh config
+      file:
+        src: "~/{{ configs_repo }}/{{ dotconfigdir }}/todo"
+        dest: ~/.config/todo
+        state: link
+      when: repo is succeeded
+
+    - name: Sync gtd directory
+      git:
+        repo: "git@github.com:{{ git_username }}/{{ todotxtrepo }}.git"
+        dest: ~
+      when: ssh is succeeded
+
+    # set up 'b' 
+    - name: Create .local/bin
+      command: mkdir -p ~/.local/bin
+
+    - name: link b
+      file:
+        src: "~/{{ configs_repo }}/scripts/b.sh"
+        dest: ~/.local/bin/b
+        state: link
+      when: repo is succeeded
+
+    - name: Sync text_stuff directory
+      git:
+        repo: "git@github.com:{{ git_username }}/text_stuff.git"
+        dest: ~
+      when: ssh is succeeded
