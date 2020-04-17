@@ -16,9 +16,13 @@ autocmd BufReadPost *.rs setlocal filetype=rust
 autocmd! BufNewFile,BufRead *.rs setlocal ft=rust
 autocmd! BufNewFile,BufRead *.tex setlocal ft=tex
 autocmd! BufNewFile,BufRead *.lhs setlocal ft=haskell
+autocmd BufRead,BufNewFile *.nix set filetype=nix
 
+
+autocmd Filetype json setlocal ts=2 sts=2 sw=2
 autocmd Filetype haskell setlocal ts=2 sts=2 sw=2
 autocmd Filetype arduino setlocal ts=2 sts=2 sw=2
+autocmd Filetype yaml setlocal ts=2 sts=2 sw=2
 autocmd Filetype python setlocal ts=4 sts=4 sw=4
 autocmd Filetype cpp setlocal ts=4 sts=4 sw=4
 autocmd Filetype c++ setlocal ts=4 sts=4 sw=4
@@ -37,7 +41,7 @@ highlight warn ctermbg=black
 
 " set listchars=tab:>.,trail:.,extends:#,nbsp:.
 
-call matchadd('colorcolumn', '\%81v', 80) " highlighting lines longer than 80 characters in red
+call matchadd('colorcolumn', '\%101v', 100) " highlighting lines longer than 100 characters in red
 " call matchadd('colorcolumn', '\%>100v.', 0) "for it is better that way: highlighting lines longer than 100 characters in red
 call matchadd('warn', '\s\+$', 0) " highlighting trailing whitespaces in black
 
@@ -53,6 +57,7 @@ call matchadd('warn', '\s\+$', 0) " highlighting trailing whitespaces in black
 
 " Saving when switching buffers or making
 set autowriteall
+
 
 "set smartindent
 "
@@ -265,7 +270,9 @@ nnoremap <C-L> :nohl<CR><C-L>
 " - shorten line respectively, unmatch the two spaces (would be highlighted
 "   otherwise)
 " - correctly re-indent from last line to end of paragraph
-noremap l mk:.s# # #ge<CR>gql<C-L>:nohl<CR>k=}jj={'kj
+noremap L mk:.s# # #ge<CR>gql<C-L>:nohl<CR>k=}jj={'kj
+" without the paragraph reformatting part:
+noremap l mk:.s# # #ge<CR>gql<C-L>:nohl<CR>
 
 
 " For multi line version you can do this after selecting the text:
@@ -273,6 +280,14 @@ noremap l mk:.s# # #ge<CR>gql<C-L>:nohl<CR>k=}jj={'kj
 " :'<,'>:w !command<CR>
 " You can map it to simple visual mode shortcut like this:
 "
+
+" http://vim.wikia.com/wiki/Highlight_current_line
+nnoremap <silent> <Leader>l ml:execute 'match Search /\%'.line('.').'l/'<CR>
+nnoremap <silent> <Leader>c :exec '!'.getline('.')<CR>
+
+" from: https://stackoverflow.com/questions/1089028/is-it-possible-to-call-make-in-vim-in-linux-without-showing-the-shell
+nnoremap <leader>m :silent make!\|redraw!\|cc<CR>
+
 
 xnoremap <leader>c <esc>:'<,'>:w !fish<CR>
 " Hit leader key + c in visual mode to send the selected text to a stdin of the command. stdout of the command will be printed below vim's statusbar.
@@ -301,12 +316,12 @@ xnoremap <leader>c <esc>:'<,'>:w !fish<CR>
 
 
 " Turn Vim into a Distraction-Free Word Processor
-" While Vim is a great text editor for developers, it’s also great for those
+" While Vim is a great text editor for developers, it's also great for those
 " who want a simplified, customizable yet distraction-free environment for
 " writing.
 "
-" With a few lines of code, you can configure vim to switch into a “word
-" processor” mode when required. This changes how text is formatted in the
+" With a few lines of code, you can configure vim to switch into a "word
+" processor" mode when required. This changes how text is formatted in the
 " editor, and introduces things like spellchecking.
 "
 " First, create a function called WordProcessorMode, and include the following
@@ -320,15 +335,15 @@ xnoremap <leader>c <esc>:'<,'>:w !fish<CR>
 "  setlocal spell spelllang=en_us
 "  setlocal noexpandtab
 " endfu
-" Then, you’re going to need to define how you’ll activate it. The
+" Then, you're going to need to define how you'll activate it. The
 " following line of code allows you to create a command. When in command
-" mode, if you call “WP”, it will activate word processor mode.
+" mode, if you call "WP", it will activate word processor mode.
 "
 " vim-callwordprocessormode
 "
 " com! WP call WordProcessorMode()
 " To test that it works, open a new text file in VIM, and press escape.
-" Then type “WP”, and hit enter. Then, type some text, with some words
+" Then type "WP", and hit enter. Then, type some text, with some words
 " intentionally spelled incorrectly. If VIM highlights them as incorrect,
 " then you know you've installed it correctly.
 
@@ -567,6 +582,7 @@ endfu
 com! Test call Test()
 
 
+com! Ct call checktime
 
 " Tipp: CTRL-a increases the underlying number,
 " CTRL-x decreases the underlying number
@@ -576,40 +592,12 @@ com! Test call Test()
 
 
 " LaTeX Macros:
-let @f = 'i\begin{frame}[c]�kd\end{frame}�ku    '
-let @i = 'a\begin{itemize}[<+(1)->]\item\end{itemize}�ku '
-
+let @f = 'o\begin{frame}[c]\end{frame}kA    '
+let @i = 'o\begin{itemize}[<+(1)->]\item \end{itemize}kA'
+let @c = 'o\begin{columns}\begin{column}{0.5\textwidth}\end{column}\begin{column}{0.5\textwidth}\end{column}\end{columns}5k'
+let @o = 'o\begin{overlayarea}{\textheight}{\textwidth}\end{overlayarea}'
 
 
 colorscheme koehler
-
-
-" deactivate initially unloaded RUST RLS
-"
-" "------------------------- RUST RLS ------------------------------
-"
-" call plug#begin('~/.local/share/nvim/plugged')
-" Plug 'autozimu/LanguageClient-neovim', {
-"     \ 'branch': 'next',
-"     \ 'do': 'bash install.sh',
-"     \ }
-" call plug#end()
-"
-" " Required for operations modifying multiple buffers like rename.
-" " set hidden
-"
-" let g:LanguageClient_serverCommands = {
-"     \ 'rust': ['~/.cargo/bin/rustup', 'run', 'nightly', 'rls'],
-"     \ }
-"
-" nnoremap <F16> :call LanguageClient_contextMenu()<CR>
-" " Or map each action separately
-" " Maps K to hover, gd to goto definition, F2 to rename
-" nnoremap <silent> K :call LanguageClient#textDocument_hover()<CR>
-" nnoremap <silent> gd :call LanguageClient#textDocument_definition()<CR>
-" nnoremap <silent> <F14> :call LanguageClient#textDocument_rename()<CR>
-"
-
-
 
 
