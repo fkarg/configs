@@ -82,9 +82,18 @@
         state: link
       when: repo is succeeded
 
+    - name: link alacritty config
+      file:
+        src: "~/{{ configs_repo }}/{{ dotconfigdir }}/alacritty"
+        dest: ~/.config/alacritty
+        state: link
+      when: repo is succeeded
+
     # Background picture
     - name: create folder for background picture
-      command: mkdir -p ~/Pictures/Space
+      file:
+        path: ~/Pictures/Space
+        state: directory
 
     - name: copy initial background picture
       copy:
@@ -104,12 +113,14 @@
     - name: Sync gtd directory
       git:
         repo: "git@github.com:{{ git_username }}/{{ todotxtrepo }}.git"
-        dest: ~
+        dest: "~/{{ todotxtrepo }}"
       when: ssh is succeeded
 
     # set up 'b' 
     - name: Create .local/bin
-      command: mkdir -p ~/.local/bin
+      file:
+        path: ~/.local/bin
+        state: directory
 
     - name: link b
       file:
@@ -121,5 +132,5 @@
     - name: Sync text_stuff directory
       git:
         repo: "git@github.com:{{ git_username }}/text_stuff.git"
-        dest: ~
+        dest: ~/text_stuff
       when: ssh is succeeded
