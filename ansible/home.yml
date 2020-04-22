@@ -9,6 +9,16 @@
 
 
   tasks:
+    # # file: foo_desktop.config.j2
+    # add network widget
+    # {% if client_role == 'laptop' %}
+    # add battery widget
+    # {% endif %}
+    #
+    # # and then:
+    # - ansible-pull -e client_role=desktop playbook.yaml
+    #
+    # # others
     # - include: tasks/sth.yml
     # - debug: var=ansible_facts
     # - name: install cron job (ansible-pull)
