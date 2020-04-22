@@ -1,7 +1,8 @@
 
-function on_exit --on-process %self
-  echo "fish is now exiting"
-end
+# shown on i3status-rs without is-interactive
+# function on_exit --on-process %self --is-interactive
+#   echo "fish is now exiting"
+# end
 
 function fish_greeting
 #  echo "If you can't do it, who will?"
