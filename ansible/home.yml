@@ -24,14 +24,23 @@
         path: ~/.ssh/id_rsa.pub
       register: ssh
 
-    - name: Sync ~/configs/ directory
+    - name: Make sure ~/configs/ is present
       git:
         repo: "git@github.com:{{ git_username }}/{{ configs_repo }}.git"
         dest: "~/{{ configs_repo }}"
+        accept_hostkey: true
+        update: no
       register: repo
       when: ssh is succeeded
 
-      # tasks:
+    - name: Update ~/configs/ directory
+      git:
+        repo: "git@github.com:{{ git_username }}/{{ configs_repo }}.git"
+        dest: "~/{{ configs_repo }}"
+        accept_hostkey: true
+      when: repo is succeeded
+      ignore_errors: true
+
     # git config
     - name: link .gitconfig
       file:
@@ -118,10 +127,11 @@
         state: link
       when: repo is succeeded
 
-    - name: Sync gtd directory
+    - name: Make sure gtd directory is present
       git:
         repo: "git@github.com:{{ git_username }}/{{ todotxtrepo }}.git"
         dest: "~/{{ todotxtrepo }}"
+        update: no
       when: ssh is succeeded
 
     # set up 'b' 
@@ -137,8 +147,9 @@
         state: link
       when: repo is succeeded
 
-    - name: Sync text_stuff directory
+    - name: Make sure text_stuff is present
       git:
         repo: "git@github.com:{{ git_username }}/text_zeug.git"
         dest: ~/text_zeug
+        update: no
       when: ssh is succeeded
