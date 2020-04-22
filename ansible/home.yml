@@ -82,12 +82,12 @@
         state: link
       when: repo is succeeded
 
-    - name: link alacritty config
-      file:
-        src: "~/{{ configs_repo }}/{{ dotconfigdir }}/alacritty"
-        dest: ~/.config/alacritty
-        state: link
-      when: repo is succeeded
+      # - name: link alacritty config
+      #   file:
+      #     src: "~/{{ configs_repo }}/{{ dotconfigdir }}/alacritty"
+      #     dest: ~/.config/alacritty
+      #     state: link
+      #   when: repo is succeeded
 
     # Background picture
     - name: create folder for background picture
