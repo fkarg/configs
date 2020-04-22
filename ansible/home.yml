@@ -64,12 +64,30 @@
         state: link
       when: repo is succeeded
 
+
+    - name: check if i3 directory already exists
+      stat: path=~/.config/i3
+      register: i3dir_exists
+
+    - name: remove existing i3 directory and config
+      file: path=~/.config/i3 state=absent
+      when: i3dir_exists.stat.isdir is defined and i3dir_exists.stat.isdir
+
     - name: link i3 directory
       file:
         src: "~/{{ configs_repo }}/{{ dotconfigdir }}/i3"
         dest: ~/.config/i3
         state: link
       when: repo is succeeded
+
+
+    - name: check if fish directory already exists
+      stat: path=~/.config/fish
+      register: fishdir_exists
+
+    - name: remove existing fish directory and config
+      file: path=~/.config/fish state=absent
+      when: fishdir_exists.stat.isdir is defined and fishdir_exists.stat.isdir
 
     - name: link fish directory
       file:
