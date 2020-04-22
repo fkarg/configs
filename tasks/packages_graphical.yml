@@ -1,0 +1,25 @@
+---
+- name: Install Graphical packages
+  apt:
+    name: "{{ item }}"
+  with_items:
+    - feh
+    - vlc
+    - screen-message
+    - klavaro
+    - baobab
+    - pdftk
+    - anki
+    - thunderbird
+    - evince
+    - firefox
+    - chromium
+    - tor-browser-bundle
+    - pavucontrol
+    - xcompmgr
+    - texlive
+    - inkscape
+    - libreoffice
+    - telegram-desktop
+    - mumble
+    - gparted

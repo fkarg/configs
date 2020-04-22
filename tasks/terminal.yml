@@ -1,0 +1,92 @@
+---
+## basically this is the 'base' profile installation of anything I will have.
+
+- name: Check if .ssh present
+  stat:
+    path: ~/.ssh/id_rsa.pub
+  register: ssh
+
+- name: Make sure ~/configs/ is present
+  git:
+    repo: "git@github.com:{{ git_username }}/{{ configs_repo }}.git"
+    dest: "~/{{ configs_repo }}"
+    accept_hostkey: true
+    update: no
+  register: repo
+  when: ssh is succeeded
+
+- name: Update ~/configs/ directory
+  git:
+    repo: "git@github.com:{{ git_username }}/{{ configs_repo }}.git"
+    dest: "~/{{ configs_repo }}"
+    accept_hostkey: true
+  when: repo is succeeded
+  ignore_errors: true
+
+# git config
+- name: link .gitconfig
+  file:
+    src: "~/{{ configs_repo }}/.gitconfig"
+    dest: ~/.gitconfig
+    state: link
+  when: repo is succeeded
+
+# fish config
+- name: check if fish directory already exists
+  stat: path=~/.config/fish
+  register: fishdir_exists
+
+- name: remove existing fish directory and config
+  file: path=~/.config/fish state=absent
+  when: fishdir_exists.stat.isdir is defined and fishdir_exists.stat.isdir
+
+- name: link fish directory
+  file:
+    src: "~/{{ configs_repo }}/{{ dotconfigdir }}/fish"
+    dest: ~/.config/fish
+    state: link
+  when: repo is succeeded
+
+
+# .config files
+- name: link vim directory
+  file:
+    src: "~/{{ configs_repo }}/{{ dotconfigdir }}/nvim"
+    dest: ~/.config/vim
+    state: link
+  when: repo is succeeded
+
+- name: link nvim directory
+  file:
+    src: "~/{{ configs_repo }}/{{ dotconfigdir }}/nvim"
+    dest: ~/.config/nvim
+    state: link
+  when: repo is succeeded
+
+
+# set up 'b' 
+- name: link broot directory
+  file:
+    src: "~/{{ configs_repo }}/{{ dotconfigdir }}/broot"
+    dest: ~/.config/broot
+    state: link
+  when: repo is succeeded
+
+- name: Create .local/bin
+  file:
+    path: ~/.local/bin
+    state: directory
+
+- name: link b
+  file:
+    src: "~/{{ configs_repo }}/scripts/b.sh"
+    dest: ~/.local/bin/b
+    state: link
+  when: repo is succeeded
+
+- name: Make sure text_stuff is present
+  git:
+    repo: "git@github.com:{{ git_username }}/text_zeug.git"
+    dest: ~/text_zeug
+    update: no
+  when: ssh is succeeded

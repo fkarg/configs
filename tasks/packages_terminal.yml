@@ -1,0 +1,17 @@
+---
+- name: Install Basic Terminal packages
+  apt:
+    name: "{{item}}"
+  with_items:
+    - htop
+    - neovim
+    - wget
+    - fish
+    - curl
+    - iftop
+    - pkg-config
+    - build-essential
+    - cowsay
+    - fortune
+    - sl
+    - doge

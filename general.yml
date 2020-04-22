@@ -1,0 +1,56 @@
+---
+- hosts: local
+  connection: local
+  vars:
+    git_username: fkarg
+    configs_repo: configs
+    dotconfigdir: dotconfig
+    todotxtrepo: gtd
+
+  pre_tasks:
+    - debug: msg= "{{ ansible_facts }}"
+
+    - name: update apt repositories
+      apt: update_cache=yes
+      changed_when: False
+      when: ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu'
+
+    # # different required roles:
+    # - terminal / server / base
+    #   - nvim (config)
+    #   - fish (config)
+    # - graphical
+    #   - programs:
+    #   - configs:
+    #     - kitty
+    #     - todo
+    #     - i3status-rs
+    #     - i3
+    #     - broot
+    #     - scripts
+    #
+    #
+    # # file: foo_desktop.config.j2
+    # add network widget
+    # {% if client_role == 'laptop' %}
+    # add battery widget
+    # {% endif %}
+    #
+    # # and then:
+    # - ansible-pull -e client_role=desktop playbook.yaml
+    #
+    # # others
+    # - include: tasks/sth.yml
+    # - debug: var=ansible_facts
+    # - name: install cron job (ansible-pull)
+    #   cron:
+    #     user: ansible
+    #     name: ansible provision
+    #     minute: */10
+    #     job: "/usr/bin/ansible-pull -o -U https://github.com/<github_user>/ansible.git > /dev/null"
+
+  tasks:
+    - import_tasks: tasks/terminal.yml
+
+    - import_tasks: tasks/configs_graphical.yml
+      when: "client_role is defined and client_role != 'terminal'"

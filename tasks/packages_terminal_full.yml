@@ -1,0 +1,18 @@
+---
+- name: Install All Terminal packages
+  apt:
+    name: "{{item}}"
+  with_items:
+    - zip
+    - unzip
+    - redshift
+    - jq
+    - lsof
+      # might need compile:
+    - tokei
+    - ripgrep
+    - broot
+    - aspell
+    - haskell-platform
+    - rustup
+    - texlive-full
