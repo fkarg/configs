@@ -12,8 +12,10 @@
 
     - name: update apt repositories
       apt: update_cache=yes
+      become: True
       changed_when: False
       when: ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu'
+      ignore_errors: True
 
     # # different required roles:
     # - terminal / server / base
