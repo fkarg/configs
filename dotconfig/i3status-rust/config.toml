@@ -15,7 +15,7 @@ icons = "awesome"
 # Show Entropia club status
 [[block]]
 block = "custom"
-command = "/home/pars/Coding/.dotfiles/scripts/status.sh"
+command = "/home/felix/Coding/configs/scripts/status.sh"
 interval = 1800
 
 
@@ -47,7 +47,7 @@ interval = 1800
 # showing the current state of an external display (and switch, if necessary)
 [[block]]
 block = "custom"
-command = "/home/pars/Coding/.dotfiles/scripts/multiscreens.sh"
+command = "/home/felix/Coding/configs/scripts/multiscreens.sh"
 interval = 10
 
 
@@ -65,7 +65,7 @@ critical_mem = 80.0
 
 [[block]]
 block = "net"
-device = "enp3s0f1"
+device = "enp1s0"
 speed_up = false
 speed_down = false
 
@@ -86,18 +86,18 @@ ssid = true
 # show_clocks = true
 # interval = 1
 
-[[block]]
-block = "temperature"
-collapsed = true
-interval = 10
-format = "{average}°C"
-chip = "*-isa-*"
+# [[block]]
+# block = "temperature"
+# collapsed = true
+# interval = 10
+# format = "{average}°C"
+# chip = "*-isa-*"
 
 
 [[block]]
 block = "cpu"
 interval = 5
-format = "{barchart} {utilization}%"
+# format = "{barchart} {utilization}%"
 
 [[block]]
 block = "load"
@@ -106,9 +106,9 @@ format = "{1m} {5m} {15m}"
 
 [[block]]
 block = "battery"
-driver = "sysfs"
+# driver = "sysfs"
 interval = 5
-format = "{percentage}% {time}h"
+format = "{percentage}% {time}h {power}W"
 
 [[block]]
 block = "time"
@@ -118,6 +118,6 @@ format = "%Y-%m-%d %R:%S"
 [[block]]
 block = "sound"
 on_click = "pactl set-sink-mute alsa_output.pci-0000_00_1f.3.analog-stereo toggle"
-show_volume_when_muted = true
+# show_volume_when_muted = true
 
 

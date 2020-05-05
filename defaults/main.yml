@@ -1,0 +1,19 @@
+---
+
+# git username of the repos to be pulled
+git_username: fkarg
+configs_repo: configs
+dotconfigdir: dotconfig
+todotxtrepo: gtd
+
+
+username: pars
+
+# git configs
+git_email: f.karg10@gmail.com
+git_name: fkarg
+git_editor: nvim
+
+
+account_defaults: true
+

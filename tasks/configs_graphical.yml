@@ -42,12 +42,22 @@
     # - name: Make sure to start redshift on startup
 
 # gtd todo files
-- name: link todo.sh config
+- name: Create todo.sh config dir
   file:
-    src: "~/{{ configs_repo }}/{{ dotconfigdir }}/todo"
-    dest: ~/.config/todo
-    state: link
-  when: repo is succeeded
+    path: ~/.config/todo
+    state: directory
+
+- name: Template todo.sh config
+  template:
+    src: templates/todoconfig.j2
+    dest: ~/.config/todo/config
+
+- name: Create empty todo.sh actions file
+  copy:
+    content: ""
+    dest: ~/.configs/todo/actions
+    force: no
+
 
 - name: Make sure gtd directory is present
   git:

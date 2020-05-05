@@ -1,6 +1,8 @@
 ---
 ## basically this is the 'base' profile installation of anything I will have.
 
+# assumption: there is an ssh key for github registered for my account present.
+# after all, I want my full environment there.
 - name: Check if .ssh present
   stat:
     path: ~/.ssh/id_rsa.pub
@@ -19,17 +21,16 @@
   git:
     repo: "git@github.com:{{ git_username }}/{{ configs_repo }}.git"
     dest: "~/{{ configs_repo }}"
-    accept_hostkey: true
   when: repo is succeeded
   ignore_errors: true
 
 # git config
-- name: link .gitconfig
-  file:
-    src: "~/{{ configs_repo }}/.gitconfig"
+- name: Template .gitconfig
+  template:
+    src: templates/.gitconfig.j2
     dest: ~/.gitconfig
-    state: link
-  when: repo is succeeded
+
+- fail:
 
 # fish config
 - name: check if fish directory already exists
