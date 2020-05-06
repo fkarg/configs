@@ -3,6 +3,7 @@
 SETUVAR __fish_init_2_39_8:\x1d
 SETUVAR __fish_init_2_3_0:\x1d
 SETUVAR __fish_init_3_x:\x1d
+SETUVAR __fish_initialized:3100
 SETUVAR _fish_abbr_c:cd
 SETUVAR _fish_abbr_cl:clear
 SETUVAR _fish_abbr_e:evince
@@ -20,11 +21,13 @@ SETUVAR _fish_abbr_nrs:sudo\x20nixos\x2drebuild\x20switch
 SETUVAR _fish_abbr_nsp:nix\x2dshell\x20\x2dp
 SETUVAR _fish_abbr_r:rm\x20\x2drf
 SETUVAR _fish_abbr_s:git\x20status\x3b\x20git\x20add\x20\x2e\x3b\x20git\x20commit\x20\x2dm\x20sync\x3b\x20git\x20pull\x3b\x20git\x20push
+SETUVAR _fish_abbr_sus:systemctl\x20suspend
 SETUVAR _fish_abbr_t:todo\x2esh
 SETUVAR _fish_abbr_ta:todo\x2esh\x20add
 SETUVAR _fish_abbr_td:todo\x2esh\x20do
 SETUVAR _fish_abbr_tl:todo\x2esh\x20ls
 SETUVAR _fish_abbr_tlp:todo\x2esh\x20ls\x20project
+SETUVAR _fish_abbr_tls:todo\x2esh\x20ls\x20\x40someday
 SETUVAR _fish_abbr_tlw:todo\x2esh\x20ls\x20\x40waiting
 SETUVAR _fish_abbr_tn:todo\x2esh\x20ls\x20\x40next\x20\x2dwaiting
 SETUVAR _fish_abbr_tp:todo\x2esh\x20lsp
@@ -41,6 +44,7 @@ SETUVAR fish_color_error:ff0000
 SETUVAR fish_color_escape:00a6b2
 SETUVAR fish_color_history_current:\x2d\x2dbold
 SETUVAR fish_color_host:normal
+SETUVAR fish_color_host_remote:yellow
 SETUVAR fish_color_match:\x2d\x2dbackground\x3dbrblue
 SETUVAR fish_color_normal:normal
 SETUVAR fish_color_operator:00a6b2
@@ -49,6 +53,7 @@ SETUVAR fish_color_quote:999900
 SETUVAR fish_color_redirection:00afff
 SETUVAR fish_color_search_match:bryellow\x1e\x2d\x2dbackground\x3dbrblack
 SETUVAR fish_color_selection:white\x1e\x2d\x2dbold\x1e\x2d\x2dbackground\x3dbrblack
+SETUVAR fish_color_status:red
 SETUVAR fish_color_user:brgreen
 SETUVAR fish_color_valid_path:\x2d\x2dunderline
 SETUVAR fish_greeting:Welcome\x20to\x20fish\x2c\x20the\x20friendly\x20interactive\x20shell
