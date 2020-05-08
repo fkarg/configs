@@ -2,6 +2,7 @@
 
 cowfile: tux
 
-lan: enp3s0
-wifi: wlp3s0
+
+lan: enp3s0f1
+wifi: wlp2s0
 battery: true
