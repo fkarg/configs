@@ -18,7 +18,3 @@ terminal: kitty
 git_email: f.karg10@gmail.com
 git_name: fkarg
 git_editor: nvim
-
-
-account_defaults: true
-
