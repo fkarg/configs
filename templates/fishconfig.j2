@@ -1,13 +1,7 @@
-
-# shown on i3status-rs without is-interactive
-# function on_exit --on-process %self --is-interactive
-#   echo "fish is now exiting"
-# end
+# fish config file.
 
 function fish_greeting
-#  echo "If you can't do it, who will?"
-#  set ran random
-  fortune -as | cowthink # special thing ...
+  fortune -as | cowthink -f {{ cowfile }}
   echo
 end
 

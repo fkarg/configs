@@ -30,23 +30,35 @@
     src: templates/.gitconfig.j2
     dest: ~/.gitconfig
 
-- fail:
 
 # fish config
-- name: check if fish directory already exists
+- name: Check if fish directory already exists
   stat: path=~/.config/fish
   register: fishdir_exists
 
-- name: remove existing fish directory and config
+- name: Remove existing fish directory and config
   file: path=~/.config/fish state=absent
   when: fishdir_exists.stat.isdir is defined and fishdir_exists.stat.isdir
 
-- name: link fish directory
+- name: Create new fish config directory
   file:
-    src: "~/{{ configs_repo }}/{{ dotconfigdir }}/fish"
-    dest: ~/.config/fish
+    path: ~/.config/fish
+    state: directory
+
+- name: Template fish config
+  template:
+    src: templates/fishconfig.j2
+    dest: ~/.config/fish/config.fish
+
+- name: Link fish variables
+  file:
+    src: "~/{{ configs_repo }}/{{ dotconfigdir }}/fish/fish_variables"
+    dest: ~/.config/fish/fish_variables
     state: link
   when: repo is succeeded
+
+
+- fail:
 
 
 # .config files

@@ -9,6 +9,9 @@ todotxtrepo: gtd
 
 username: pars
 
+cowfile: default
+
+
 # git configs
 git_email: f.karg10@gmail.com
 git_name: fkarg

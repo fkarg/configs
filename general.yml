@@ -56,6 +56,11 @@
         file: vars/hp440g5.yml
       when: client_role == 'hp440g5'
 
+    - name: Load tux variables
+      include_vars:
+        file: vars/tux.yml
+      when: client_role == 'tux'
+
     - import_tasks: tasks/terminal.yml
 
     - import_tasks: tasks/configs_graphical.yml
