@@ -604,6 +604,18 @@ let @o = 'o\begin{overlayarea}{\textheight}{\textwidth}\end{overlayarea}'
 
 colorscheme koehler
 
+
+
+" install vim-plug if not yet installed
+if empty(glob("$HOME/.local/share/nvim/site/autoload/plug.vim"))
+  echo 'installing vim-plug'
+  silent !curl -fLo "$HOME/.local/share/nvim/site/autoload/plug.vim" --create-dirs
+              \ https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
+  autocmd VimEnter * PlugInstall --sync | source $MYVIMRC
+endif
+
+
+
 " install plugins by typing: PlugInstall
 " call plug#begin(stdpath('data') . '/plugged')
 call plug#begin('~/.config/nvimplugins')
