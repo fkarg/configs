@@ -12,11 +12,14 @@ set number relativenumber " showing the current line number only in this line,
                           " and relative line numbers everywhere else.
 set tabpagemax=100
 
+" todo: upgrade these file detection things
 autocmd BufReadPost *.rs setlocal filetype=rust
 autocmd! BufNewFile,BufRead *.rs setlocal ft=rust
 autocmd! BufNewFile,BufRead *.tex setlocal ft=tex
 autocmd! BufNewFile,BufRead *.lhs setlocal ft=haskell
-autocmd BufRead,BufNewFile *.nix set filetype=nix
+autocmd BufRead,BufNewFile *.nix setlocal filetype=nix
+autocmd BufRead,BufNewFile *.yml setlocal filetype=yaml
+autocmd BufRead,BufNewFile *.yaml setlocal filetype=yaml
 
 
 autocmd Filetype json setlocal ts=2 sts=2 sw=2
@@ -600,4 +603,13 @@ let @o = 'o\begin{overlayarea}{\textheight}{\textwidth}\end{overlayarea}'
 
 colorscheme koehler
 
+" call plug#begin(stdpath('data') . '/plugged')
+call plug#begin('~/.config/nvimplugins')
 
+Plug 'editorconfig/editorconfig-vim'
+
+Plug 'https://github.com/junegunn/vim-github-dashboard.git'
+
+" todo: evaluate fzf/ripgrep plugin
+
+call plug#end()
