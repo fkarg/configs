@@ -54,19 +54,24 @@
     - name: Load hp440g5 variables
       include_vars:
         file: vars/hp440g5.yml
-      when: client_role == 'hp440g5'
+      when: client_role is defined and client_role == 'hp440g5'
 
     - name: Load tux variables
       include_vars:
         file: vars/tux.yml
-      when: client_role == 'tux'
+      when: client_role is defined and client_role == 'tux'
 
     - name: Load desktop variables
       include_vars:
         file: vars/desktop.yml
-      when: client_role == 'desktop'
+      when: client_role is defined and client_role == 'desktop'
+
+    - name: Fail if client role not defined
+      fail:
+      when: "client_role is not defined or (client_role != 'tux' and client_role != 'desktop' and client_role != 'hp440g5')"
 
     - import_tasks: tasks/terminal.yml
+      when: client_role is defined
 
     - import_tasks: tasks/configs_graphical.yml
       when: "client_role is defined and client_role != 'terminal'"
