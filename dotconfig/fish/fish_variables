@@ -24,6 +24,7 @@ SETUVAR _fish_abbr_s:git\x20status\x3b\x20git\x20add\x20\x2e\x3b\x20git\x20commi
 SETUVAR _fish_abbr_sus:systemctl\x20suspend
 SETUVAR _fish_abbr_t:todo\x2esh
 SETUVAR _fish_abbr_ta:todo\x2esh\x20add
+SETUVAR _fish_abbr_tan:todo\x2esh\x20add\x20\x40next
 SETUVAR _fish_abbr_td:todo\x2esh\x20do
 SETUVAR _fish_abbr_tl:todo\x2esh\x20ls
 SETUVAR _fish_abbr_tlp:todo\x2esh\x20ls\x20project
