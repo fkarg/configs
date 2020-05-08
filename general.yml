@@ -61,7 +61,7 @@
         file: vars/tux.yml
       when: client_role == 'tux'
 
-    - name: Load tux variables
+    - name: Load desktop variables
       include_vars:
         file: vars/desktop.yml
       when: client_role == 'desktop'
