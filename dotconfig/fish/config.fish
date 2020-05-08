@@ -7,27 +7,19 @@
 function fish_greeting
 #  echo "If you can't do it, who will?"
 #  set ran random
-  fortune -as | cowthink
+  fortune -as | cowthink # special thing ...
   echo
 end
 
 if status --is-interactive
-  echo "-- (tux) --"
-  echo "Think about reading a page or more today!"
+  echo ----\((hostname)\)----
+  echo "Different is better when it is more effective or fun"
 end
 
 
 
 set -x PATH ~/.local/bin $PATH
 set -x PATH ~/.cargo/bin $PATH
-
-
-# set for factis-environment
-# set -x way f
-# set -x DOCKER_HOST tcp://127.0.0.1:2375
-#
-
-# transset --id $WINDOWID >/dev/null
 
 
 
