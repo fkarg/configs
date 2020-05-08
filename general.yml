@@ -61,6 +61,11 @@
         file: vars/tux.yml
       when: client_role == 'tux'
 
+    - name: Load tux variables
+      include_vars:
+        file: vars/desktop.yml
+      when: client_role == 'desktop'
+
     - import_tasks: tasks/terminal.yml
 
     - import_tasks: tasks/configs_graphical.yml

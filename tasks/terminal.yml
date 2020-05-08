@@ -32,15 +32,7 @@
 
 
 # fish config
-- name: Check if fish directory already exists
-  stat: path=~/.config/fish
-  register: fishdir_exists
-
-- name: Remove existing fish directory and config
-  file: path=~/.config/fish state=absent
-  when: fishdir_exists.stat.isdir is defined and fishdir_exists.stat.isdir
-
-- name: Create new fish config directory
+- name: Create config/fish directory
   file:
     path: ~/.config/fish
     state: directory
@@ -79,11 +71,8 @@
   when: repo is succeeded
 
 
-
-- fail:
-
 # set up 'b' 
-- name: link broot directory
+- name: Link broot directory
   file:
     src: "~/{{ configs_repo }}/{{ dotconfigdir }}/broot"
     dest: ~/.config/broot
@@ -95,7 +84,7 @@
     path: ~/.local/bin
     state: directory
 
-- name: link b
+- name: Link b
   file:
     src: "~/{{ configs_repo }}/scripts/b.sh"
     dest: ~/.local/bin/b

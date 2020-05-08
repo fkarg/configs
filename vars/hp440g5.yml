@@ -6,6 +6,10 @@ cowfile: apt
 git_email: felix@delibooth.com
 git_name: Felix
 
+terminal: gnome-terminal
 
 account_defaults: false
 
+lan: enp1s0
+wifi: wlp2s0
+battery: true

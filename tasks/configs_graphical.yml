@@ -1,25 +1,27 @@
 ---
-- name: check if i3 directory already exists
-  stat: path=~/.config/i3
-  register: i3dir_exists
 
-- name: remove existing i3 directory and config
-  file: path=~/.config/i3 state=absent
-  when: i3dir_exists.stat.isdir is defined and i3dir_exists.stat.isdir
 
-- name: link i3 directory
+- name: Create config/i3 directory
   file:
-    src: "~/{{ configs_repo }}/{{ dotconfigdir }}/i3"
-    dest: ~/.config/i3
-    state: link
-  when: repo is succeeded
+    path: ~/.config/i3
+    state: directory
 
-- name: link i3status-rs config
+- name: Template i3 config
+  template:
+    src: templates/i3config.j2
+    dest: ~/.config/i3/config
+
+- name: Create config/i3status directory
   file:
-    src: "~/{{ configs_repo }}/{{ dotconfigdir }}/i3status-rust"
-    dest: ~/.config/i3status-rust
-    state: link
-  when: repo is succeeded
+    path: ~/.config/i3status
+    state: directory
+
+- name: Template i3status config
+  template:
+    src: templates/i3statusconfig.j2
+    dest: ~/.config/i3status/config.toml
+
+- fail:
 
 - name: link kitty config
   file:

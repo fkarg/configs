@@ -15,7 +15,7 @@ icons = "awesome"
 # Show Entropia club status
 [[block]]
 block = "custom"
-command = "/home/felix/Coding/configs/scripts/status.sh"
+command = "/home/{{ username }}/configs/scripts/status.sh"
 interval = 1800
 
 
@@ -47,7 +47,7 @@ interval = 1800
 # showing the current state of an external display (and switch, if necessary)
 [[block]]
 block = "custom"
-command = "/home/felix/Coding/configs/scripts/multiscreens.sh"
+command = "/home/{{ username }}/configs/scripts/multiscreens.sh"
 interval = 10
 
 
@@ -65,17 +65,33 @@ critical_mem = 80.0
 
 [[block]]
 block = "net"
-device = "enp1s0"
+device = "{{ lan }}"
 speed_up = false
 speed_down = false
 
+{% if wifi is defined %}
 
 [[block]]
 block = "net"
-device = "wlp2s0"
+device = "{{ wifi }}"
 speed_up = false
 speed_down = false
 ssid = true
+
+{% endif %}
+
+{% if wifi2 is defined %}
+
+[[block]]
+block = "net"
+device = "{{ wifi2 }}"
+speed_up = false
+speed_down = false
+ssid = true
+
+{% endif %}
+
+
 
 
 # For Desktop:
@@ -104,11 +120,16 @@ block = "load"
 interval = 5
 format = "{1m} {5m} {15m}"
 
+{% if battery is defined and battery %}
+
 [[block]]
 block = "battery"
 # driver = "sysfs"
 interval = 5
 format = "{percentage}% {time}h {power}W"
+
+{% endif %}
+
 
 [[block]]
 block = "time"
@@ -119,5 +140,3 @@ format = "%Y-%m-%d %R:%S"
 block = "sound"
 on_click = "pactl set-sink-mute alsa_output.pci-0000_00_1f.3.analog-stereo toggle"
 # show_volume_when_muted = true
-
-

@@ -11,6 +11,8 @@ username: pars
 
 cowfile: default
 
+terminal: kitty
+
 
 # git configs
 git_email: f.karg10@gmail.com
