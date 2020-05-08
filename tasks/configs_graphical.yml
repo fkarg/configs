@@ -21,22 +21,20 @@
     src: templates/i3statusconfig.j2
     dest: ~/.config/i3status/config.toml
 
-- fail:
-
-- name: link kitty config
+- name: Link kitty config
   file:
     src: "~/{{ configs_repo }}/{{ dotconfigdir }}/kitty"
     dest: ~/.config/kitty
     state: link
-  when: repo is succeeded
+  when: repo is succeeded and terminal == "kitty"
 
 # Background picture
-- name: create folder for background picture
+- name: Create folder for background picture
   file:
     path: ~/Pictures/Space
     state: directory
 
-- name: copy initial background picture
+- name: Copy initial background picture
   copy:
     src: "~/{{ configs_repo }}/background_picture/IMAG7297.JPG"
     dest: "~/Pictures/Space/IMAG7297.JPG"
@@ -57,7 +55,7 @@
 - name: Create empty todo.sh actions file
   copy:
     content: ""
-    dest: ~/.configs/todo/actions
+    dest: ~/.config/todo/actions
     force: no
 
 
