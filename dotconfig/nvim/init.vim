@@ -12,6 +12,7 @@ set number relativenumber " showing the current line number only in this line,
                           " and relative line numbers everywhere else.
 set tabpagemax=100
 
+" todo: https://vi.stackexchange.com/questions/12794/how-to-share-config-between-vim-and-neovim
 " todo: upgrade these file detection things
 autocmd BufReadPost *.rs setlocal filetype=rust
 autocmd! BufNewFile,BufRead *.rs setlocal ft=rust
@@ -603,6 +604,7 @@ let @o = 'o\begin{overlayarea}{\textheight}{\textwidth}\end{overlayarea}'
 
 colorscheme koehler
 
+" install plugins by typing: PlugInstall
 " call plug#begin(stdpath('data') . '/plugged')
 call plug#begin('~/.config/nvimplugins')
 

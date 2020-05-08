@@ -58,24 +58,29 @@
   when: repo is succeeded
 
 
-- fail:
-
-
-# .config files
-- name: link vim directory
+# vim files
+- name: Create nvim plugin directory
   file:
-    src: "~/{{ configs_repo }}/{{ dotconfigdir }}/nvim"
-    dest: ~/.config/vim
-    state: link
-  when: repo is succeeded
+    path: ~/.config/nvimplugins
+    state: directory
 
-- name: link nvim directory
+- name: Link nvim directory
   file:
     src: "~/{{ configs_repo }}/{{ dotconfigdir }}/nvim"
     dest: ~/.config/nvim
     state: link
   when: repo is succeeded
 
+- name: Link vim directory
+  file:
+    src: "~/{{ configs_repo }}/{{ dotconfigdir }}/nvim"
+    dest: ~/.config/vim
+    state: link
+  when: repo is succeeded
+
+
+
+- fail:
 
 # set up 'b' 
 - name: link broot directory
