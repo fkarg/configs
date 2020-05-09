@@ -4,6 +4,7 @@ SETUVAR __fish_init_2_39_8:\x1d
 SETUVAR __fish_init_2_3_0:\x1d
 SETUVAR __fish_init_3_x:\x1d
 SETUVAR __fish_initialized:3100
+SETUVAR _fish_abbr_a:abbr\x20\x2ds
 SETUVAR _fish_abbr_c:cd
 SETUVAR _fish_abbr_cl:clear
 SETUVAR _fish_abbr_e:evince
@@ -25,6 +26,7 @@ SETUVAR _fish_abbr_sus:systemctl\x20suspend
 SETUVAR _fish_abbr_t:todo\x2esh
 SETUVAR _fish_abbr_ta:todo\x2esh\x20add
 SETUVAR _fish_abbr_tan:todo\x2esh\x20add\x20\x40next
+SETUVAR _fish_abbr_taw:todo\x2esh\x20add\x20\x40waiting\x20for
 SETUVAR _fish_abbr_td:todo\x2esh\x20do
 SETUVAR _fish_abbr_tl:todo\x2esh\x20ls
 SETUVAR _fish_abbr_tlp:todo\x2esh\x20ls\x20project
