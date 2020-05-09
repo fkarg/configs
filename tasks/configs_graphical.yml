@@ -10,6 +10,7 @@
   template:
     src: templates/i3config.j2
     dest: ~/.config/i3/config
+  notify: "restart i3"
 
 - name: Create config/i3status directory
   file:
@@ -20,6 +21,7 @@
   template:
     src: templates/i3statusconfig.j2
     dest: ~/.config/i3status/config.toml
+  notify: "restart i3"
 
 - name: Link kitty config
   file:

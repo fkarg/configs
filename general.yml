@@ -46,6 +46,10 @@
     #     minute: */10
     #     job: "/usr/bin/ansible-pull -o -U https://github.com/<github_user>/ansible.git > /dev/null"
 
+  handlers:
+    - name: Import handlers
+      import_tasks: handlers/main.yml
+
   tasks:
     - name: Load global variables
       include_vars:
@@ -75,3 +79,7 @@
 
     - import_tasks: tasks/configs_graphical.yml
       when: "client_role is defined and client_role != 'terminal'"
+
+    - meta: flush_handlers
+
+

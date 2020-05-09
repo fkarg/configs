@@ -1,0 +1,10 @@
+---
+
+- name: Create local broot links
+  shell: broot -- install
+  listen: "install br"
+
+- name: Restart i3 with new config
+  shell: i3 restart
+  ignore_errors: true
+  listen: "restart i3"

@@ -90,6 +90,7 @@
     dest: ~/.local/bin/b
     state: link
   when: repo is succeeded
+  notify: "install br"
 
 - name: Make sure text_stuff is present
   git:
