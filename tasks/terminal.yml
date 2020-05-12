@@ -27,7 +27,7 @@
 # git config
 - name: Template .gitconfig
   template:
-    src: templates/.gitconfig.j2
+    src: templates/gitconfig.j2
     dest: ~/.gitconfig
 
 
@@ -42,11 +42,11 @@
     src: templates/fishconfig.j2
     dest: ~/.config/fish/config.fish
 
-- name: Link fish variables
+- name: Hard Link fish variables
   file:
     src: "~/{{ configs_repo }}/{{ dotconfigdir }}/fish/fish_variables"
     dest: ~/.config/fish/fish_variables
-    state: link
+    state: hard
   when: repo is succeeded
 
 
