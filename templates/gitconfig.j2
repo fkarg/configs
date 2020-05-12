@@ -3,5 +3,8 @@
     name = {{ git_name }}
 [pull]
     rebase = true
+[rebase]
+; see http://stackoverflow.com/a/30209750: git 2.6+ for git pull --rebase
+    autoStash = true
 [core]
     editor = {{ git_editor }}
