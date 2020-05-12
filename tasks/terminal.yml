@@ -41,6 +41,7 @@
   template:
     src: templates/fishconfig.j2
     dest: ~/.config/fish/config.fish
+  notify: "install br"
 
 - name: Hard Link fish variables
   file:
@@ -48,6 +49,7 @@
     dest: ~/.config/fish/fish_variables
     state: hard
   when: repo is succeeded
+  notify: "install br"
 
 
 # vim files
@@ -78,6 +80,7 @@
     dest: ~/.config/broot
     state: link
   when: repo is succeeded
+  notify: "install br"
 
 - name: Create .local/bin
   file:
