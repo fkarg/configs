@@ -1,7 +1,0 @@
-[user]
-	email = f.karg10@gmail.com
-	name = fkarg
-[pull]
-	rebase = true
-[core]
-	editor = nvim
