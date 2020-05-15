@@ -39,6 +39,7 @@ execution = "$EDITOR {file}"
 
 [[verbs]]
 key = "ctrl-c"
+invocation = "quit"
 execution = ":quit"
 
 [[verbs]]
