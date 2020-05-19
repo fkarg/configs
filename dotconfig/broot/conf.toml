@@ -51,6 +51,12 @@ invocation = "git_diff"
 shortcut = "gd"
 execution = "git diff {file}"
 
+[[verbs]]
+invocation = "grep {searchargs}"
+shortcut = "rg"
+execution = "rg -ie {searchargs} {directory}"
+
+
 # If $PAGER isn't set on your computer, you should either set it
 #  or just replace it with your viewer of choice in the 'execution'
 #  pattern.
