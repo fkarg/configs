@@ -8,3 +8,13 @@
   shell: i3 restart
   ignore_errors: true
   listen: "restart i3"
+
+- name: Rebuild NixOS based on current configuration
+  shell: nixos-rebuild build
+  listen: "nixos-rebuild build"
+
+- name: Make current NixOS configuration boot default
+  shell: nixos-rebuild boot
+  become: true
+  ignore_errors: true
+  listen: "nixos-rebuild boot"

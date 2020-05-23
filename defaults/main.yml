@@ -7,11 +7,17 @@ dotconfigdir: dotconfig
 todotxtrepo: gtd
 
 
+# username on this machine
 username: pars
 
+# cowfile on this machine
 cowfile: default
 
+# terminal for machine
 terminal: kitty
+
+# if the nixos-config should be linked on this system
+link_nixos: false
 
 
 # git configs

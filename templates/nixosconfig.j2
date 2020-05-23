@@ -1,0 +1,29 @@
+{ config, pkgs, ... }:
+
+{
+  imports =
+    [ # Include the results of the hardware scan.
+      ./hardware-configuration.nix
+
+      # install some 'default' programs
+      ./configs/programs.nix
+
+      # include global configurations
+      ./configs/machines/default.nix
+
+      # include machine-specific configurations
+      ./configs/machines/{{ client_role }}.nix
+
+      # include user-specific configurations
+      ./configs/{{ username }}.nix
+    ];
+
+  system.stateVersion = "20.03";
+  system.autoUpgrade.enable = true;
+}
+
+# open questions:
+# - what does 'rec' do?
+# - what does 'callPackage' do?
+# - what does 'inherit' do exactly?
+# - how does 'with' work, in detail?

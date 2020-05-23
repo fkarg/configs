@@ -1,0 +1,22 @@
+---
+
+- name: Link nixos folder
+  file:
+    src: "/home/{{ username }}/{{ configs_repo }}/nixos"
+    dest: /etc/nixos/configs
+    state: link
+  become: true
+  ignore_errors: true
+  # when: repo is succeeded
+
+
+- name: Template /etc/nixos/configuration.nix
+  template:
+    src: "/home/{{ username }}/{{ configs_repo }}/templates/nixosconfig.j2"
+    dest: /etc/nixos/configuration.nix
+  become: true
+  ignore_errors: true
+  notify: 
+    - "nixos-rebuild build"
+    - "nixos-rebuild boot"
+

@@ -1,3 +1,5 @@
 ---
 
 cowfile: cower
+
+link_nixos: true

@@ -6,3 +6,5 @@ cowfile: tux
 lan: enp3s0f1
 wifi: wlp2s0
 battery: true
+
+link_nixos: true
