@@ -1,3 +1,4 @@
+# actually not even necessary anymore, since it will not be symlinked to /etc/nixos
 configuration.nix
 hardware-configuration.nix
 
@@ -6,3 +7,6 @@ result
 launcher
 
 .netrwhist
+
+# symlinking dotconfig/fish
+config.fish

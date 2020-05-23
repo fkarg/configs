@@ -32,23 +32,16 @@
 
 
 # fish config
-- name: Create config/fish directory
+- name: Link config/fish directory
   file:
-    path: ~/.config/fish
-    state: directory
+    src: "~/{{ configs_repo }}/{{ dotconfigdir }}/fish"
+    dest: ~/.config/fish
+    state: link
 
 - name: Template fish config
   template:
     src: templates/fishconfig.j2
     dest: ~/.config/fish/config.fish
-  notify: "install br"
-
-- name: Hard Link fish variables
-  file:
-    src: "~/{{ configs_repo }}/{{ dotconfigdir }}/fish/fish_variables"
-    dest: ~/.config/fish/fish_variables
-    state: hard
-  when: repo is succeeded
   notify: "install br"
 
 
