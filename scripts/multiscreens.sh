@@ -9,6 +9,7 @@ MONITOR=eDP-1
 EXTERN1=HDMI-1
 # EXTERN2=DP1
 EXTERN2=DP-1
+EXTERN3=DP1-1
 
 EXTERN=None
 
@@ -29,7 +30,10 @@ CONFIG=None
 
 
 function detectExtern {
-    if [ -n "$(xrandr -q | rg \^$EXTERN2 | rg \ connected)" ]
+    if [ -n "$(xrandr -q | rg \^$EXTERN3 | rg \ connected)" ]
+    then
+        EXTERN=$EXTERN3
+    elif [ -n "$(xrandr -q | rg \^$EXTERN2 | rg \ connected)" ]
     then
         EXTERN=$EXTERN2
     elif [ -n "$(xrandr -q | rg \^$EXTERN1 | rg \ connected)" ]
@@ -51,7 +55,13 @@ function getOldConfig {
 
 
 function setNewState {
-    if [ "$CONFIG" == "None" ] && [ "$EXTERN" != "None" ]
+    if [ "$CONFIG" == "None" ] && [ "$EXTERN" == "DP1-1" ]
+    then
+        # xrandr --output DP1-1-1 --auto --right-of eDP1
+        # xrandr --output eDP1 --off
+        # xrandr --output DP1-1-8 --auto --left-of DP1-1-1
+        xrandr --output DP1-1-8 --auto --output DP1-1-1 --auto --left-of DP1-1-8 --output eDP1 --off
+    elif [ "$CONFIG" == "None" ] && [ "$EXTERN" != "None" ]
     then
         xrandr --output $EXTERN --auto --above $MONITOR
     elif [ "$CONFIG" != "None" ] && [ "$EXTERN" == "None" ]
