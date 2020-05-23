@@ -30,7 +30,6 @@
     shell = "${pkgs.fish}/bin/fish";
     extraGroups = [ "wheel" "networkmanager" "video" "lxd" "docker"];
     home = "/home/pars";
-    # initialHashedPassword = "$6$zJ3UEKSmFpLzlEF$OWR9kYnCeNF3TH5xlvaXGVTPzNvwOyK6lLFMr9I3F1Z1octemDpUqfRncNcOJQDepHzRTX2a2Aiz1eQ.MssSw/";
   };
 
   environment.variables = {
@@ -38,7 +37,6 @@
     BROWSER = "chromium";
     PAGER = "less -R";
   };
-
 
 
 }

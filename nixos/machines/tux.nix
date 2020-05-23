@@ -9,6 +9,7 @@
 
 {
   boot.loader.grub.device = "/dev/sdb";
+  boot.kernelParams = [ "mitigations=off" ];
 
   networking.hostName = "tux";
 
@@ -25,6 +26,6 @@
   ];
   virtualisation.lxd.enable = true;
 
-  hardware.brightnessctl.enable = true; # for xbacklight
+  hardware.acpilight.enable = true;
 }
 

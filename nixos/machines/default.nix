@@ -44,12 +44,7 @@
     layout = "de";
     xkbVariant = "neo";
 
-    desktopManager = {
-      default = "none";
-      xterm.enable = false;
-    };
 
-    windowManager.default = "i3";
     windowManager.i3 = {
       enable = true;
       extraPackages = with pkgs; [
@@ -60,8 +55,11 @@
       ];
     };
 
-    displayManager.auto.enable = false;
-    displayManager.auto.user = "pars";
+    # displayManager.defaultSession = "none+i3";
+    displayManager.lightdm.autoLogin = {
+      enable = true;
+      user = "pars";
+    };
 
   };
 
