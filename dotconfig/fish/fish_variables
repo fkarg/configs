@@ -5,13 +5,16 @@ SETUVAR __fish_init_2_3_0:\x1d
 SETUVAR __fish_init_3_x:\x1d
 SETUVAR __fish_initialized:3100
 SETUVAR _fish_abbr_a:abbr\x20\x2ds
+SETUVAR _fish_abbr_au:sudo\x20apt\x20update
 SETUVAR _fish_abbr_c:cd
 SETUVAR _fish_abbr_cl:clear
 SETUVAR _fish_abbr_e:evince
 SETUVAR _fish_abbr_f:feh
 SETUVAR _fish_abbr_g:git
+SETUVAR _fish_abbr_ga:git\x20add
 SETUVAR _fish_abbr_gc:git\x20commit
 SETUVAR _fish_abbr_gd:git\x20diff
+SETUVAR _fish_abbr_gp:git\x20pull
 SETUVAR _fish_abbr_gs:git\x20status
 SETUVAR _fish_abbr_l:exa\x20\x2dlahF
 SETUVAR _fish_abbr_lb:lsblk
@@ -41,6 +44,7 @@ SETUVAR _fish_abbr_tn:todo\x2esh\x20ls\x20\x40next\x20\x2dwaiting
 SETUVAR _fish_abbr_tp:todo\x2esh\x20lsp
 SETUVAR _fish_abbr_tr:todo\x2esh\x20report
 SETUVAR _fish_abbr_tw:todo\x2esh\x20add\x20\x40waiting\x20for
+SETUVAR _fish_abbr_up:sudo\x20apt\x20upgrade
 SETUVAR _fish_abbr_v:nvim
 SETUVAR fish_color_autosuggestion:555\x1ebrblack
 SETUVAR fish_color_cancel:\x2dr
