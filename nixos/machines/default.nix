@@ -39,11 +39,16 @@
   # Enable the X11 windowing system.
   services.xserver = {
     enable = true;
+
+    desktopManager.xterm.enable = false;
+
     autorun = true;
 
     layout = "de";
     xkbVariant = "neo";
 
+    # deprecated ?
+    # windowManager.default = "i3";
 
     windowManager.i3 = {
       enable = true;
@@ -55,7 +60,7 @@
       ];
     };
 
-    # displayManager.defaultSession = "none+i3";
+    displayManager.defaultSession = "none+i3";
     displayManager.lightdm.autoLogin = {
       enable = true;
       user = "pars";
