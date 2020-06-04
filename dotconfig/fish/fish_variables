@@ -26,6 +26,7 @@ SETUVAR _fish_abbr_nrs:sudo\x20nixos\x2drebuild\x20switch
 SETUVAR _fish_abbr_nsp:nix\x2dshell\x20\x2dp
 SETUVAR _fish_abbr_r:rm\x20\x2drf
 SETUVAR _fish_abbr_s:git\x20status\x3b\x20git\x20add\x20\x2e\x3b\x20git\x20commit\x20\x2dm\x20sync\x3b\x20git\x20pull\x3b\x20git\x20push
+SETUVAR _fish_abbr_se:setxkbmap\x20de\x20neo
 SETUVAR _fish_abbr_so:source\x20\x2evenv/bin/activate\x2efish
 SETUVAR _fish_abbr_sus:systemctl\x20suspend
 SETUVAR _fish_abbr_t:todo\x2esh
