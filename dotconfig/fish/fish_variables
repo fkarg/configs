@@ -14,6 +14,7 @@ SETUVAR _fish_abbr_g:git
 SETUVAR _fish_abbr_ga:git\x20add
 SETUVAR _fish_abbr_gc:git\x20commit
 SETUVAR _fish_abbr_gd:git\x20diff
+SETUVAR _fish_abbr_gm:git\x20mergetool
 SETUVAR _fish_abbr_gp:git\x20pull
 SETUVAR _fish_abbr_gs:git\x20status
 SETUVAR _fish_abbr_l:exa\x20\x2dlahF
@@ -35,6 +36,7 @@ SETUVAR _fish_abbr_tab:todo\x2esh\x20add\x20\x40buy
 SETUVAR _fish_abbr_tan:todo\x2esh\x20add\x20\x40next
 SETUVAR _fish_abbr_tap:todo\x2esh\x20add\x20\x40project
 SETUVAR _fish_abbr_tas:todo\x2esh\x20add\x20\x40someday
+SETUVAR _fish_abbr_tat:todo\x2esh\x20add\x20\x40travel\x20do
 SETUVAR _fish_abbr_taw:todo\x2esh\x20add\x20\x40waiting\x20for
 SETUVAR _fish_abbr_td:todo\x2esh\x20do
 SETUVAR _fish_abbr_tl:todo\x2esh\x20ls
@@ -47,6 +49,7 @@ SETUVAR _fish_abbr_tr:todo\x2esh\x20report
 SETUVAR _fish_abbr_tw:todo\x2esh\x20add\x20\x40waiting\x20for
 SETUVAR _fish_abbr_up:sudo\x20apt\x20upgrade
 SETUVAR _fish_abbr_v:nvim
+SETUVAR _fish_abbr_vd:vimdiff
 SETUVAR fish_color_autosuggestion:555\x1ebrblack
 SETUVAR fish_color_cancel:\x2dr
 SETUVAR fish_color_command:005fd7
