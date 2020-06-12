@@ -24,10 +24,13 @@
 
 { config, pkgs, ... }: with pkgs;
 {
+
+  programs.fish.enable = true;
+
   users.users.pars = {
     isNormalUser = true;
     uid = 1000;
-    shell = "${pkgs.fish}/bin/fish";
+    shell = pkgs.fish;
     extraGroups = [ "wheel" "networkmanager" "video" "lxd" "docker"];
     home = "/home/pars";
   };
