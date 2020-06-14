@@ -53,7 +53,6 @@ SETUVAR _fish_abbr_tlw:todo\x2esh\x20ls\x20\x40waiting
 SETUVAR _fish_abbr_tn:todo\x2esh\x20ls\x20\x40next\x20\x2dwaiting
 SETUVAR _fish_abbr_tp:todo\x2esh\x20lsp
 SETUVAR _fish_abbr_tr:todo\x2esh\x20report
-SETUVAR _fish_abbr_tw:todo\x2esh\x20add\x20\x40waiting\x20for
 SETUVAR _fish_abbr_ud:sudo\x20apt\x20update
 SETUVAR _fish_abbr_ug:sudo\x20apt\x20upgrade
 SETUVAR _fish_abbr_v:nvim
