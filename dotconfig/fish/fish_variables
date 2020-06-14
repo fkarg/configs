@@ -34,6 +34,8 @@ SETUVAR _fish_abbr_t:todo\x2esh
 SETUVAR _fish_abbr_ta:todo\x2esh\x20add
 SETUVAR _fish_abbr_tab:todo\x2esh\x20add\x20\x40buy
 SETUVAR _fish_abbr_tac:todo\x2esh\x20add\x20\x40continuous
+SETUVAR _fish_abbr_tag:todo\x2esh\x20add\x20\x40goals
+SETUVAR _fish_abbr_tai:todo\x2esh\x20add\x20\x40idea
 SETUVAR _fish_abbr_tan:todo\x2esh\x20add\x20\x40next
 SETUVAR _fish_abbr_tap:todo\x2esh\x20add\x20\x40project
 SETUVAR _fish_abbr_tas:todo\x2esh\x20add\x20\x40someday
@@ -43,6 +45,8 @@ SETUVAR _fish_abbr_td:todo\x2esh\x20do
 SETUVAR _fish_abbr_tl:todo\x2esh\x20ls
 SETUVAR _fish_abbr_tlb:todo\x2esh\x20ls\x20blog
 SETUVAR _fish_abbr_tlc:todo\x2esh\x20ls\x20\x40commitment
+SETUVAR _fish_abbr_tlg:todo\x2esh\x20ls\x20goals
+SETUVAR _fish_abbr_tli:todo\x2esh\x20ls\x20\x40idea
 SETUVAR _fish_abbr_tlp:todo\x2esh\x20ls\x20project
 SETUVAR _fish_abbr_tls:todo\x2esh\x20ls\x20\x40someday
 SETUVAR _fish_abbr_tlw:todo\x2esh\x20ls\x20\x40waiting
