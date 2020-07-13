@@ -4,3 +4,4 @@
 # git ignore further changes in <filename>
 # git update-index --skip-worktree <filename>
 
+# journalctl --vacuum-size=200M
