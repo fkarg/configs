@@ -293,6 +293,8 @@ nnoremap <silent> <Leader>c :exec '!'.getline('.')<CR>
 nnoremap <leader>m :silent make!\|redraw!\|cc<CR>
 vnoremap <Leader>r y:!rg "<c-r>""<CR>
 vnoremap <Leader>s yjV:s/REPO/<c-r>"/g<CR>
+vnoremap <Leader>w <esc>:'<,'>:w !wc<CR>
+nnoremap <Leader>w <esc>:%w !wc<CR>
 
 " testing
 " [REPO](testurl/REPO)
@@ -606,6 +608,7 @@ let @f = 'o\begin{frame}[c]\end{frame}kA    '
 let @i = 'o\begin{itemize}[<+(1)->]\item \end{itemize}kA'
 let @c = 'o\begin{columns}\begin{column}{0.5\textwidth}\end{column}\begin{column}{0.5\textwidth}\end{column}\end{columns}5k'
 let @o = 'o\begin{overlayarea}{\textheight}{\textwidth}\end{overlayarea}'
+let @b = 'o\begin{qblock}{}\end{qblock}kk$i'
 
 
 colorscheme koehler
@@ -627,8 +630,8 @@ endif
 call plug#begin('~/.config/nvimplugins')
 
 Plug 'editorconfig/editorconfig-vim'
-
 Plug 'https://github.com/junegunn/vim-github-dashboard.git'
+Plug 'https://github.com/fkarg/todo.txt-vim.git'
 
 " todo: evaluate fzf/ripgrep plugin
 
