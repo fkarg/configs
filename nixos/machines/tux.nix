@@ -17,7 +17,11 @@
   networking.interfaces.wlp2s0.useDHCP = true;
 
   # enable touchpad support
-  services.xserver.libinput.enable = true;
+  services.xserver.libinput = {
+    enable = true;
+    disableWhileTyping = true;
+    naturalScrolling = true;
+  };
 
   environment.systemPackages = [
     # xbacklight:
