@@ -33,6 +33,17 @@
     shell = pkgs.fish;
     extraGroups = [ "wheel" "networkmanager" "video" "lxd" "docker"];
     home = "/home/pars";
+    packages = [
+        pkgs.chromium
+        pkgs.etcher
+        pkgs.fish
+        pkgs.teams
+        pkgs.tdesktop
+        pkgs.tor-browser-bundle-bin
+        pkgs.thunderbird
+        # nixpkgs.
+        # nixpkgs.
+    ];
   };
 
   environment.variables = {
