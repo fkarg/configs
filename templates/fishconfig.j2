@@ -1,6 +1,16 @@
 # fish config file.
 # {{ ansible_managed }}
 
+{% if link_nixos %}
+# maybe only import these if they are not in there already. How to do that?
+# set -x PATH /run/wrappers/bin $PATH
+# set -x PATH /home/{{ username }}/.nix-profile/bin $PATH
+# set -x PATH /run/current-system/sw/bin $PATH
+#
+# any-nix-shell fish --info-right | source
+{% endif %}
+
+
 function fish_greeting
   fortune -as | cowthink -f {{ cowfile }}
   echo
