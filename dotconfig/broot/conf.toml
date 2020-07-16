@@ -33,7 +33,7 @@ default_flags = ""
 #
 [[verbs]]
 invocation = "edit"
-key = "F2"
+key = "enter"
 shortcut = "e"
 execution = "$EDITOR {file}"
 
@@ -99,10 +99,9 @@ execution = "$PAGER {file}"
 
 # If you develop using git, you might like to often switch
 # to the "git status" filter:
-#
-# [[verbs]]
-# key = "ctrl-g"
-# execution = ":toggle_git_status"
+[[verbs]]
+key = "ctrl-g"
+execution = ":toggle_git_status"
 
 ###############################################################
 # Skin
