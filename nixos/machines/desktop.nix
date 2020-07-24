@@ -11,12 +11,12 @@
 {
   boot.loader.grub.device = "/dev/sdc"; # or "nodev" for efi only
 
-  fileSystems."/HDD3/" = 
+  fileSystems."/HDD3/" =
     { device = "/dev/disk/by-uuid/304e2387-e801-465d-b75e-3c54ba33b814";
       fsType = "ext4";
     };
 
-  fileSystems."/HDD/" = 
+  fileSystems."/HDD/" =
     { device = "/dev/disk/by-uuid/adde52d0-a40b-4889-973a-7d2b032d9052";
       fsType = "ext4";
     };
