@@ -23,10 +23,13 @@ SETUVAR _fish_abbr_lb:lsblk
 SETUVAR _fish_abbr_m:make
 SETUVAR _fish_abbr_mpd:ncmpcpp\x20\x2dh
 SETUVAR _fish_abbr_n:nmcli\x20d\x20w
-SETUVAR _fish_abbr_ni:nix\x2denv\x20\x2diA
+SETUVAR _fish_abbr_ne:nix\x2denv\x20\x2de
+SETUVAR _fish_abbr_ni:nix\x2denv\x20\x2diA\x20nixpkgs\x2e
+SETUVAR _fish_abbr_nq:nix\x2denv\x20\x2dq
 SETUVAR _fish_abbr_nrb:nixos\x2drebuild\x20build
 SETUVAR _fish_abbr_nrs:sudo\x20nixos\x2drebuild\x20switch
 SETUVAR _fish_abbr_nsp:nix\x2dshell\x20\x2dp
+SETUVAR _fish_abbr_nu:nix\x2denv\x20\x2du
 SETUVAR _fish_abbr_r:rm\x20\x2drf
 SETUVAR _fish_abbr_s:git\x20status\x3b\x20git\x20add\x20\x2e\x3b\x20git\x20commit\x20\x2dm\x20sync\x3b\x20git\x20pull\x3b\x20git\x20push
 SETUVAR _fish_abbr_se:setxkbmap\x20de\x20neo
