@@ -2,4 +2,7 @@
 
 cowfile: cower
 
+lan: enp2so
+wifi: wlp0s18f2u1u4
+
 link_nixos: true
