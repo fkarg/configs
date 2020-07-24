@@ -10,3 +10,6 @@ launcher
 
 # symlinking dotconfig/fish
 config.fish
+
+# installed fish functions
+dotconfig/fish/functions/
