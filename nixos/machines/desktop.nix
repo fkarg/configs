@@ -18,9 +18,10 @@
   # networking.interfaces.wlp0s18f2u1u1.useDHCP = true;
   networking.interfaces.wlp0s18f2u1u4.useDHCP = true;
 
-  environment.systemPackages = [
-    lxd
-  ];
+  # included in lower
+  # environment.systemPackages = [
+  #   lxd
+  # ];
   virtualisation.lxd.enable = true;
 
 
@@ -38,6 +39,7 @@
   environment.systemPackages = with pkgs; [
     # (steam.override { extraPkgs = pkgs: [ mono gtk3 gtk3-x11 libgdiplus zlib ]; nativeOnly = true; }).run
     (steam.override { extraPkgs = pkgs: [ mono gtk3 gtk3-x11 libgdiplus zlib ]; }).run
+    lxd
   ];
 
   hardware.opengl.driSupport32Bit = true;
