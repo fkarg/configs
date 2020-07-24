@@ -93,30 +93,20 @@ speed_down = false
 ssid = true
 
 {% endif %}
+{% if gpu is defined %}
 
+[[block]]
+block = "nvidia_gpu"
+label = "{{ gpu }}"
+show_memory = false
+show_clocks = true
+interval = 5
 
-
-
-# For Desktop:
-# [[block]]
-# block = "nvidia_gpu"
-# label = "GT 1030"
-# show_memory = false
-# show_clocks = true
-# interval = 1
-
-# [[block]]
-# block = "temperature"
-# collapsed = true
-# interval = 10
-# format = "{average}°C"
-# chip = "*-isa-*"
-
+{% endif %}
 
 [[block]]
 block = "cpu"
 interval = 5
-# format = "{barchart} {utilization}%"
 
 [[block]]
 block = "load"
