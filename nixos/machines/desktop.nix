@@ -10,6 +10,19 @@
 { config, pkgs, ... }:
 {
   boot.loader.grub.device = "/dev/sdc"; # or "nodev" for efi only
+  boot.kernelParams = [ "mitigations=off" ];
+
+  networking.hostName = "home";
+
+  networking.interfaces.enp2s0.useDHCP = true;
+  # networking.interfaces.wlp0s18f2u1u1.useDHCP = true;
+  networking.interfaces.wlp0s18f2u1u4.useDHCP = true;
+
+  environment.systemPackages = [
+    lxd
+  ];
+  virtualisation.lxd.enable = true;
+
 
   fileSystems."/HDD3/" =
     { device = "/dev/disk/by-uuid/304e2387-e801-465d-b75e-3c54ba33b814";
@@ -33,12 +46,6 @@
 
 
     # steam end
-  networking.hostName = "home";
 
   services.xserver.videoDrivers = [ "nvidia" ];
-
-  networking.interfaces.enp2s0.useDHCP = true;
-  networking.interfaces.wlp0s18f2u1u1.useDHCP = true;
-  networking.interfaces.wlp0s18f2u1u4.useDHCP = true;
 }
-
