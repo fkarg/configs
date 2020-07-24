@@ -16,19 +16,19 @@
   networking.interfaces.enp3s0f1.useDHCP = true;
   networking.interfaces.wlp2s0.useDHCP = true;
 
-  # enable touchpad support
-  services.xserver.libinput = {
-    enable = true;
-    disableWhileTyping = true;
-    naturalScrolling = true;
-  };
-
   environment.systemPackages = [
     # xbacklight:
     acpilight
     lxd
   ];
   virtualisation.lxd.enable = true;
+
+  # enable touchpad support
+  services.xserver.libinput = {
+    enable = true;
+    disableWhileTyping = true;
+    naturalScrolling = true;
+  };
 
   hardware.acpilight.enable = true;
 }
