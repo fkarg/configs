@@ -16,7 +16,7 @@
 
   networking.interfaces.enp2s0.useDHCP = true;
   # networking.interfaces.wlp0s18f2u1u1.useDHCP = true;
-  networking.interfaces.wlp0s18f2u1u4.useDHCP = true;
+  networking.interfaces.wlp0s19f2u4.useDHCP = true;
 
   # included in lower
   # environment.systemPackages = [
