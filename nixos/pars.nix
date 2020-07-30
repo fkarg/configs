@@ -50,6 +50,7 @@
     EDITOR = "nvim";
     BROWSER = "chromium";
     PAGER = "less -R";
+    LD_LIBRARY_PATH = "${stdenv.cc.cc.lib}/lib/libstdc++.so.6";
   };
 
 
