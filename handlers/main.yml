@@ -7,7 +7,7 @@
 - name: Restart i3 with new config
   shell: i3 restart
   register: _result
-  failed_when: "'Sending them as a command to i3' not in _result.stderr"
+  failed_when: "'[{\"success\":true}]' not in _result.stdout"
   listen: "restart i3"
 
 - name: Rebuild NixOS based on current configuration

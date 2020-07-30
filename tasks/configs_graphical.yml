@@ -10,6 +10,8 @@
   template:
     src: templates/on_startup.j2
     dest: ~/on_startup.sh
+    mode: u+x
+  notify: "restart i3"
 
 - name: Template i3 config
   template:

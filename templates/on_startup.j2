@@ -5,12 +5,14 @@ xset m 10/1 1
 xset -dpms
 xset s off
 
-feh --no-xinerama --bg-scale {{ background_image }}
-
 {% if client_role == 'desktop' %}
+xrandr --output HDMI-1 --auto --mode 1920x1080 --primary --output HDMI-0 --auto --right-of HDMI-1
+
 # for some reason, this does not happen at system level
 setxkbmap de neo
 {% endif %}
+
+feh --no-xinerama --bg-scale {{ background_image }}
 
 redshift -l 48.455467:11.329369 &
 xcompmgr &
