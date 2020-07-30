@@ -1,0 +1,16 @@
+#!/bin/sh
+# execute on startup, happening through i3
+# {{ ansible_managed }}
+xset m 10/1 1
+xset -dpms
+xset s off
+
+feh --no-xinerama --bg-scale {{ background_image }}
+
+{% if client_role == 'desktop' %}
+# for some reason, this does not happen at system level
+setxkbmap de neo
+{% endif %}
+
+redshift -l 48.455467:11.329369 &
+xcompmgr &

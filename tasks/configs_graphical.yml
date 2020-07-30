@@ -6,6 +6,11 @@
     path: ~/.config/i3
     state: directory
 
+- name: Template on_startup.sh
+  template:
+    src: templates/on_startup.j2
+    dest: ~/on_startup.sh
+
 - name: Template i3 config
   template:
     src: templates/i3config.j2

@@ -219,12 +219,11 @@ bindsym XF86AudioPause exec playerctl pause
 bindsym XF86AudioNext exec playerctl next
 bindsym XF86AudioPrev exec playerctl previous
 
-
-# execute stuff at startup
-exec ~/other_fixes
-exec chromium-browser
-
 # setting the mouse not to be followed by active windows (default?)
 focus_follows_mouse yes
 
 hide_edge_borders smart
+
+# execute stuff at startup
+exec ~/on_startup.sh
+exec chromium-browser

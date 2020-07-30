@@ -19,6 +19,11 @@ terminal: kitty
 # if the nixos-config should be linked on this system
 link_nixos: false
 
+# absolute path to background image to use for graphical systems. Default is one-screen.
+background_image: /home/{{ username }}/{{ configs_repo }}/background_picture/IMAG7297.JPG
+
+# name of the audio sink
+pactl_sink_name: 0
 
 # git configs
 git_email: f.karg10@gmail.com
