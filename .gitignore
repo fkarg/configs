@@ -8,8 +8,11 @@ launcher
 
 .netrwhist
 
-# symlinking dotconfig/fish
-config.fish
+# templated dotconfig/fish
+dotconfig/fish/config.fish
 
-# installed fish functions
+# generated fish details
 dotconfig/fish/functions/
+dotconfig/fish/completions/
+dotconfig/fish/conf.d/
+dotconfig/fish/fishfile
