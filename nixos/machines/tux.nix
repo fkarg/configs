@@ -27,7 +27,6 @@
   services.xserver.libinput = {
     enable = true;
     disableWhileTyping = true;
-    naturalScrolling = true;
   };
 
   hardware.acpilight.enable = true;
