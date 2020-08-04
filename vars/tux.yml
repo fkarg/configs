@@ -2,9 +2,10 @@
 
 cowfile: tux
 
-
 lan: enp3s0f1
 wifi: wlp2s0
 battery: true
 
 link_nixos: true
+
+pactl_sink_name: alsa_output.pci-0000_00_1f.3.analog-stereo
