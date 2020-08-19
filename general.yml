@@ -3,7 +3,8 @@
   connection: local
 
   pre_tasks:
-    - debug: msg= "{{ ansible_facts }}"
+    - debug: 
+        msg: "{{ ansible_facts }}"
 
     - name: update apt repositories
       apt: update_cache=yes
