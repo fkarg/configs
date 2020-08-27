@@ -8,6 +8,7 @@ SETUVAR _fish_abbr_a:abbr\x20\x2ds
 SETUVAR _fish_abbr_c:cd
 SETUVAR _fish_abbr_cl:clear
 SETUVAR _fish_abbr_com:gs\x20\x2dsDEVICE\x3dpdfwrite\x20\x2ddNOPAUSE\x20\x2ddQUIET\x20\x2ddBATCH\x20\x2ddPDFSETTINGS\x3d/default\x20\x2dsOutputFile\x3dout\x2epdf
+SETUVAR _fish_abbr_de:deactivate
 SETUVAR _fish_abbr_e:evince
 SETUVAR _fish_abbr_f:feh
 SETUVAR _fish_abbr_g:git
