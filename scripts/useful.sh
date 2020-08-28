@@ -5,3 +5,6 @@
 # git update-index --skip-worktree <filename>
 
 # journalctl --vacuum-size=200M
+
+# jpgs to pdf
+# convert /path/to/images/*.jpg new.pdf
