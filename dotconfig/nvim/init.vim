@@ -22,6 +22,7 @@ autocmd BufRead,BufNewFile *.nix setlocal filetype=nix
 autocmd BufRead,BufNewFile *.yml setlocal filetype=yaml
 autocmd BufRead,BufNewFile *.yaml setlocal filetype=yaml
 autocmd BufRead,BufNewFile *.bean setlocal filetype=bean
+autocmd BufRead,BufNewFile *.beancount setlocal filetype=bean
 
 
 autocmd Filetype json setlocal ts=2 sts=2 sw=2
@@ -34,6 +35,7 @@ autocmd Filetype cpp setlocal ts=4 sts=4 sw=4
 autocmd Filetype c++ setlocal ts=4 sts=4 sw=4
 autocmd FileType make setlocal noexpandtab
 autocmd FileType rust setlocal ts=4 sts=4 sw=4
+autocmd FileType bean setlocal ts=2 sts=2 sw=2
 
 
 " http://stackoverflow.com/questions/4521818/automatically-insert-a-matching-brace-in-vim
