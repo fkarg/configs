@@ -1,6 +1,5 @@
 ---
 
-
 - name: Create config/i3 directory
   file:
     path: ~/.config/i3
@@ -68,13 +67,20 @@
     force: no
 
 
-- name: Make sure gtd directory is present
+- name: Make sure gtd repository is present
   git:
     repo: "git@github.com:{{ git_username }}/{{ todotxtrepo }}.git"
     dest: "~/{{ todotxtrepo }}"
-    update: no
+    update: yes
   when: ssh is succeeded
 
+
+- name: Make sure finances repository is present
+  git:
+    repo: "git@github.com:{{ git_username }}/{{ finances_repo }}.git"
+    dest: "~/{{ finances_repo }}"
+    update: yes
+  when: ssh is succeeded
 
 
 # - name: link alacritty config

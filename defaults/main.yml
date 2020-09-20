@@ -5,7 +5,7 @@ git_username: fkarg
 configs_repo: configs
 dotconfigdir: dotconfig
 todotxtrepo: gtd
-
+finances_repo: finances
 
 # username on this machine
 username: pars
