@@ -73,6 +73,7 @@
     dest: "~/{{ todotxtrepo }}"
     update: yes
   when: ssh is succeeded
+  ignore_errors: True
 
 
 - name: Make sure finances repository is present
@@ -81,6 +82,7 @@
     dest: "~/{{ finances_repo }}"
     update: yes
   when: ssh is succeeded
+  ignore_errors: True
 
 
 # - name: link alacritty config
