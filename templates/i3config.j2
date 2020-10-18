@@ -182,24 +182,19 @@ bar {
 
 # Sound Control with funktion-keys
 # Pulse Audio controls
-# bindsym XF86AudioRaiseVolume exec --no-startup-id pactl set-sink-volume 1 +5% #increase sound volume
-# bindsym XF86AudioLowerVolume exec --no-startup-id pactl set-sink-volume 1 -5% #decrease sound volume
-# bindsym XF86AudioMute exec --no-startup-id pactl set-sink-mute 1 toggle # mute sound
+# bindsym XF86AudioRaiseVolume exec --no-startup-id pactl set-sink-volume 0 +5% #increase sound volume
+# bindsym XF86AudioLowerVolume exec --no-startup-id pactl set-sink-volume 0 -5% #decrease sound volume
+# bindsym XF86AudioMute exec --no-startup-id pactl set-sink-mute 0 toggle # mute sound
 
 
-bindsym XF86AudioRaiseVolume exec --no-startup-id pactl set-sink-volume alsa_output.pci-0000_00_1f.3.analog-stereo +5% #increase sound volume
-bindsym XF86AudioLowerVolume exec --no-startup-id pactl set-sink-volume alsa_output.pci-0000_00_1f.3.analog-stereo -5% #decrease sound volume
-bindsym XF86AudioMute exec --no-startup-id pactl set-sink-mute alsa_output.pci-0000_00_1f.3.analog-stereo toggle # mute sound
+bindsym XF86AudioRaiseVolume exec --no-startup-id pactl set-sink-volume {{ pactl_sink_name }} +5% #increase sound volume
+bindsym XF86AudioLowerVolume exec --no-startup-id pactl set-sink-volume {{ pactl_sink_name }} -5% #decrease sound volume
+bindsym XF86AudioMute exec --no-startup-id pactl set-sink-mute {{ pactl_sink_name }} toggle # mute sound
 
 
-bindsym $mod+y exec --no-startup-id pactl set-sink-volume alsa_output.pci-0000_00_1f.3.hdmi-stereo-extra1 +5% #increase sound volume
-bindsym $mod+t exec --no-startup-id pactl set-sink-volume alsa_output.pci-0000_00_1f.3.hdmi-stereo-extra1 -5% #decrease sound volume
-# bindsym XF86AudioMute exec --no-startup-id pactl set-sink-mute alsa_output.pci-0000_00_1f.3.hdmi-stereo-extra1 toggle # mute sound
-
-
-# bindsym XF86AudioRaiseVolume exec --no-startup-id pactl set-sink-volume alsa_output.pci-0000_00_1f.3.hdmi-stereo-extra1 +5% #increase sound volume
-# bindsym XF86AudioLowerVolume exec --no-startup-id pactl set-sink-volume alsa_output.pci-0000_00_1f.3.hdmi-stereo-extra1 -5% #decrease sound volume
-# bindsym XF86AudioMute exec --no-startup-id pactl set-sink-mute alsa_output.pci-0000_00_1f.3.hdmi-stereo-extra1 toggle # mute sound
+bindsym $mod+y exec --no-startup-id pactl set-sink-volume {{ pactl_sink_name }} +5% #increase sound volume
+bindsym $mod+t exec --no-startup-id pactl set-sink-volume {{ pactl_sink_name }} -5% #decrease sound volume
+# bindsym XF86AudioMute exec --no-startup-id pactl set-sink-mute {{ pactl_sink_name }} toggle # mute sound
 
 
 # Sreen brightness controls
