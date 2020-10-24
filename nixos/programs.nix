@@ -18,6 +18,7 @@
       xorg.xinit
       inetutils
       gparted
+
       # misc productivity
       neovim
       ripgrep
@@ -34,10 +35,6 @@
       ghostscript
       scrot
       tokei
-      # todo\.txt-cli
-      anki
-      # wireshark
-      # filezilla
 
       # for building i3status-rs
       pkg-config
@@ -46,31 +43,6 @@
       binutils-unwrapped
       # gui open zip archives
       gnome3.file-roller
-      # spellchecking
-      aspell
-      aspellDicts.de
-      aspellDicts.en
-      aspellDicts.en-science
-      aspellDicts.en-computers
-      # unstable.etcher
-      # global python
-      python37Packages.ipython
-      python3
-      # rust
-      gcc
-      rustup
-      # haskell
-      ghc
-      cabal-install
-      # E-mail program
-      thunderbird
-      # viewing pdfs
-      evince
-      pdfpc
-      # browsers
-      firefox
-      chromium
-      tor-browser-bundle-bin
       # audio
       pavucontrol
       # 'better' terminal
@@ -79,24 +51,6 @@
       tmux
       # composer for transparent terminal
       xcompmgr
-      # tex
-      texlive.combined.scheme-full
-      # image editing
-      inkscape
-      pstoedit
-      # office
-      libreoffice-fresh
-      # fun
-      cowsay
-      fortune
-      sl
-      doge
-      # messaging
-      mumble
-      tdesktop
-      # skype
-      # setting up other configs
-      ansible
   ];
   nixpkgs.config.allowUnfree = true;
 
