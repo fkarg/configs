@@ -62,7 +62,7 @@
     };
 
     displayManager.defaultSession = "none+i3";
-    displayManager.lightdm.autoLogin = {
+    displayManager.autoLogin = {
       enable = true;
       user = "pars";
     };
