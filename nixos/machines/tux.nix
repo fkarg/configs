@@ -13,6 +13,11 @@
 
   networking.hostName = "tux";
 
+  fileSystems."/datadisk/" =
+    { device = "/dev/disk/by-uuid/c8425c4c-ec6b-4edd-ba68-2fbbb71ab78b";
+      fsType = "ext4";
+    };
+
   networking.interfaces.enp3s0f1.useDHCP = true;
   networking.interfaces.wlp2s0.useDHCP = true;
 
