@@ -650,7 +650,6 @@ Plug 'editorconfig/editorconfig-vim'
 Plug 'https://github.com/junegunn/vim-github-dashboard.git'
 Plug 'https://github.com/fkarg/todo.txt-vim.git'
 Plug 'nathangrigg/vim-beancount'
-
-" todo: evaluate fzf/ripgrep plugin
+Plug 'junegunn/fzf', { 'do': { -> fzf#install() } }
 
 call plug#end()
