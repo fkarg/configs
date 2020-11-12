@@ -642,13 +642,14 @@ endif
 
 
 
-" install plugins by typing: PlugInstall
+
+" install plugins with: PlugInstall
+" update with: PlugUpdate
 " call plug#begin(stdpath('data') . '/plugged')
 call plug#begin('~/.config/nvimplugins')
 
 Plug 'editorconfig/editorconfig-vim'
-Plug 'https://github.com/junegunn/vim-github-dashboard.git'
-Plug 'https://github.com/fkarg/todo.txt-vim.git'
+Plug 'fkarg/todo.txt-vim'
 Plug 'nathangrigg/vim-beancount'
 Plug 'junegunn/fzf', { 'do': { -> fzf#install() } }
 
