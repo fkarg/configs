@@ -11,6 +11,7 @@ set cursorline    " highlights (e.g. underlines) current line of cursor
 set number relativenumber " showing the current line number only in this line,
                           " and relative line numbers everywhere else.
 set tabpagemax=100
+set noswapfile    " disable swap file
 
 " todo: https://vi.stackexchange.com/questions/12794/how-to-share-config-between-vim-and-neovim
 " todo: upgrade these file detection things
