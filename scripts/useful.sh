@@ -15,3 +15,10 @@
 # # cd /lib/firmware/<module>
 # # wget https://git.kernel.org/pub/scm/linux/kernel/git/firmware/linux-firmware.git/plain/<module>/<driver>
 # # update-initramfs -u # update
+
+# splitting pdf pages apart:
+# nix-shell -p mupdf
+# mutool poster -y 2 infile [outfile]
+# -y <y decimation factor>
+# -x <x decimation factor>
+# ^ number of times it should be split apart in
