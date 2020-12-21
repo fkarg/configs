@@ -11,6 +11,7 @@
 {
   boot.loader.grub.device = "/dev/sdc"; # or "nodev" for efi only
   boot.kernelParams = [ "mitigations=off" ];
+  boot.extraModulePackages = with config.boot.kernelPackages; [ rtl88x2bu ];
 
   networking.hostName = "home";
 
