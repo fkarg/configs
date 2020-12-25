@@ -18,6 +18,7 @@
   # boot.loader.efi.efiSysMountPoint = "/boot/efi";
   # Define on which hard drive you want to install Grub.
   # boot.loader.grub.device = ??? # or "nodev" for efi only
+  boot.extraModulePackages = with config.boot.kernelPackages; [ rtl88x2bu ];
 
   # Optional:
   boot.kernelPackages = pkgs.linuxPackages_latest;

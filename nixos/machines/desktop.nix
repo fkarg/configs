@@ -11,13 +11,13 @@
 {
   boot.loader.grub.device = "/dev/sdc"; # or "nodev" for efi only
   boot.kernelParams = [ "mitigations=off" ];
-  boot.extraModulePackages = with config.boot.kernelPackages; [ rtl88x2bu ];
 
   networking.hostName = "home";
 
   networking.interfaces.enp2s0.useDHCP = true;
-  # networking.interfaces.wlp0s18f2u1u1.useDHCP = true;
-  networking.interfaces.wlp0s19f2u4.useDHCP = true;
+  # networking.interfaces.wlp0s18f2u1u1.useDHCP = true; # only 2.4GHz stick
+  # networking.interfaces.wlp0s19f2u4.useDHCP = true;   # 2.4 + 5GHz stick Archer T1U
+  networking.interfaces.wlp0s19f2u3.useDHCP = true;     # Archer T3U
 
   # included in lower
   # environment.systemPackages = [
