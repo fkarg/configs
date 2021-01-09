@@ -58,12 +58,12 @@ SETUVAR _fish_abbr_tl:todo\x2esh\x20ls
 SETUVAR _fish_abbr_tlb:todo\x2esh\x20ls\x20blog
 SETUVAR _fish_abbr_tlc:todo\x2esh\x20ls\x20\x40commitment
 SETUVAR _fish_abbr_tld:todo\x2esh\x20ls\x20due
-SETUVAR _fish_abbr_tlg:todo\x2esh\x20ls\x20goals
+SETUVAR _fish_abbr_tlg:todo\x2esh\x20\x2dP\x20ls\x20goals
 SETUVAR _fish_abbr_tli:todo\x2esh\x20ls\x20\x40idea
-SETUVAR _fish_abbr_tlp:todo\x2esh\x20ls\x20project
+SETUVAR _fish_abbr_tlp:todo\x2esh\x20\x2dP\x20ls\x20project\x20\x2dwaiting\x20\x2dsomeday\x20\x2dnext
 SETUVAR _fish_abbr_tls:todo\x2esh\x20ls\x20\x40someday
 SETUVAR _fish_abbr_tlw:todo\x2esh\x20ls\x20\x40waiting
-SETUVAR _fish_abbr_tn:todo\x2esh\x20ls\x20\x40next\x20\x2dwaiting
+SETUVAR _fish_abbr_tn:todo\x2esh\x20\x2dP\x20ls\x20\x40next\x20\x2dwaiting
 SETUVAR _fish_abbr_tp:todo\x2esh\x20lsp
 SETUVAR _fish_abbr_tr:todo\x2esh\x20report
 SETUVAR _fish_abbr_ud:sudo\x20apt\x20update
