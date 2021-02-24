@@ -25,6 +25,8 @@
   # ];
   virtualisation.lxd.enable = true;
 
+  virtualisation.virtualbox.host.enable = true;
+  users.extraGroups.vboxusers.members = [ "pars" ];
 
   fileSystems."/HDD3/" =
     { device = "/dev/disk/by-uuid/304e2387-e801-465d-b75e-3c54ba33b814";
