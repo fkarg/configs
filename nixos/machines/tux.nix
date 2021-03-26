@@ -35,5 +35,13 @@
   };
 
   hardware.acpilight.enable = true;
+  hardware.pulseaudio.extraConfig = "load-module module-udev-detect use_ucm=0 tsched=0\nload-module module-echo-cancel source_name=noechosource sink_name=noechosink\nset-default-source noechosource\nset-default-sink noechosink";
+  hardware.pulseaudio.daemon.config = {
+    # flat-volumes=no
+    # resample-method=speex-float-5
+    default-sample-rate = 48000;
+    resample-method = "src-sinc-best-quality";
+    default-sample-format = "s16le";
+  };
 }
 
