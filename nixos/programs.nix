@@ -18,7 +18,7 @@
       xorg.xinit
       inetutils
       gparted
-      poppler_utils ; pdfunite etc
+      poppler_utils # pdfunite etc
 
       # misc productivity
       neovim
