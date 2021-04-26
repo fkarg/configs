@@ -84,6 +84,24 @@
   when: ssh is succeeded
   ignore_errors: True
 
+# Get Fontin font
+- name: Create fonts directory
+  file:
+    path: ~/.local/share/fonts
+    state: directory
+
+- name: Unarchive Fontin font
+  ansible.builtin.unarchive:
+    # src: ~/Downloads/fontin.zip
+    src: https://wfonts.com/download/data/2015/03/10/fontin/fontin.zip
+    dest: ~/.local/share/fonts
+    remote_src: yes
+
+- name: Duplicate Regular Fontin File
+  copy:
+    src: ~/.local/share/fonts/Fontin-Regular.otf
+    dest: ~/.local/share/fonts/Fontin.otf
+    mode: 0644
 
 # - name: link alacritty config
 #   file:
