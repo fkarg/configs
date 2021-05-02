@@ -96,5 +96,12 @@
     LD_LIBRARY_PATH = "${stdenv.cc.cc.lib}/lib/libstdc++.so.6";
   };
 
+  # Enable cron service
+  services.cron = {
+    enable = true;
+    systemCronJobs = [
+      "0 * * * *      pars  /home/pars/passive_update.sh"
+    ];
+  };
 
 }

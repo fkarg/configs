@@ -115,3 +115,11 @@
 #     dest: ~/.config/alacritty
 #     state: link
 #   when: repo is succeeded
+
+- name: Set up Cronjob to update repositories
+  ansible.builtin.cron:
+    name: Passively update common Repositories
+    minute: "0"
+    user: "{{ username }}"
+    job: "~/passive_update.sh"
+  when: not link_nixos
