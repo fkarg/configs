@@ -75,6 +75,9 @@
       fail:
       when: "client_role is not defined or (client_role != 'tux' and client_role != 'desktop' and client_role != 'hp440g5')"
 
+      # - import_tasks: tasks/testing.yml
+      #   when: client_role is defined
+
     - import_tasks: tasks/terminal.yml
       when: client_role is defined
 
