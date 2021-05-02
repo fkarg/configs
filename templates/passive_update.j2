@@ -1,0 +1,30 @@
+#!/bin/sh
+
+USER={{ username }}
+
+REPOS="/home/$USER/configs /home/$USER/finances /home/$USER/gtd /home/$USER/Coding/lebenslauf /home/$USER/Coding/invoices /home/$USER/text_zeug /home/$USER/Coding/kit-stuff /home/$USER/Coding/fkarg.github.io /home/$USER/Coding/beratervertrag /home/$USER/Coding/things-to-talk-about"
+
+# colors
+RED='\033[0;31m'
+YELLOW='\033[1;33m'
+GREEN='\033[0;32m'
+NC='\033[0m'
+
+
+for REPO in $REPOS
+do
+    DIFF=$(cd $REPO && git ls-files -m $REPO)
+    # echo "$REPO"
+    # echo $DIFF
+    if [ -z "$DIFF" ]
+    then
+        echo -e "${GREEN}[$REPO]${NC} Pulling and Pushing"
+        cd $REPO && git pull --ff-only || : && git push
+    else
+        echo -e "${YELLOW}[$REPO]${NC} has uncommitted changes"
+        cd $REPO && git fetch
+    fi
+    echo
+done
+
+exit 0

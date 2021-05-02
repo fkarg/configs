@@ -5,11 +5,17 @@
     path: ~/.config/i3
     state: directory
 
+- name: Template passive_update.sh
+  template:
+    src: templates/passive_update.j2
+    dest: ~/passive_update.sh
+    mode: 0500 # u=rx
+
 - name: Template on_startup.sh
   template:
     src: templates/on_startup.j2
     dest: ~/on_startup.sh
-    mode: u+x
+    mode: 0500 # u=rx
   notify: "restart i3"
 
 - name: Template i3 config
