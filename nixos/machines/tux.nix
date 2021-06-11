@@ -8,12 +8,12 @@
 { config, pkgs, ... }: with pkgs; rec
 
 {
-  boot.loader.grub.device = "/dev/sdb";
-  boot.kernelParams = [ "mitigations=off" ];
+  boot.loader.grub.device = "/dev/sda";
+  boot.kernelParams = [ "mitigations=off" "splash"];
 
   networking.hostName = "tux";
 
-  fileSystems."/datadisk/" =
+  fileSystems."/datadisk" =
     { device = "/dev/disk/by-uuid/c8425c4c-ec6b-4edd-ba68-2fbbb71ab78b";
       fsType = "ext4";
     };
@@ -25,13 +25,15 @@
     # xbacklight:
     acpilight
     lxd
+    docker
   ];
   virtualisation.lxd.enable = true;
+  virtualisation.docker.enable = true;
 
   # enable touchpad support
   services.xserver.libinput = {
     enable = true;
-    disableWhileTyping = true;
+    touchpad.disableWhileTyping = true;
   };
 
   hardware.acpilight.enable = true;

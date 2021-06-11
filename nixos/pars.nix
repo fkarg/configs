@@ -94,6 +94,7 @@
     BROWSER = "chromium";
     PAGER = "less -R";
     LD_LIBRARY_PATH = "${stdenv.cc.cc.lib}/lib/libstdc++.so.6";
+    FZF_DEFAULT_COMMAND = "rg --files --no-ignore --hidden --follow --glob '!.git/*'";
   };
 
   # Enable cron service
