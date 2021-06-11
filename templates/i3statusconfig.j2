@@ -4,31 +4,17 @@
 theme = "plain"
 icons = "awesome"
 
-# [[block]]
-# block = "disk_space"
-# path = "/"
-# alias = "/"
-# info_type = "available"
-# unit = "GB"
-# interval = 200
-# warning = 10.0
-# alert = 5.0
-
-
 # Show Entropia club status
 [[block]]
 block = "custom"
 command = "/home/{{ username }}/{{ configs_repo }}/scripts/status.sh"
 interval = 1800
 
-
-
 # Show battery state of wireless mouse and keyboard (or other devices, really)
 [[block]]
 block = "custom"
 command = "/home/{{ username }}/{{ configs_repo }}/scripts/wireless_battery.sh"
 interval = 1800
-
 
 # showing the current state of an external display (and switch, if necessary)
 [[block]]
@@ -37,57 +23,66 @@ command = "/home/{{ username }}/{{ configs_repo }}/scripts/multiscreens.sh"
 interval = 10
 
 [[block]]
+block = "docker"
+interval = 10
+format = "{running}/{total}"
+
+[[block]]
 block = "memory"
 display_type = "memory"
 clickable = false
-format_mem = "{Mupi}% ({Mug}GB)"
-# format_mem = "{MFm}MB/{MTm}MB({Mp}%)"
+format_mem = "{mem_used_percents} {mem_used}"
 warning_mem = 60.0
 critical_mem = 80.0
+interval = 10
 
 [[block]]
 block = "net"
 device = "{{ lan }}"
-speed_up = false
-speed_down = false
+format = "{bitrate}"
+interval = 10
 
 {% if wifi is defined %}
 [[block]]
 block = "net"
 device = "{{ wifi }}"
-speed_up = false
-speed_down = false
-ssid = true
+format = "{signal_strength} {ssid}"
+interval = 10
 {% endif %}
 
 {% if wifi2 is defined %}
 [[block]]
 block = "net"
 device = "{{ wifi2 }}"
-speed_up = false
-speed_down = false
-ssid = true
+format = "{signal_strength} {ssid}"
+interval = 10
 {% endif %}
+
+# [[block]]
+# block = "networkmanager"
+# on_click = "alacritty -e nmtui"
+# interface_name_exclude = ["br\\-[0-9a-f]{12}", "docker\\d+"]
+# interface_name_include = []
+# ap_format = "{ssid^10}"
 
 {% if gpu is defined %}
 [[block]]
 block = "nvidia_gpu"
 label = "{{ gpu }}"
-show_memory = false
 show_clocks = true
 interval = 5
 {% endif %}
 
 [[block]]
 block = "cpu"
-format = "{barchart} {utilization}% {frequency}GHz"
+format = "{barchart} {utilization} {frequency}"
 interval = 5
 
 [[block]]
 block = "temperature"
 collapsed = true
 interval = 10
-format = "{min}° min, {max}° max, {average}° avg"
+format = "{min} min {max} max {average} avg"
 chip = "*-isa-*"
 
 [[block]]
@@ -103,14 +98,12 @@ interval = 5
 format = "{percentage}% {time}h {power}W"
 {% endif %}
 
-[[block]]
-block = "pomodoro"
-length = 25
-break_length = 5
-message = "Take a break!"
-break_message = "Back to work!"
-use_nag = true
-nag_path = "i3-nagbar"
+# [[block]]
+# block = "pomodoro"
+# length = 25
+# break_length = 5
+# use_nag = true
+# nag_path = "i3-nagbar"
 
 [[block]]
 block = "time"
