@@ -13,6 +13,12 @@ set number relativenumber " showing the current line number only in this line,
 set tabpagemax=100
 set noswapfile    " disable swap file
 
+" https://stackoverflow.com/questions/357785/what-is-the-recommended-way-to-use-vim-folding-for-python-code
+set foldmethod=indent
+nnoremap <space> za
+vnoremap <space> zf
+
+
 " todo: https://vi.stackexchange.com/questions/12794/how-to-share-config-between-vim-and-neovim
 " todo: upgrade these file detection things
 autocmd BufReadPost *.rs setlocal filetype=rust
@@ -22,6 +28,7 @@ autocmd! BufNewFile,BufRead *.lhs setlocal ft=haskell
 autocmd BufRead,BufNewFile *.nix setlocal filetype=nix
 autocmd BufRead,BufNewFile *.yml setlocal filetype=yaml
 autocmd BufRead,BufNewFile *.yaml setlocal filetype=yaml
+autocmd BufRead * normal zR
 
 
 autocmd Filetype json setlocal ts=2 sts=2 sw=2
