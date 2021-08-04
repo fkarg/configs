@@ -31,7 +31,14 @@
     isNormalUser = true;
     uid = 1000;
     shell = pkgs.fish;
-    extraGroups = [ "wheel" "networkmanager" "video" "lxd" "docker"];
+    extraGroups = [
+      "wheel"
+      "networkmanager"
+      "video"
+      "lxd"
+      "docker"
+      "adbusers"
+    ];
     home = "/home/pars";
     packages = [
         # util
@@ -104,5 +111,4 @@
       "0 * * * *      pars  /home/pars/passive_update.sh"
     ];
   };
-
 }
