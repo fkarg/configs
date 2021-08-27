@@ -37,6 +37,7 @@
   sound.enable = true;
   sound.mediaKeys.enable = true;  # enable audio control through default media keys
   hardware.pulseaudio.enable = true;
+  hardware.pulseaudio.package = pkgs.pulseaudioFull;
 
   # Enable the X11 windowing system.
   services.xserver = {

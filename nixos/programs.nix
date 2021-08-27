@@ -36,6 +36,7 @@
       ghostscript
       scrot
       tokei
+      pulseaudioFull
 
       # for building i3status-rs
       pkg-config
@@ -54,6 +55,7 @@
       xcompmgr
   ];
   nixpkgs.config.allowUnfree = true;
+  nixpkgs.config.pulseaudio = true;
 
   # fonts.
   fonts.fonts = with pkgs; [
