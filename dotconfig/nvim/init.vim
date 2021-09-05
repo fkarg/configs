@@ -14,7 +14,11 @@ set tabpagemax=100
 set noswapfile    " disable swap file
 
 " https://stackoverflow.com/questions/357785/what-is-the-recommended-way-to-use-vim-folding-for-python-code
-set foldmethod=indent
+set foldmethod=indent " also available: syntax, manual, marker
+
+" for automatic loading and saving of manually created 'views'.
+autocmd BufWinLeave *.* mkview
+autocmd BufWinEnter *.* silent loadview
 nnoremap <space> za
 vnoremap <space> zf
 
@@ -632,6 +636,8 @@ let @i = 'o\begin{itemize}[<+(1)->]\item \end{itemize}kA'
 let @c = 'o\begin{columns}\begin{column}{0.5\textwidth}\end{column}\begin{column}{0.5\textwidth}\end{column}\end{columns}5k'
 let @o = 'o\begin{overlayarea}{\textheight}{\textwidth}\end{overlayarea}'
 let @b = 'o\begin{qblock}{}\end{qblock}kk$i'
+let @g = 'o\includegraphics[height=0.85\textheight]{}i'
+let @q = 'oSource: \cite{}hp'
 
 
 colorscheme koehler
