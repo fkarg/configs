@@ -12,6 +12,7 @@
       iftop
       zip
       unzip
+      gnutar
       screen
       xclip
       xorg.xkill
