@@ -17,7 +17,16 @@
   register: repo
   when: ssh is succeeded
 
-- name: Update ~/configs/ directory
+- name: Make sure ~/configs/ is present
+  git:
+    repo: "https://github.com/{{ git_username }}/{{ configs_repo }}.git"
+    dest: "~/{{ configs_repo }}"
+    accept_hostkey: true
+    update: no
+  register: repo
+  when: ssh is not succeeded
+
+- name: Update ~/configs/ repository
   git:
     repo: "git@github.com:{{ git_username }}/{{ configs_repo }}.git"
     dest: "~/{{ configs_repo }}"

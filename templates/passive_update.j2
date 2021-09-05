@@ -2,7 +2,7 @@
 
 USER={{ username }}
 
-REPOS="/home/$USER/configs /home/$USER/finances /home/$USER/gtd /home/$USER/Coding/lebenslauf /home/$USER/Coding/invoices /home/$USER/text_zeug /home/$USER/Coding/kit-stuff /home/$USER/Coding/fkarg.github.io /home/$USER/Coding/beratervertrag /home/$USER/Coding/things-to-talk-about"
+REPOS="{{ repos_list + repos_additional | join('') }}"
 
 # colors
 RED='\033[0;31m'

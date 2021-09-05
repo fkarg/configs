@@ -71,9 +71,14 @@
         file: vars/desktop.yml
       when: client_role is defined and client_role == 'desktop'
 
+    - name: Load terminal variables
+      include_vars:
+        file: vars/terminal.yml
+      when: client_role is defined and client_role == 'terminal'
+
     - name: Fail if client role not defined
       fail:
-      when: "client_role is not defined or (client_role != 'tux' and client_role != 'desktop' and client_role != 'hp440g5')"
+      when: "client_role is not defined or (client_role != 'tux' and client_role != 'desktop' and client_role != 'terminal')"
 
       # - import_tasks: tasks/testing.yml
       #   when: client_role is defined
