@@ -29,3 +29,17 @@ pactl_sink_name: 0
 git_email: f.karg10@gmail.com
 git_name: fkarg
 git_editor: nvim
+
+repos_list:
+  - "/home/$USER/configs"
+  - "/home/$USER/finances"
+  - "/home/$USER/gtd"
+  - "/home/$USER/text_zeug"
+  - "/home/$USER/Coding/lebenslauf"
+  - "/home/$USER/Coding/invoices"
+  - "/home/$USER/Coding/kit-stuff"
+  - "/home/$USER/Coding/fkarg.github.io"
+  - "/home/$USER/Coding/beratervertrag"
+  - "/home/$USER/Coding/things-to-talk-about"
+
+repos_additional: []

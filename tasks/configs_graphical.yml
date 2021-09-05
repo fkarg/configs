@@ -5,12 +5,6 @@
     path: ~/.config/i3
     state: directory
 
-- name: Template passive_update.sh
-  template:
-    src: templates/passive_update.j2
-    dest: ~/passive_update.sh
-    mode: 0500 # u=rx
-
 - name: Template on_startup.sh
   template:
     src: templates/on_startup.j2
@@ -72,7 +66,6 @@
     dest: ~/.config/todo/actions
     force: no
 
-
 - name: Make sure gtd repository is present
   git:
     repo: "git@github.com:{{ git_username }}/{{ todotxtrepo }}.git"
@@ -81,7 +74,7 @@
   when: ssh is succeeded
   ignore_errors: True
 
-
+# finances repository
 - name: Make sure finances repository is present
   git:
     repo: "git@github.com:{{ git_username }}/{{ finances_repo }}.git"
@@ -116,10 +109,3 @@
 #     state: link
 #   when: repo is succeeded
 
-- name: Set up Cronjob to update repositories
-  ansible.builtin.cron:
-    name: Passively update common Repositories
-    minute: "0"
-    user: "{{ username }}"
-    job: "~/passive_update.sh"
-  when: not link_nixos

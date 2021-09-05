@@ -84,9 +84,10 @@
     - import_tasks: tasks/nixos.yml
       when: link_nixos
 
+    - import_tasks: tasks/terminal_extended.yml
+      when: "client_role is defined and client_role != 'terminal'"
+
     - import_tasks: tasks/configs_graphical.yml
       when: "client_role is defined and client_role != 'terminal'"
 
     - meta: flush_handlers
-
-
