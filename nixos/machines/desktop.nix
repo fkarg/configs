@@ -24,6 +24,7 @@
   #   lxd
   # ];
   virtualisation.lxd.enable = true;
+  virtualisation.docker.enable = true;
 
   virtualisation.virtualbox.host.enable = true;
   users.extraGroups.vboxusers.members = [ "pars" ];
