@@ -24,6 +24,7 @@
       # misc productivity
       neovim
       ripgrep
+      ripgrep-all
       broot
       redshift
       feh
@@ -54,6 +55,11 @@
       tmux
       # composer for transparent terminal
       xcompmgr
+      # extended uname
+      neofetch
+      # progress bar for cp/mv
+      progress
+      watch
   ];
   nixpkgs.config.allowUnfree = true;
   nixpkgs.config.pulseaudio = true;
