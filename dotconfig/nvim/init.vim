@@ -18,7 +18,9 @@ set foldmethod=indent " also available: syntax, manual, marker
 
 " for automatic loading and saving of manually created 'views'.
 autocmd BufWinLeave *.* mkview
-autocmd BufWinEnter *.* silent loadview
+autocmd BufWinEnter *.* silent! loadview
+
+" closing and opening of folds
 nnoremap <space> za
 vnoremap <space> zf
 
