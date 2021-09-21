@@ -27,7 +27,7 @@ pactl_sink_name: 0
 
 # git configs
 git_email: f.karg10@gmail.com
-git_name: fkarg
+git_name: Felix Karg
 git_editor: nvim
 
 repos_list:

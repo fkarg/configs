@@ -18,10 +18,12 @@
   # boot.loader.efi.efiSysMountPoint = "/boot/efi";
   # Define on which hard drive you want to install Grub.
   # boot.loader.grub.device = ??? # or "nodev" for efi only
-  boot.extraModulePackages = with config.boot.kernelPackages; [ rtl88x2bu ];
+
+  # boot.extraModulePackages = with config.boot.kernelPackages; [ rtl88x2bu ]; # currently broken with latest kernel
 
   # Optional:
-  boot.kernelPackages = pkgs.linuxPackages_latest;
+  # boot.kernelPackages = pkgs.linuxPackages_latest;
+  # boot.kernelPackages = pkgs.linuxPackages_5_12_13;
 
 
   # enable networkmanager:
@@ -76,4 +78,3 @@
 
   services.upower.enable = true;
 }
-

@@ -36,6 +36,7 @@
       "networkmanager"
       "video"
       "audio"
+      "pulse"
       "lxd"
       "docker"
       "adbusers"
