@@ -1,0 +1,12 @@
+---
+
+- name: Check if nix is installed already
+  shell: nix --version
+  register: nix_exist
+  ignore_failure: true
+  when: ansible_distribution != 'NixOS'
+
+- name: We're on nixos or nix is installed
+  shell: ":"
+  register: nix_exists
+  when: ansible_distribution != 'NixOS' or nix_exist

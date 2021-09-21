@@ -30,6 +30,13 @@ git_email: f.karg10@gmail.com
 git_name: Felix Karg
 git_editor: nvim
 
+# ensure that nix is installed regardless of of the OS being nixOS
+ensure_nix: true
+
+# if nix is available, install a number of packages for the user
+install_nix_programs: true
+
+
 repos_list:
   - "/home/$USER/configs"
   - "/home/$USER/finances"
