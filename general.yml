@@ -76,9 +76,14 @@
         file: vars/terminal.yml
       when: client_role is defined and client_role == 'terminal'
 
+    - name: Load serf variables
+      include_vars:
+        file: vars/serf.yml
+      when: client_role is defined and client_role == 'serf'
+
     - name: Fail if client role not defined
       fail:
-      when: "client_role is not defined or (client_role != 'tux' and client_role != 'desktop' and client_role != 'terminal')"
+      when: "client_role is not defined or (client_role != 'tux' and client_role != 'desktop' and client_role != 'terminal' and client_role != 'serf')"
 
       # - import_tasks: tasks/testing.yml
       #   when: client_role is defined
