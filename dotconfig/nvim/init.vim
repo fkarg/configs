@@ -34,6 +34,8 @@ autocmd! BufNewFile,BufRead *.lhs setlocal ft=haskell
 autocmd BufRead,BufNewFile *.nix setlocal filetype=nix
 autocmd BufRead,BufNewFile *.yml setlocal filetype=yaml
 autocmd BufRead,BufNewFile *.yaml setlocal filetype=yaml
+autocmd BufRead,BufNewFile *.bean setlocal filetype=bean
+autocmd BufRead,BufNewFile *.ts setlocal filetype=typescript
 autocmd BufRead * normal zR
 
 
@@ -42,6 +44,7 @@ autocmd Filetype haskell setlocal ts=2 sts=2 sw=2
 autocmd Filetype arduino setlocal ts=2 sts=2 sw=2
 autocmd Filetype yaml setlocal ts=2 sts=2 sw=2
 autocmd Filetype bean setlocal ts=2 sts=2 sw=2
+autocmd Filetype typescript setlocal ts=2 sts=2 sw=2
 autocmd Filetype python setlocal ts=4 sts=4 sw=4
 autocmd Filetype cpp setlocal ts=4 sts=4 sw=4
 autocmd Filetype c++ setlocal ts=4 sts=4 sw=4
