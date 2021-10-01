@@ -40,6 +40,15 @@
       tokei
       pulseaudioFull
 
+      # global for generating correct xdg-open/mime bindings
+      # located at /run/current-system/sw/share/applications/
+      evince
+      teams
+      zoom-us
+      tdesktop
+      libreoffice-fresh
+      chromium
+
       # for building i3status-rs
       pkg-config
       dbus.dev
