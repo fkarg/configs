@@ -36,6 +36,18 @@
     touchpad.disableWhileTyping = true;
   };
 
+  # bluetooth
+  # $ bluetoothctl
+  # [bluetooth] # power on
+  # [bluetooth] # agent on
+  # [bluetooth] # default-agent
+  # [bluetooth] # scan on
+  # ...put device in pairing mode and wait [hex-address] to appear here...
+  # [bluetooth] # pair [hex-address]
+  # [bluetooth] # connect [hex-address]
+  hardware.bluetooth.enable = true;
+  services.blueman.enable = true;
+
   hardware.acpilight.enable = true;
   hardware.pulseaudio.extraConfig = "load-module module-udev-detect use_ucm=0 tsched=0\nload-module module-echo-cancel source_name=noechosource sink_name=noechosink\nset-default-source noechosource\nset-default-sink noechosink";
   hardware.pulseaudio.daemon.config = {
