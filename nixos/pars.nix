@@ -26,6 +26,12 @@
 {
 
   programs.fish.enable = true;
+  programs.neovim.enable = true;
+  programs.evince.enable = true;
+  programs.chromium = {
+    enable = true;
+    extraOpts = {}; # don't enable any 'policy'-management
+  };
 
   users.users.pars = {
     isNormalUser = true;
@@ -64,7 +70,7 @@
         pkgs.pdfpc
 
         # global python
-        pkgs.python37Packages.ipython
+        pkgs.python39Packages.ipython
         pkgs.python3
         pkgs.ansible
 

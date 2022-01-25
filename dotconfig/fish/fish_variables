@@ -13,6 +13,7 @@ SETUVAR _fish_abbr_c:cd
 SETUVAR _fish_abbr_cl:clear
 SETUVAR _fish_abbr_com:gs\x20\x2dsDEVICE\x3dpdfwrite\x20\x2ddNOPAUSE\x20\x2ddQUIET\x20\x2ddBATCH\x20\x2ddPDFSETTINGS\x3d/default\x20\x2dsOutputFile\x3dout\x2epdf
 SETUVAR _fish_abbr_de:deactivate
+SETUVAR _fish_abbr_do:docker\x2dcompose\x20\x2df\x20docker\x2dcompose\x2eyml\x20\x2df\x20docker\x2dcompose\x2edev\x2dlocal\x2eyml
 SETUVAR _fish_abbr_e:evince
 SETUVAR _fish_abbr_f:feh
 SETUVAR _fish_abbr_g:git
@@ -61,6 +62,7 @@ SETUVAR _fish_abbr_tlc:todo\x2esh\x20ls\x20\x40commitment
 SETUVAR _fish_abbr_tld:todo\x2esh\x20ls\x20due
 SETUVAR _fish_abbr_tlg:todo\x2esh\x20\x2dP\x20ls\x20goals
 SETUVAR _fish_abbr_tli:todo\x2esh\x20ls\x20\x40idea
+SETUVAR _fish_abbr_tln:todo\x2esh\x20\x2dP\x20lsp\x20\x40next\x20\x2dwaiting
 SETUVAR _fish_abbr_tlp:todo\x2esh\x20\x2dP\x20ls\x20project\x20\x2dwaiting\x20\x2dsomeday\x20\x2dnext
 SETUVAR _fish_abbr_tls:todo\x2esh\x20ls\x20\x40someday
 SETUVAR _fish_abbr_tlt:todo\x2esh\x20ls\x20topics

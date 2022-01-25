@@ -22,7 +22,7 @@
   # boot.extraModulePackages = with config.boot.kernelPackages; [ rtl88x2bu ]; # currently broken with latest kernel
 
   # Optional:
-  # boot.kernelPackages = pkgs.linuxPackages_latest;
+  boot.kernelPackages = pkgs.linuxPackages_latest;
   # boot.kernelPackages = pkgs.linuxPackages_5_12_13;
 
 
