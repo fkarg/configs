@@ -44,7 +44,7 @@
 
 - name: Copy initial background picture
   copy:
-    src: "~/{{ configs_repo }}/background_picture/IMAG7297.JPG"
+    src: "~/{{ configs_repo }}/pictures/IMAG7297.JPG"
     dest: "~/Pictures/Space/IMAG7297.JPG"
 
     # - name: Make sure to start redshift on startup
