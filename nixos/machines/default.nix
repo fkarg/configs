@@ -27,19 +27,36 @@
 
 
   # enable networkmanager:
-  networking.networkmanager.enable = true;
+  # networking.networkmanager.enable = true;
 
   # this needs to be set globally, and activated for each interface seperately.
   networking.useDHCP = false;
 
+
+  # Configure network proxy if necessary
+  # networking.proxy.default = "http://user:password@proxy:port/";
+  # networking.proxy.noProxy = "127.0.0.1,localhost,internal.domain";
   # Set your time zone.
   time.timeZone = "Europe/Berlin";
+
+  # Select internationalisation properties.
+  i18n.defaultLocale = "en_US.UTF-8";
+  console = {
+    font = "Lat2-Terminus16";
+    keyMap = "neo";
+  };
+
 
   # Enable sound.
   sound.enable = true;
   sound.mediaKeys.enable = true;  # enable audio control through default media keys
   hardware.pulseaudio.enable = true;
   hardware.pulseaudio.package = pkgs.pulseaudioFull;
+
+
+  # Enable CUPS to print documents.
+  # services.printing.enable = true;
+
 
   # Enable the X11 windowing system.
   services.xserver = {
