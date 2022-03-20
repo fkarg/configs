@@ -1,0 +1,8 @@
+cowfile: tux
+
+wifi: wlp170s0
+battery: true
+
+link_nixos: true
+
+  # pactl_sink_name: 

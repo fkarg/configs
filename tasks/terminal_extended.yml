@@ -1,11 +1,11 @@
 ---
 
 # passive_update templating and cron setup
-- name: Template passive_update.sh
-  template:
-    src: templates/passive_update.j2
-    dest: ~/passive_update.sh
-    mode: 0500 # u=rx
+# - name: Template passive_update.sh
+#   template:
+#     src: templates/passive_update.j2
+#     dest: ~/passive_update.sh
+#     mode: 0500 # u=rx
 
 - name: Set up Cronjob to update repositories
   ansible.builtin.cron:

@@ -36,11 +36,13 @@ warning_mem = 60.0
 critical_mem = 80.0
 interval = 10
 
+{% if lan is defined %}
 [[block]]
 block = "net"
 device = "{{ lan }}"
 format = "{bitrate}"
 interval = 10
+{% endif %}
 
 {% if wifi is defined %}
 [[block]]

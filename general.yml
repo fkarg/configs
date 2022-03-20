@@ -66,6 +66,11 @@
         file: vars/tux.yml
       when: client_role is defined and client_role == 'tux'
 
+    - name: Load artus variables
+      include_vars:
+        file: vars/artus.yml
+      when: client_role is defined and client_role == 'artus'
+
     - name: Load desktop variables
       include_vars:
         file: vars/desktop.yml
@@ -83,7 +88,7 @@
 
     - name: Fail if client role not defined
       fail:
-      when: "client_role is not defined or (client_role != 'tux' and client_role != 'desktop' and client_role != 'terminal' and client_role != 'serf')"
+      when: "client_role is not defined or (client_role != 'tux' and client_role != 'desktop' and client_role != 'terminal' and client_role != 'serf' and client_role != 'artus')"
 
       # - import_tasks: tasks/testing.yml
       #   when: client_role is defined
