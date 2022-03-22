@@ -9,6 +9,28 @@
 
 {
 
+  boot.kernelParams = [ "mem_sleep_default=deep" ];
+  fileSystems."/" =
+    { device = "/dev/disk/by-uuid/c9776b0b-dd89-4489-8c8c-10d0d3ca5f02";
+      fsType = "ext4";
+    };
+
+  boot.initrd.luks.devices."enc".device = "/dev/disk/by-uuid/471f76bc-106b-4ceb-b071-5498308a0fe9";
+
+  fileSystems."/boot" =
+    { device = "/dev/disk/by-uuid/9535-F294";
+      fsType = "vfat";
+    };
+
+  fileSystems."/nix" =
+    { device = "/dev/disk/by-uuid/214069b2-e87d-482f-940a-b235e42afcd5";
+      fsType = "ext4";
+    };
+
+  fileSystems."/var/lib/docker" =
+    { device = "/dev/disk/by-uuid/bd670182-4860-43b1-a74a-b94ab669a23d";
+      fsType = "ext4";
+    };
 
 
   # Use the systemd-boot EFI boot loader.
@@ -17,21 +39,15 @@
 
   # networking
   networking.hostName = "artus";
-  networking.wireless.enable = true;  # Enables wireless support via wpa_supplicant.
+  # networking.wireless.enable = true;  # Enables wireless support via wpa_supplicant.
+  networking.networkmanager.enable = true;
 
   # The global useDHCP flag is deprecated, therefore explicitly set to false here.
   # Per-interface useDHCP will be mandatory in the future, so this generated config
   # replicates the default behaviour.
   networking.useDHCP = false;
   networking.interfaces.wlp170s0.useDHCP = true;
-  # networking.networkmanager.enable = true;
 
-  environment.systemPackages = [
-    # xbacklight:
-    acpilight
-    lxd
-    docker
-  ];
   virtualisation.lxd.enable = true;
   virtualisation.docker.enable = true;
 
@@ -70,4 +86,23 @@
   #   [
   #     /home/pars/vpn/vpn_config.nix
   #   ];
+
+
+  # steam
+  environment.systemPackages = with pkgs; [
+    # (steam.override { extraPkgs = pkgs: [ mono gtk3 gtk3-x11 libgdiplus zlib ]; nativeOnly = true; }).run
+    (steam.override { extraPkgs = pkgs: [ mono gtk3 gtk3-x11 libgdiplus zlib ]; }).run
+    # actually non-steam
+    acpilight
+    lxd
+    docker
+  ];
+
+  hardware.opengl.driSupport32Bit = true;
+  hardware.opengl.extraPackages32 = with pkgs.pkgsi686Linux; [ libva ];
+  hardware.pulseaudio.support32Bit = true;
+  # steam end
+
+
+
 }
