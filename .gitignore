@@ -12,7 +12,6 @@ launcher
 dotconfig/fish/config.fish
 
 # generated fish details
-dotconfig/fish/functions/
 dotconfig/fish/completions/
 dotconfig/fish/conf.d/
 dotconfig/fish/fishfile
