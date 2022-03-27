@@ -26,6 +26,7 @@
     acpilight
     lxd
     docker
+    (steam.override { extraPkgs = pkgs: [ mono gtk3 gtk3-x11 libgdiplus zlib ]; }).run
   ];
   virtualisation.lxd.enable = true;
   virtualisation.docker.enable = true;
@@ -47,6 +48,17 @@
   # [bluetooth] # connect [hex-address]
   hardware.bluetooth.enable = true;
   services.blueman.enable = true;
+
+  # steam
+  programs.steam.enable = true;
+  # environment.systemPackages = with pkgs; [
+    # (steam.override { extraPkgs = pkgs: [ mono gtk3 gtk3-x11 libgdiplus zlib ]; nativeOnly = true; }).run
+    # (steam.override { extraPkgs = pkgs: [ mono gtk3 gtk3-x11 libgdiplus zlib ]; }).run
+  # ];
+  hardware.opengl.driSupport32Bit = true;
+  hardware.opengl.extraPackages32 = with pkgs.pkgsi686Linux; [ libva ];
+  hardware.pulseaudio.support32Bit = true;
+
 
   hardware.acpilight.enable = true;
   hardware.pulseaudio.extraConfig = "load-module module-udev-detect use_ucm=0 tsched=0\nload-module module-echo-cancel source_name=noechosource sink_name=noechosink\nset-default-source noechosource\nset-default-sink noechosink";
