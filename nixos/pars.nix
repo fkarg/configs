@@ -51,8 +51,9 @@
     packages = [
         # util
         pkgs.fish
-        pkgs.etcher
+        # pkgs.etcher
         pkgs.todo-txt-cli
+        # pkgs.obsidian
 
         # browser
         pkgs.chromium
@@ -61,6 +62,7 @@
 
         # messaging
         pkgs.thunderbird
+        pkgs.signal-desktop
         pkgs.tdesktop
         pkgs.teams
         pkgs.mumble
@@ -118,13 +120,14 @@
     enable = true;
     systemCronJobs = [
       "0 * * * *      pars  /home/pars/passive_update.sh"
+      "0 * * * *      pars  nix-channel --update"
     ];
   };
   services.logind.extraConfig = "RuntimeDirectorySize=4G";
 
-  networking.nameservers = [
-    "208.67.220.220"
-    "208.67.222.222"
-    "8.8.8.8"
-  ];
+  # networking.nameservers = [
+  #   "208.67.220.220"
+  #   "208.67.222.222"
+  #   "8.8.8.8"
+  # ];
 }

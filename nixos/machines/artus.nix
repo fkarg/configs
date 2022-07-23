@@ -45,10 +45,10 @@
   # The global useDHCP flag is deprecated, therefore explicitly set to false here.
   # Per-interface useDHCP will be mandatory in the future, so this generated config
   # replicates the default behaviour.
-  networking.useDHCP = false;
+  # networking.useDHCP = false; # already set globally in default
   networking.interfaces.wlp170s0.useDHCP = true;
 
-  virtualisation.lxd.enable = true;
+  # virtualisation.lxd.enable = true;
   virtualisation.docker.enable = true;
 
   # enable touchpad support
@@ -94,7 +94,7 @@
     (steam.override { extraPkgs = pkgs: [ mono gtk3 gtk3-x11 libgdiplus zlib ]; }).run
     # actually non-steam
     acpilight
-    lxd
+    # lxd
     docker
   ];
 

@@ -6,6 +6,7 @@
       # 'basic os functionality'
       wget
       git
+      exa
       curl
       fish
       htop
@@ -20,6 +21,7 @@
       inetutils
       gparted
       poppler_utils # pdfunite etc
+      lm_sensors
 
       # misc productivity
       neovim
@@ -39,6 +41,8 @@
       scrot
       tokei
       pulseaudioFull
+      gnumake
+      docker-compose
 
       # global for generating correct xdg-open/mime bindings
       # located at /run/current-system/sw/share/applications/
@@ -81,7 +85,7 @@
     liberation_ttf
     fira-code
     fira-code-symbols
-    mplus-outline-fonts
+    # mplus-outline-fonts
     dina-font
     proggyfonts
     font-awesome_4
