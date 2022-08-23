@@ -34,7 +34,7 @@ autocmd! BufNewFile,BufRead *.lhs setlocal ft=haskell
 autocmd BufRead,BufNewFile *.nix setlocal filetype=nix
 autocmd BufRead,BufNewFile *.yml setlocal filetype=yaml
 autocmd BufRead,BufNewFile *.yaml setlocal filetype=yaml
-autocmd BufRead,BufNewFile *.bean setlocal filetype=bean
+autocmd BufRead,BufNewFile *.bean setlocal filetype=beancount
 autocmd BufRead,BufNewFile *.ts setlocal filetype=typescript
 autocmd BufRead * normal zR
 
