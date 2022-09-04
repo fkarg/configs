@@ -26,7 +26,7 @@
 
 
   # enable networkmanager:
-  # networking.networkmanager.enable = true;
+  networking.networkmanager.enable = true;
 
   # this needs to be set globally, and activated for each interface seperately.
   networking.useDHCP = false;
