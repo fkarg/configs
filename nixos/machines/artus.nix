@@ -9,7 +9,13 @@
 
 {
 
-  boot.kernelParams = [ "mem_sleep_default=deep" ];
+  # `i915.enable_psr=1`:  force-enable psr (should be enabled default in >=5.14) to reach deeper suspend states on idle
+  # `mem_sleep_default=deep`: 'shutdown' system and go to deep suspension instead of `s2idle`. This trades reduced energy consumption for increased resume time delay.
+  boot.kernelParams = [ "mem_sleep_default=deep" "nvme.noacpi=1" "mitigations=off" "fsck.mode=force" "fsck.repair=yes" "i915.enable_psr=1"];
+  # boot.kernelParams = [ "mem_sleep_default=deep" ];
+  # run `sudo powertop --auto-tune` on startup. Reduces power consumption on idle
+  powerManagement.powertop.enable = true;
+
   fileSystems."/" =
     { device = "/dev/disk/by-uuid/c9776b0b-dd89-4489-8c8c-10d0d3ca5f02";
       fsType = "ext4";
@@ -103,6 +109,25 @@
   hardware.pulseaudio.support32Bit = true;
   # steam end
 
+  # experiment to enable more hardware accel and lower power draw on videos?
+  nixpkgs.config.packageOverrides = pkgs: {
+    vaapiIntel = pkgs.vaapiIntel.override { enableHybridCodec = true; };
+  };
+  hardware.opengl = {
+    enable = true;
+    extraPackages = with pkgs; [
+      intel-media-driver # LIBVA_DRIVER_NAME=iHD
+      vaapiIntel         # LIBVA_DRIVER_NAME=i965 (older but works better for Firefox/Chromium)
+      vaapiVdpau
+      libvdpau-va-gl
+    ];
+  };
 
-
+  # this disables nix-env ?
+  # nix = {
+  #   package = pkgs.nixFlakes; # or versioned attributes like nix_2_7
+  #   extraOptions = ''
+  #     experimental-features = nix-command flakes
+  #   '';
+  # };
 }
