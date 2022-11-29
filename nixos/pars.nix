@@ -31,6 +31,7 @@
   programs.chromium = {
     enable = true;
     extraOpts = {}; # don't enable any 'policy'-management
+    # doesn't seem to disable policy management though
   };
 
   users.users.pars = {
@@ -124,11 +125,4 @@
     ];
   };
   services.logind.extraConfig = "RuntimeDirectorySize=4G";
-
-  # networking.nameservers = [
-  networking.networkmanager.appendNameservers = [
-    "208.67.220.220"
-    "208.67.222.222"
-    "8.8.8.8"
-  ];
 }

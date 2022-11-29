@@ -94,4 +94,12 @@
   services.openssh.forwardX11 = true;
 
   services.upower.enable = true;
+
+  # services.resolved.enable = true;
+  # services.resolved.fallbackDns = [
+  networking.networkmanager.appendNameservers = [
+    "208.67.220.220"
+    "208.67.222.222"
+    "8.8.8.8"
+  ];
 }

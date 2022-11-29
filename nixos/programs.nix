@@ -73,6 +73,18 @@
       # progress bar for cp/mv
       progress
       watch
+      # Run github actions locally: https://github.com/nektos/act
+      act
+
+      # other
+      obsidian
+      networkmanagerapplet
+      intel-gpu-tools
+      libva-utils
+      beancount
+      fava
+      poetry
+
   ];
   nixpkgs.config.allowUnfree = true;
   nixpkgs.config.pulseaudio = true;
