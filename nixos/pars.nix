@@ -126,8 +126,9 @@
   services.logind.extraConfig = "RuntimeDirectorySize=4G";
 
   # networking.nameservers = [
-  #   "208.67.220.220"
-  #   "208.67.222.222"
-  #   "8.8.8.8"
-  # ];
+  networking.networkmanager.appendNameservers = [
+    "208.67.220.220"
+    "208.67.222.222"
+    "8.8.8.8"
+  ];
 }

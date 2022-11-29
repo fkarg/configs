@@ -28,7 +28,7 @@
     docker
     (steam.override { extraPkgs = pkgs: [ mono gtk3 gtk3-x11 libgdiplus zlib ]; }).run
   ];
-  virtualisation.lxd.enable = true;
+  # virtualisation.lxd.enable = true;
   virtualisation.docker.enable = true;
 
   # enable touchpad support
@@ -70,8 +70,8 @@
     default-sample-format = "s16le";
   };
 
-  imports =
-    [
-      /home/pars/vpn/vpn_config.nix
-    ];
+  # imports =
+  #   [
+  #     /home/pars/vpn/vpn_config.nix
+  #   ];
 }
