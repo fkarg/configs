@@ -15,7 +15,7 @@
   # Enable the OpenSSH daemon.
   # services.openssh.enable = true;
 
-  system.stateVersion = "22.05";
+  system.stateVersion = "22.11";
   system.autoUpgrade.enable = true;
 }
 

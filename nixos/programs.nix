@@ -83,7 +83,7 @@
       libva-utils
       beancount
       fava
-      poetry
+      # poetry
 
   ];
   nixpkgs.config.allowUnfree = true;
