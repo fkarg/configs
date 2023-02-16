@@ -10,6 +10,7 @@
       curl
       fish
       htop
+      gotop
       iftop
       zip
       unzip
@@ -22,6 +23,7 @@
       gparted
       poppler_utils # pdfunite etc
       lm_sensors
+      busybox
 
       # misc productivity
       neovim
@@ -77,7 +79,7 @@
       act
 
       # other
-      obsidian
+      # obsidian  # using deprecated electron version
       networkmanagerapplet
       intel-gpu-tools
       libva-utils
