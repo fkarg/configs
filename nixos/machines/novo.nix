@@ -15,8 +15,6 @@
   boot.kernelModules = [ "kvm-amd" ];
   boot.extraModulePackages = [ ];
 
-  zramSwap.enable = true;
-
   powerManagement.powertop.enable = true;
 
   fileSystems."/" =

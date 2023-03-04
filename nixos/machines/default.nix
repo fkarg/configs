@@ -33,6 +33,7 @@
   # this needs to be set globally, and activated for each interface seperately.
   networking.useDHCP = false;
 
+  zramSwap.enable = true;
 
   # Configure network proxy if necessary
   # networking.proxy.default = "http://user:password@proxy:port/";
