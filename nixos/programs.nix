@@ -54,6 +54,7 @@
       tdesktop
       libreoffice-fresh
       chromium
+      slack
 
       # for building i3status-rs
       pkg-config
@@ -77,6 +78,8 @@
       watch
       # Run github actions locally: https://github.com/nektos/act
       act
+      # for academic stuff
+      zotero
 
       # other
       # obsidian  # using deprecated electron version

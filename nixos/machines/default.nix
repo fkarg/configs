@@ -24,6 +24,8 @@
   # Optional:
   boot.kernelPackages = pkgs.linuxPackages_latest;
 
+  # automatically run `nix-store --optimize`
+  nix.settings.auto-optimise-store = true;
 
   # enable networkmanager:
   networking.networkmanager.enable = true;
@@ -67,9 +69,6 @@
 
     layout = "de";
     xkbVariant = "neo";
-
-    # deprecated ?
-    # windowManager.default = "i3";
 
     windowManager.i3 = {
       enable = true;
