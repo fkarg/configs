@@ -33,6 +33,7 @@
   # this needs to be set globally, and activated for each interface seperately.
   networking.useDHCP = false;
 
+  # dedicate part of RAM as compressed SWAP space
   zramSwap.enable = true;
 
   # Configure network proxy if necessary
