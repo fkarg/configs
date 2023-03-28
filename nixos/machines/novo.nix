@@ -51,6 +51,8 @@
 
   # virtualisation.lxd.enable = true;
   virtualisation.docker.enable = true;
+  virtualisation.containerd.enable = true;
+  virtualisation.podman.enable = true;
 
   # enable touchpad support
   services.xserver.libinput = {

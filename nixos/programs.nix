@@ -49,6 +49,12 @@
       openvpn
       shutter
 
+      # python
+      poetry
+      pdm
+      python311Packages.virtualenv
+      python311Packages.python
+
       # global for generating correct xdg-open/mime bindings
       # located at /run/current-system/sw/share/applications/
       evince
@@ -80,9 +86,7 @@
       # progress bar for cp/mv
       progress
       watch
-      # Run github actions locally: https://github.com/nektos/act
-      act
-      # for academic stuff
+      # for scientific research
       zotero
 
       # other
@@ -93,8 +97,6 @@
       libva-utils
       beancount
       fava
-      # poetry
-
   ];
   nixpkgs.config.allowUnfree = true;
   nixpkgs.config.pulseaudio = true;

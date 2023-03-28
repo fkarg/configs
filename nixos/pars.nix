@@ -117,7 +117,7 @@
     BROWSER = "chromium";
     PAGER = "less -R";
     TZ = "Europe/Berlin";
-    LD_LIBRARY_PATH = "${stdenv.cc.cc.lib}/lib/libstdc++.so.6";
+    LD_LIBRARY_PATH = "${stdenv.cc.cc.lib}/lib/";
     FZF_DEFAULT_COMMAND = "rg --files --no-ignore --hidden --follow --glob '!.git/*'";
   };
 
