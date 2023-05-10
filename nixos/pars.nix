@@ -73,8 +73,9 @@
         pkgs.pdfpc
 
         # global python
-        pkgs.python39Packages.ipython
-        pkgs.python3
+        pkgs.python310Packages.ipython
+        pkgs.python310Packages.pygments
+        pkgs.python310
         pkgs.ansible
 
         # rust

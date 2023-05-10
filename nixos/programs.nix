@@ -23,7 +23,7 @@
       gparted
       poppler_utils # pdfunite etc
       lm_sensors
-      # busybox
+      tree
 
       # misc productivity
       neovim
@@ -45,6 +45,8 @@
       pulseaudioFull
       gnumake
       docker-compose
+      openvpn
+      shutter
 
       # global for generating correct xdg-open/mime bindings
       # located at /run/current-system/sw/share/applications/
