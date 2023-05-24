@@ -10,7 +10,7 @@
       curl
       fish
       htop
-      gotop
+      btop
       iftop
       zip
       unzip
@@ -23,7 +23,7 @@
       gparted
       poppler_utils # pdfunite etc
       lm_sensors
-      busybox
+      # busybox
 
       # misc productivity
       neovim
@@ -55,6 +55,7 @@
       libreoffice-fresh
       chromium
       slack
+      dolphin
 
       # for building i3status-rs
       pkg-config
@@ -82,6 +83,7 @@
       zotero
 
       # other
+      subsurface # diving records
       # obsidian  # using deprecated electron version
       networkmanagerapplet
       intel-gpu-tools
