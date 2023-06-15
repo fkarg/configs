@@ -47,6 +47,7 @@
       "lxd"
       "docker"
       "adbusers"
+      "lp"
     ];
     home = "/home/pars";
     packages = [

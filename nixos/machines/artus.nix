@@ -11,7 +11,8 @@
 
   # `i915.enable_psr=1`:  force-enable psr (should be enabled default in >=5.14) to reach deeper suspend states on idle
   # `mem_sleep_default=deep`: 'shutdown' system and go to deep suspension instead of `s2idle`. This trades reduced energy consumption for increased resume time delay.
-  boot.kernelParams = [ "mem_sleep_default=deep" "nvme.noacpi=1" "mitigations=off" "fsck.mode=force" "fsck.repair=yes" "i915.enable_psr=1"];
+  # boot.kernelParams = [ "mem_sleep_default=deep" "nvme.noacpi=1" "mitigations=off" "fsck.mode=force" "fsck.repair=yes" "i915.enable_psr=1"];
+  boot.kernelParams = [ "mem_sleep_default=deep" "nvme.noacpi=1" "fsck.mode=force" "fsck.repair=yes"];
   # boot.kernelParams = [ "mem_sleep_default=deep" ];
   # run `sudo powertop --auto-tune` on startup. Reduces power consumption on idle
   powerManagement.powertop.enable = true;
@@ -130,6 +131,15 @@
       libvdpau-va-gl
     ];
   };
+
+  # printer
+  services.printing.enable = true;
+  services.printing.drivers = with pkgs; [
+    gutenprint
+    epson-escpr
+    epson-escpr2
+  ];
+
 
   # this disables nix-env ?
   # nix = {
