@@ -104,6 +104,9 @@
         pkgs.sl
         pkgs.doge
 
+
+        pkgs.xdg-user-dirs
+
         # nixpkgs.
         # nixpkgs.
     ];

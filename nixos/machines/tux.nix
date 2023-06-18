@@ -26,7 +26,7 @@
     acpilight
     lxd
     docker
-    (steam.override { extraPkgs = pkgs: [ mono gtk3 gtk3-x11 libgdiplus zlib ]; }).run
+    (steam.override { extraPkgs = pkgs: [ mono gtk3 gtk3-x11 libgdiplus zlib gamemode ]; }).run
   ];
   # virtualisation.lxd.enable = true;
   virtualisation.docker.enable = true;
