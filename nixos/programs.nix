@@ -6,6 +6,7 @@
       # 'basic os functionality'
       wget
       git
+      git-lfs
       exa
       curl
       fish
