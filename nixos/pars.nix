@@ -74,13 +74,16 @@
         pkgs.pdfpc
 
         # global python
-        pkgs.python310Packages.ipython
-        pkgs.python310Packages.pygments
-        pkgs.python310
+        pkgs.python311Packages.ipython
+        pkgs.python311Packages.pygments
+        pkgs.python311Packages.virtualenv
+        pkgs.python311
+        pkgs.poetry
+        pkgs.pdm
         pkgs.ansible
 
         # rust
-        pkgs.gcc
+        pkgs.gcc12
         pkgs.rustup
 
         # haskell

@@ -69,7 +69,6 @@ function setNewState {
         i3-msg "workspace 4, move workspace to output $EXTERN"
         i3-msg "workspace 5, move workspace to output $EXTERN"
         i3-msg "workspace 6, move workspace to output $EXTERN"
-        i3-msg "workspace 7, move workspace to output $EXTERN"
         i3-msg "workspace 8, move workspace to output $EXTERN"
         i3-msg "workspace 9, move workspace to output $EXTERN"
         i3-msg "workspace 10, move workspace to output $EXTERN"

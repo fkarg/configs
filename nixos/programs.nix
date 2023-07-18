@@ -49,11 +49,11 @@
       openvpn
       shutter
 
-      # python
-      poetry
-      pdm
-      python311Packages.virtualenv
-      python311Packages.python
+      # python is in user: `pars.nix`
+      # poetry
+      # pdm
+      # python311Packages.virtualenv
+      # python311Packages.python
 
       # global for generating correct xdg-open/mime bindings
       # located at /run/current-system/sw/share/applications/

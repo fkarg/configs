@@ -1,8 +1,11 @@
 # i3status-rs configuration settings.
 # {{ ansible_managed }}
 
+[theme]
 theme = "plain"
-icons = "awesome"
+
+[icons]
+icons = "awesome4"
 
 # Show Entropia club status
 [[block]]
@@ -24,23 +27,27 @@ interval = 10
 
 [[block]]
 block = "docker"
-interval = 10
-format = "{running}/{total}"
+interval = 20
+format = "$icon$running/$total"
 
 [[block]]
 block = "memory"
-display_type = "memory"
-clickable = false
-format_mem = "{mem_used_percents} {mem_used}"
+format = "$icon $mem_used_percents.eng(w:2) $mem_used.eng(w:4)"
 warning_mem = 60.0
 critical_mem = 80.0
+interval = 10
+
+[[block]]
+block = "memory"
+format = "$icon_swap $swap_used_percents.eng(w:2) $swap_used.eng(w:4)"
+warning_swap = 60.0
 interval = 10
 
 {% if lan is defined %}
 [[block]]
 block = "net"
 device = "{{ lan }}"
-format = "{bitrate}"
+format = "$icon $bitrate.eng(w:3)"
 interval = 10
 {% endif %}
 
@@ -48,7 +55,7 @@ interval = 10
 [[block]]
 block = "net"
 device = "{{ wifi }}"
-format = "{signal_strength} {ssid}"
+format = "$icon $signal_strength.eng(w:2) $ssid"
 interval = 10
 {% endif %}
 
@@ -56,7 +63,7 @@ interval = 10
 [[block]]
 block = "net"
 device = "{{ wifi2 }}"
-format = "{signal_strength} {ssid}"
+format = "$icon $signal_strength.eng(w:2) $ssid"
 interval = 10
 {% endif %}
 
@@ -77,43 +84,41 @@ interval = 5
 
 [[block]]
 block = "cpu"
-format = "{barchart} {utilization} {frequency}"
+format = "$icon$barchart $utilization.eng(w:4) $frequency.eng(w:4)"
 interval = 5
 
 [[block]]
 block = "temperature"
-collapsed = true
 interval = 10
-format = "{min} min {max} max {average} avg"
-chip = "*-isa-*"
+format = "$icon $min min $max max $average avg"
+format_alt = " $icon "
 
 [[block]]
 block = "load"
 interval = 5
-format = "{1m} {5m} {15m}"
+format = "$1m.eng(w:4) $5m.eng(w:4) $15m.eng(w:4)"
 
 {% if battery is defined and battery %}
 [[block]]
 block = "battery"
 # driver = "sysfs"
 interval = 5
-format = "{percentage} {time}h {power}"
+format = "$icon $percentage {$time}h $power"
 good = 99
 info = 99
 {% endif %}
 
-# [[block]]
-# block = "pomodoro"
-# length = 25
-# break_length = 5
-# use_nag = true
-# nag_path = "i3-nagbar"
-
 [[block]]
 block = "time"
 interval = 5
-format = "%Y-%m-%d %R:%S"
+format = "$icon $timestamp.datetime(f:'%Y-%m-%d %R:%S', l:de_DE)"
 
 [[block]]
 block = "sound"
-on_click = "pactl set-sink-mute {{ pactl_sink_name }} toggle"
+driver = "pulseaudio"
+device = "@DEFAULT_SINK@"
+device_kind = "sink"
+
+[[sound.click]]
+button = "left"
+cmd = "pactl set-sink-mute {{ pactl_sink_name }} toggle"

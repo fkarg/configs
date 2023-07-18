@@ -1,0 +1,15 @@
+cowsay: stimpy
+
+git_email: felix.karg@aimino.de
+
+wifi: wlp1s0
+battery: true
+
+  # link_nixos: true
+
+pactl_sink_name: alsa_output.pci-0000_03_00.6.analog-stereo
+
+repos_additional:
+  - "/home/$USER/Coding/linked-buddy"
+  - "/home/$USER/Coding/data-synthesis"
+  - "/home/$USER/Coding/siemens-gc-toolkit"

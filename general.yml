@@ -61,6 +61,11 @@
         file: vars/hp440g5.yml
       when: client_role is defined and client_role == 'hp440g5'
 
+    - name: Load novo variables
+      include_vars:
+        file: vars/novo.yml
+      when: client_role is defined and client_role == 'novo'
+
     - name: Load tux variables
       include_vars:
         file: vars/tux.yml
@@ -88,7 +93,7 @@
 
     - name: Fail if client role not defined
       fail:
-      when: "client_role is not defined or (client_role != 'tux' and client_role != 'desktop' and client_role != 'terminal' and client_role != 'serf' and client_role != 'artus')"
+      when: "client_role is not defined or (client_role != 'tux' and client_role != 'desktop' and client_role != 'terminal' and client_role != 'serf' and client_role != 'artus' and client_role != 'novo')"
 
       # - import_tasks: tasks/testing.yml
       #   when: client_role is defined
