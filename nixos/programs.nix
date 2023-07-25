@@ -28,6 +28,7 @@
 
       # misc productivity
       neovim
+      vim  # vimdiff
       ripgrep
       ripgrep-all
       broot

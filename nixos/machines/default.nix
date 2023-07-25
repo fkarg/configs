@@ -93,9 +93,12 @@
   services.openssh = {
     enable = true;
     startWhenNeeded = true;
+  };
+  programs.ssh ={
+    startAgent = true;
     forwardX11 = true;
   };
-  programs.ssh.startAgent = true;
+
 
   services.upower.enable = true;
 

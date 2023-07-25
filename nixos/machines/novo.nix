@@ -76,7 +76,9 @@
   services.blueman.enable = true;
 
   hardware.acpilight.enable = true;
- 
+
+  # increase proportional size of zramswap
+  zramSwap.memoryPercent = 150;
 
 
   # Enables DHCP on each ethernet and wireless interface. In case of scripted networking
