@@ -14,7 +14,6 @@ SETUVAR _fish_abbr_ca:cargo\x20build\x3b\x20cargo\x20doc\x3b\x20cargo\x20test
 SETUVAR _fish_abbr_cl:clear
 SETUVAR _fish_abbr_com:gs\x20\x2dsDEVICE\x3dpdfwrite\x20\x2ddNOPAUSE\x20\x2ddQUIET\x20\x2ddBATCH\x20\x2ddPDFSETTINGS\x3d/default\x20\x2dsOutputFile\x3dout\x2epdf
 SETUVAR _fish_abbr_de:deactivate
-SETUVAR _fish_abbr_do:docker\x2dcompose\x20\x2df\x20docker\x2dcompose\x2eyml\x20\x2df\x20docker\x2dcompose\x2edev\x2dlocal\x2eyml
 SETUVAR _fish_abbr_e:evince
 SETUVAR _fish_abbr_f:feh
 SETUVAR _fish_abbr_fix:sudo\x20route\x20delete\x20default\x20gw\x200\x2e0\x2e0\x2e0\x3b\x20sudo\x20route\x20add\x20default\x20gw\x20192\x2e168\x2e2\x2e1
