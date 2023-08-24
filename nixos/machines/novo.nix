@@ -78,7 +78,8 @@
   hardware.acpilight.enable = true;
 
   # increase proportional size of zramswap
-  zramSwap.memoryPercent = 150;
+  # zramSwap.memoryPercent = 75; # default is 50
+  # had 150 before upgrade to more RAM
 
 
   # Enables DHCP on each ethernet and wireless interface. In case of scripted networking
