@@ -7,7 +7,7 @@
       wget
       git
       git-lfs
-      exa
+      eza
       curl
       fish
       htop
@@ -59,7 +59,7 @@
       # global for generating correct xdg-open/mime bindings
       # located at /run/current-system/sw/share/applications/
       evince
-      teams
+      # teams
       zoom-us
       tdesktop
       libreoffice-fresh
@@ -103,7 +103,7 @@
   nixpkgs.config.pulseaudio = true;
 
   # fonts.
-  fonts.fonts = with pkgs; [
+  fonts.packages = with pkgs; [
     noto-fonts
     noto-fonts-cjk
     noto-fonts-emoji
