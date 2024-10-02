@@ -28,11 +28,6 @@
   programs.fish.enable = true;
   programs.neovim.enable = true;
   programs.evince.enable = true;
-  programs.chromium = {
-    enable = true;
-    extraOpts = {}; # don't enable any 'policy'-management
-    # doesn't seem to disable policy management though
-  };
 
   users.users.pars = {
     isNormalUser = true;
@@ -53,25 +48,7 @@
     packages = [
         # util
         pkgs.fish
-        # pkgs.etcher
         pkgs.todo-txt-cli
-        # pkgs.obsidian
-
-        # browser
-        pkgs.chromium
-        pkgs.firefox
-        # pkgs.tor-browser-bundle-bin
-
-        # messaging
-        pkgs.thunderbird
-        pkgs.signal-desktop
-        pkgs.tdesktop
-        pkgs.teams
-        pkgs.mumble
-
-        # viewing pdfs
-        pkgs.evince
-        pkgs.pdfpc
 
         # global python
         pkgs.python311Packages.ipython
@@ -93,25 +70,13 @@
         # tex
         pkgs.texlive.combined.scheme-full
 
-        # image editing
-        pkgs.inkscape
-        pkgs.pstoedit
-        pkgs.gimp
-
-        # office
-        pkgs.libreoffice-fresh
-
         # fun
         pkgs.cowsay
         pkgs.fortune
         pkgs.sl
         pkgs.doge
 
-
         pkgs.xdg-user-dirs
-
-        # nixpkgs.
-        # nixpkgs.
     ];
   };
 
@@ -120,7 +85,7 @@
     BROWSER = "chromium";
     PAGER = "less -R";
     TZ = "Europe/Berlin";
-    LD_LIBRARY_PATH = "$LD_LIBRARY_PATH:${pkgs.gcc12.cc.lib}/lib64/:${stdenv.cc.cc.lib}/lib/";
+    # LD_LIBRARY_PATH = "$LD_LIBRARY_PATH:${pkgs.gcc12.cc.lib}/lib64/:${stdenv.cc.cc.lib}/lib/";
     FZF_DEFAULT_COMMAND = "rg --files --no-ignore --hidden --follow --glob '!.git/*'";
   };
 

@@ -657,7 +657,8 @@ if empty(glob("$HOME/.local/share/nvim/site/autoload/plug.vim"))
   autocmd VimEnter * PlugInstall --sync | source $MYVIMRC
 endif
 
-
+" type date<Tab> to insert current date
+inoremap <script> <silent> <buffer> date<Tab> <C-R>=strftime("%Y-%m-%d")<CR>
 
 
 " install plugins with: PlugInstall
@@ -670,5 +671,6 @@ Plug 'fkarg/todo.txt-vim'
 Plug 'nathangrigg/vim-beancount'
 Plug 'junegunn/fzf', { 'do': { -> fzf#install() } }
 Plug 'LnL7/vim-nix'
+Plug 'lervag/vimtex'
 
 call plug#end()

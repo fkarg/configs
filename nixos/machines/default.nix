@@ -26,6 +26,12 @@
 
   # automatically run `nix-store --optimize`
   nix.settings.auto-optimise-store = true;
+  nix.gc = {
+    automatic = true;
+    dates = "weekly";
+    options = "--delete-older-than 30d";
+  };
+
 
   # enable networkmanager:
   networking.networkmanager.enable = true;
@@ -51,8 +57,8 @@
 
 
   # Enable sound.
-  sound.enable = true;
-  sound.mediaKeys.enable = true;  # enable audio control through default media keys
+  # sound.enable = true;
+  # sound.mediaKeys.enable = true;  # enable audio control through default media keys
   hardware.pulseaudio.enable = true;
   hardware.pulseaudio.package = pkgs.pulseaudioFull;
 
@@ -60,6 +66,8 @@
   # Enable CUPS to print documents.
   # services.printing.enable = true;
 
+  # automatically set LD_LIBRARY_PATH
+  # hardware.opengl.setLdLibraryPath = true;
 
   # Enable the X11 windowing system.
   services.xserver = {
@@ -69,8 +77,10 @@
 
     autorun = true;
 
-    layout = "de";
-    xkbVariant = "neo";
+    xkb = {
+      layout = "de";
+      variant = "neo";
+    };
 
     windowManager.i3 = {
       enable = true;
@@ -109,4 +119,10 @@
     "208.67.222.222"
     "8.8.8.8"
   ];
+
+  system.autoUpgrade = {
+    enable = true;
+    allowReboot = false;
+    channel = "https://nixos.org/channels/nixpkgs-unstable";
+  };
 }

@@ -58,14 +58,28 @@
 
       # global for generating correct xdg-open/mime bindings
       # located at /run/current-system/sw/share/applications/
-      evince
-      # teams
-      zoom-us
-      tdesktop
+
+      # 'office'
       libreoffice-fresh
-      chromium
-      slack
+      gimp
+      pstoedit
+      inkscape
       dolphin
+
+      # browser
+      chromium
+      firefox
+      # tor-browser-bundle-bin
+
+      # messenger
+      tdesktop
+      slack
+      thunderbird
+      signal-desktop
+
+      # viewing pdfs
+      evince
+      pdfpc
 
       # for building i3status-rs
       pkg-config
@@ -90,12 +104,16 @@
       # for scientific research
       zotero
 
-      # other
+      # games
+      steam
+
+      # other / util
       subsurface # diving records
-      # obsidian  # using deprecated electron version
       networkmanagerapplet
       intel-gpu-tools
       libva-utils
+
+      # fin
       beancount
       fava
   ];

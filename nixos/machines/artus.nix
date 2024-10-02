@@ -60,7 +60,8 @@
   virtualisation.docker.daemon.settings = {
     default-address-pools = [
       {
-        base = "172.30.0.0/16";
+        base = "172.30.0.0/16"; # mhm, might be too large.
+        # bd train network: 172.18.0.0
         size = 24;
       }
     ];
@@ -111,6 +112,7 @@
     acpilight
     # lxd
     docker
+    vscode.fhs
   ];
 
   hardware.opengl.driSupport32Bit = true;
