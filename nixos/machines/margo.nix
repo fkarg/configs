@@ -12,40 +12,31 @@
   # `i915.enable_psr=1`:  force-enable psr (should be enabled default in >=5.14) to reach deeper suspend states on idle
   # `mem_sleep_default=deep`: 'shutdown' system and go to deep suspension instead of `s2idle`. This trades reduced energy consumption for increased resume time delay.
   # boot.kernelParams = [ "mem_sleep_default=deep" "nvme.noacpi=1" "mitigations=off" "fsck.mode=force" "fsck.repair=yes" "i915.enable_psr=1"];
-  boot.kernelParams = [ "mem_sleep_default=deep" "nvme.noacpi=1" "fsck.mode=force" "fsck.repair=yes"];
+  boot.kernelParams = [ "fsck.mode=force" "fsck.repair=yes"];
   # boot.kernelParams = [ "mem_sleep_default=deep" ];
   # run `sudo powertop --auto-tune` on startup. Reduces power consumption on idle
   powerManagement.powertop.enable = true;
 
   fileSystems."/" =
-    { device = "/dev/disk/by-uuid/c9776b0b-dd89-4489-8c8c-10d0d3ca5f02";
+    { device = "/dev/disk/by-uuid/ba2ef340-5436-4a5e-a39c-791de5bf38a7";
       fsType = "ext4";
     };
 
-  boot.initrd.luks.devices."enc".device = "/dev/disk/by-uuid/471f76bc-106b-4ceb-b071-5498308a0fe9";
+  boot.initrd.luks.devices."crypted".device = "/dev/disk/by-uuid/3b04250a-2b83-4498-a590-c2de44dd7b60";
 
   fileSystems."/boot" =
-    { device = "/dev/disk/by-uuid/9535-F294";
+    { device = "/dev/disk/by-uuid/4135-4CBC";
       fsType = "vfat";
     };
 
-  fileSystems."/nix" =
-    { device = "/dev/disk/by-uuid/214069b2-e87d-482f-940a-b235e42afcd5";
-      fsType = "ext4";
-    };
-
-  fileSystems."/var/lib/docker" =
-    { device = "/dev/disk/by-uuid/bd670182-4860-43b1-a74a-b94ab669a23d";
-      fsType = "ext4";
-    };
-
+  swapDevices = [ ];
 
   # Use the systemd-boot EFI boot loader.
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
 
   # networking
-  networking.hostName = "artus";
+  networking.hostName = "margo";
   # networking.wireless.enable = true;  # Enables wireless support via wpa_supplicant.
   networking.networkmanager.enable = true;
 
@@ -54,6 +45,7 @@
   # replicates the default behaviour.
   # networking.useDHCP = false; # already set globally in default
   networking.interfaces.wlp170s0.useDHCP = true;
+  # networking.useDHCP = true;
 
   # virtualisation.lxd.enable = true;
   virtualisation.docker.enable = true;
@@ -68,7 +60,7 @@
   };
 
   # enable touchpad support
-  services.xserver.libinput = {
+  services.libinput = {
     enable = true;
     touchpad.disableWhileTyping = true;
   };
@@ -115,16 +107,16 @@
     vscode.fhs
   ];
 
-  hardware.opengl.driSupport32Bit = true;
-  hardware.opengl.extraPackages32 = with pkgs.pkgsi686Linux; [ libva ];
-  hardware.pulseaudio.support32Bit = true;
+  hardware.graphics.enable32Bit = true;
+  hardware.graphics.extraPackages32 = with pkgs.pkgsi686Linux; [ libva ];
+  # hardware.pulseaudio.support32Bit = true;
   # steam end
 
   # experiment to enable more hardware accel and lower power draw on videos?
   nixpkgs.config.packageOverrides = pkgs: {
     vaapiIntel = pkgs.vaapiIntel.override { enableHybridCodec = true; };
   };
-  hardware.opengl = {
+  hardware.graphics = {
     enable = true;
     extraPackages = with pkgs; [
       intel-media-driver # LIBVA_DRIVER_NAME=iHD
@@ -144,6 +136,18 @@
     epson-escpr
     epson-escpr2
   ];
+
+  environment.etc."X11/xorg.conf.d/20-intel.conf" = {
+    text = ''
+      Section "Device"
+        Identifier "Intel Graphics"
+        Driver "intel"
+        Option "TearFree" "true"
+        Option "AccelMethod" "sna"
+        Option "SwapbuffersWait" "true"
+      EndSection
+    '';
+  };
 
 
   # this disables nix-env ?

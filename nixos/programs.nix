@@ -87,7 +87,7 @@
       # for building in general
       binutils-unwrapped
       # gui open zip archives
-      gnome3.file-roller
+      file-roller
       # audio
       pavucontrol
       # 'better' terminal

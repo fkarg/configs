@@ -69,6 +69,14 @@
   # automatically set LD_LIBRARY_PATH
   # hardware.opengl.setLdLibraryPath = true;
 
+  services.displayManager = {
+    defaultSession = "none+i3";
+    autoLogin = {
+      enable = true;
+      user = "pars";
+    };
+  };
+
   # Enable the X11 windowing system.
   services.xserver = {
     enable = true;
@@ -91,13 +99,6 @@
         i3lock-fancy
       ];
     };
-
-    displayManager.defaultSession = "none+i3";
-    displayManager.autoLogin = {
-      enable = true;
-      user = "pars";
-    };
-
   };
 
   services.openssh = {
