@@ -79,3 +79,9 @@ end
 #   echo -n -s (set_color $fish_color_user) "$user" $normal @ (set_color $color_host) (prompt_hostname) $normal ' ' (set_color $color_cwd) (prompt_pwd) $normal (fish_vcs_prompt) $normal $prompt_status $suffix " "
 # end
 
+{% if direnv %}
+direnv hook fish | source
+{% endif %}
+{% if zoxide %}
+zoxide init fish | source
+{% endif %}

@@ -29,6 +29,8 @@ pactl_sink_name: 0
 git_email: f.karg10@gmail.com
 git_name: Felix Karg
 git_editor: nvim
+git_difft: false
+git_lfs: false
 
 # ensure that nix is installed regardless of of the OS being nixOS
 ensure_nix: true

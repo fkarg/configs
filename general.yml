@@ -76,6 +76,11 @@
         file: vars/artus.yml
       when: client_role is defined and client_role == 'artus'
 
+    - name: Load SNB variables
+      include_vars:
+        file: vars/snb.yml
+      when: client_role is defined and client_role == 'SNB'
+
     - name: Load margo variables
       include_vars:
         file: vars/margo.yml
@@ -98,7 +103,7 @@
 
     - name: Fail if client role not defined
       fail:
-      when: "client_role is not defined or (client_role != 'tux' and client_role != 'desktop' and client_role != 'terminal' and client_role != 'serf' and client_role != 'artus' and client_role != 'novo' and client_role != 'margo')"
+      when: "client_role is not defined or (client_role != 'tux' and client_role != 'desktop' and client_role != 'terminal' and client_role != 'serf' and client_role != 'artus' and client_role != 'novo' and client_role != 'margo' and client_role != 'SNB')"
 
       # - import_tasks: tasks/testing.yml
       #   when: client_role is defined

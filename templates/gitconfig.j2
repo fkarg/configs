@@ -11,10 +11,40 @@
     autoStash = true
 [core]
     editor = {{ git_editor }}
+    autocrlf = true  ; convert CRLF files to LF at commit
 [merge]
     tool = vimdiff
 [mergetool]
     prompt = false
 [blame]
     ignoreRevsFile = .git-blame-ignore-revs
-
+[color]
+    ui = auto
+[color "status"]
+    changed = yellow
+[help]
+    autocorrect = 1
+[rerere]
+    enabled = true
+    autoUpdate = true
+{% if git_difft %}
+[diff]
+    rename = copies
+    tool = difft
+    external = difft
+[alias]
+    dlog = "-c diff.external=difft log -p --ext-diff"
+[difftool]
+    prompt = false
+[difftool "difftastic"]
+    cmd = difft "$LOCAL" "$REMOTE"
+[pager]
+    difftool = true
+{% endif %}
+{% if git_lfs %}
+[filter "lfs"]
+    clean = git-lfs clean -- %f
+    smudge = git-lfs smudge -- %f
+    process = git-lfs filter-process
+    required = true
+{% endif %}

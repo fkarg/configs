@@ -1,0 +1,12 @@
+---
+
+username: pars
+cowfile: apt
+
+git_email: felix.karg@ebnerstolz.de
+git_name: Felix Karg
+git_difft: true
+git_lfs: true
+
+direnv: true
+zoxide: true
