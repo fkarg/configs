@@ -14,6 +14,7 @@ SETUVAR _fish_abbr_ca:cargo\x20build\x3b\x20cargo\x20doc\x3b\x20cargo\x20test
 SETUVAR _fish_abbr_cl:clear
 SETUVAR _fish_abbr_com:gs\x20\x2dsDEVICE\x3dpdfwrite\x20\x2ddNOPAUSE\x20\x2ddQUIET\x20\x2ddBATCH\x20\x2ddPDFSETTINGS\x3d/default\x20\x2dsOutputFile\x3dout\x2epdf
 SETUVAR _fish_abbr_de:deactivate
+SETUVAR _fish_abbr_do:docker\x20compose
 SETUVAR _fish_abbr_e:evince
 SETUVAR _fish_abbr_f:feh
 SETUVAR _fish_abbr_fix:sudo\x20route\x20delete\x20default\x20gw\x200\x2e0\x2e0\x2e0\x3b\x20sudo\x20route\x20add\x20default\x20gw\x20192\x2e168\x2e2\x2e1
@@ -40,6 +41,9 @@ SETUVAR _fish_abbr_ns:nix\x2dshell
 SETUVAR _fish_abbr_nsp:nix\x2dshell\x20\x2dp
 SETUVAR _fish_abbr_nu:nix\x2denv\x20\x2du
 SETUVAR _fish_abbr_pyl:pylanguagetool\x20\x2d\x2dlines
+SETUVAR _fish_abbr_p:pdm
+SETUVAR _fish_abbr_ps:pdm\x20start
+SETUVAR _fish_abbr_pd:pdm\x20dev
 SETUVAR _fish_abbr_r:rm\x20\x2drf
 SETUVAR _fish_abbr_s:git\x20status\x3b\x20git\x20add\x20\x2e\x3b\x20git\x20commit\x20\x2dm\x20sync\x3b\x20git\x20pull\x3b\x20git\x20push
 SETUVAR _fish_abbr_se:setxkbmap\x20de\x20neo
