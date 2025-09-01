@@ -118,7 +118,3 @@ block = "sound"
 driver = "pulseaudio"
 device = "@DEFAULT_SINK@"
 device_kind = "sink"
-
-[[sound.click]]
-button = "left"
-cmd = "pactl set-sink-mute {{ pactl_sink_name }} toggle"
