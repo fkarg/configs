@@ -10,10 +10,12 @@ Currently available `client_role`s are:
 - hp440g5
 - desktop
 - terminal
+- caeli (macOS)
 
 each has it's own little modifications.
 
-### Usage:
+### Usage
+
 `ansible-pull --diff --clean -U git@github.com:fkarg/configs.git general.yml -e client_role=<client>`
 
 if you would like to see what would change first:

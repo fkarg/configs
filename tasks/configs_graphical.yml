@@ -4,6 +4,7 @@
   file:
     path: ~/.config/i3
     state: directory
+  when: ansible_system == 'Linux'
 
 - name: Template on_startup.sh
   template:
@@ -11,23 +12,27 @@
     dest: ~/on_startup.sh
     mode: 0500 # u=rx
   notify: "restart i3"
+  when: ansible_system == 'Linux'
 
 - name: Template i3 config
   template:
     src: templates/i3config.j2
     dest: ~/.config/i3/config
   notify: "restart i3"
+  when: ansible_system == 'Linux'
 
 - name: Create config/i3status directory
   file:
     path: ~/.config/i3status
     state: directory
+  when: ansible_system == 'Linux'
 
 - name: Template i3status config
   template:
     src: templates/i3statusconfig.j2
     dest: ~/.config/i3status/config.toml
   notify: "restart i3"
+  when: ansible_system == 'Linux'
 
 - name: Link kitty config
   file:

@@ -101,12 +101,22 @@
         file: vars/serf.yml
       when: client_role is defined and client_role == 'serf'
 
+    - name: Load caeli variables
+      include_vars:
+        file: vars/caeli.yml
+      when: client_role is defined and client_role == 'caeli'
+
     - name: Fail if client role not defined
       fail:
-      when: "client_role is not defined or (client_role != 'tux' and client_role != 'desktop' and client_role != 'terminal' and client_role != 'serf' and client_role != 'artus' and client_role != 'novo' and client_role != 'margo' and client_role != 'SNB')"
+        msg: "Unsupported or undefined client_role='{{ client_role | default('UNSET') }}'"
+      when: "client_role is not defined or (client_role not in ['tux','desktop','terminal','serf','artus','novo','margo','SNB','hp440g5','caeli'])"
 
       # - import_tasks: tasks/testing.yml
       #   when: client_role is defined
+
+    # macOS specific packages (homebrew etc.) before terminal setup so fish/neovim exist
+    - import_tasks: tasks/macos_packages.yml
+      when: client_role is defined and ansible_system == 'Darwin'
 
     - import_tasks: tasks/terminal.yml
       when: client_role is defined

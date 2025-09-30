@@ -1,0 +1,43 @@
+cowfile: llama
+username: felix
+link_nixos: false
+
+# common brew formulae for macOS host
+brew_packages_common:
+  - git
+  - wget
+  - node
+  - cowsay
+  - fortune
+  - neovim
+  - tokei
+  - fish
+  - fzf
+  - eza
+  - zoxide
+  - ripgrep
+  - ripgrep-all
+  - scroll-reverser
+  - htop
+  - tmux
+  - jq
+  - tree
+  - broot
+  - fd
+  - rust
+  - ghc
+  - typst
+  - uv
+  - postgresql
+  - tor-browser
+  - logi-options+
+  - whatsapp
+  - signal-desktop
+  - obsidian
+brew_packages_extra: []
+
+# GUI apps / casks
+brew_casks_common:
+  - kitty
+  - rectangle
+brew_casks_extra: []

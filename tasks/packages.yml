@@ -1,7 +1,9 @@
 ---
-- name: Install Terminal packages
+- name: Install Terminal packages (Linux)
   apt:
-    name: "{{item}}"
-  with_items:
+    name: "{{ item }}"
+    state: present
+  loop:
     - htop
     - neovim
+  when: ansible_system == 'Linux'

@@ -10,6 +10,9 @@ finances_repo: finances
 # username on this machine
 username: pars
 
+# computed home dir (linux vs macos)
+home_dir: "{{ (ansible_system == 'Darwin') | ternary('/Users','/home') }}/{{ username }}"
+
 # cowfile on this machine
 cowfile: default
 
@@ -20,7 +23,7 @@ terminal: kitty
 link_nixos: false
 
 # absolute path to background image to use for graphical systems. Default is one-screen.
-background_image: /home/{{ username }}/{{ configs_repo }}/pictures/IMAG7297.JPG
+background_image: "{{ home_dir }}/{{ configs_repo }}/pictures/IMAG7297.JPG"
 
 # name of the audio sink
 pactl_sink_name: 0
@@ -40,15 +43,11 @@ install_nix_programs: true
 
 
 repos_list:
-  - "/home/$USER/configs"
-  - "/home/$USER/finances"
-  - "/home/$USER/gtd"
-  - "/home/$USER/text_zeug"
-  - "/home/$USER/Coding/lebenslauf"
-  - "/home/$USER/Coding/invoices"
-  - "/home/$USER/Coding/kit-stuff"
-  - "/home/$USER/Coding/fkarg.github.io"
-  - "/home/$USER/Coding/beratervertrag"
-  - "/home/$USER/Coding/things-to-talk-about"
+  - "{{ home_dir }}/configs"
+  - "{{ home_dir }}/text_zeug"
+  - "{{ home_dir }}/Coding/lebenslauf"
+  - "{{ home_dir }}/Coding/fkarg.github.io"
+  - "{{ home_dir }}/Coding/beratervertrag"
+  - "{{ home_dir }}/Coding/things-to-talk-about"
 
 repos_additional: []
