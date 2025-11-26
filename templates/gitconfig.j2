@@ -2,6 +2,7 @@
 [user]
     email = {{ git_email }}
     name = {{ git_name }}
+    signingkey = /home/{{ username}}/.ssh/id_ed25519.pub
 [pull]
     rebase = true
 [push]
@@ -48,3 +49,9 @@
     process = git-lfs filter-process
     required = true
 {% endif %}
+[gpg]
+    format = ssh
+[commit]
+    gpgSign = true
+[gpg "ssh"]
+    allowedSignersFile = /home/{{ username }}/.ssh/allowed_signers
