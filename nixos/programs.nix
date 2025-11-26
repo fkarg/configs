@@ -22,9 +22,14 @@
       xorg.xinit
       inetutils
       gparted
-      poppler_utils # pdfunite etc
+      poppler-utils # pdfunite etc
       lm_sensors
       tree
+      usbutils
+
+      # network debugging
+      dig
+      nmap
 
       # misc productivity
       neovim
@@ -32,6 +37,7 @@
       ripgrep
       ripgrep-all
       broot
+      direnv
       redshift
       feh
       vlc
@@ -49,6 +55,8 @@
       docker-compose
       openvpn
       shutter
+      zellij
+      zoxide
 
       # python is in user: `pars.nix`
       # poetry
@@ -62,9 +70,8 @@
       # 'office'
       libreoffice-fresh
       gimp
-      pstoedit
-      inkscape
-      dolphin
+      # pstoedit
+      # inkscape
 
       # browser
       chromium
@@ -72,7 +79,7 @@
       # tor-browser-bundle-bin
 
       # messenger
-      tdesktop
+      telegram-desktop
       slack
       thunderbird
       signal-desktop
@@ -105,26 +112,40 @@
       zotero
 
       # games
-      steam
+      steam-run
 
       # other / util
       subsurface # diving records
       networkmanagerapplet
       intel-gpu-tools
       libva-utils
+      wireguard-tools
+      nettools
 
       # fin
       beancount
       fava
+
+      # signal
+      clang
+      libclang
+      cmake
+      gnumake
+      protobuf
   ];
   nixpkgs.config.allowUnfree = true;
   nixpkgs.config.pulseaudio = true;
 
+  programs.ausweisapp = {
+    openFirewall = true;
+    enable = true;
+  };
+
   # fonts.
   fonts.packages = with pkgs; [
     noto-fonts
-    noto-fonts-cjk
-    noto-fonts-emoji
+    noto-fonts-cjk-sans
+    noto-fonts-color-emoji
     liberation_ttf
     fira-code
     fira-code-symbols
