@@ -52,7 +52,7 @@
   virtualisation.docker.daemon.settings = {
     default-address-pools = [
       {
-        base = "172.30.0.0/16"; # mhm, might be too large.
+        base = "112.30.0.0/16"; # mhm, might be too large.
         # bd train network: 172.18.0.0
         size = 24;
       }
