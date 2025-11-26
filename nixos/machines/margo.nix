@@ -78,6 +78,7 @@
   # [bluetooth] # pair [hex-address]
   # [bluetooth] # connect [hex-address]
   hardware.bluetooth.enable = true;
+  hardware.bluetooth.powerOnBoot = true; # powers up the default Bluetooth controller on boot
   services.blueman.enable = true;
 
   hardware.acpilight.enable = true;
