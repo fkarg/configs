@@ -28,6 +28,14 @@
   programs.fish.enable = true;
   programs.neovim.enable = true;
   programs.evince.enable = true;
+  programs.nix-ld.enable = true;
+  programs.nix-ld.libraries = with pkgs; [
+    zlib # e.g. for numpy
+    libgcc # e.g. for sqlalchemy
+    # that's where the shared libs go, you can find which one you need using
+    # nix-locate --top-level libstdc++.so.6  (replace this with your lib)
+    # ^ this requires `nix-index` pkg
+  ];
 
   users.users.pars = {
     isNormalUser = true;
@@ -50,25 +58,34 @@
         pkgs.fish
         pkgs.todo-txt-cli
 
+        # dev
+        pkgs.postgresql
+
         # global python
-        pkgs.python311Packages.ipython
-        pkgs.python311Packages.pygments
-        pkgs.python311Packages.virtualenv
-        pkgs.python311
+        pkgs.python313Packages.ipython
+        pkgs.python313Packages.pygments
+        pkgs.python313Packages.virtualenv
+        pkgs.python313Packages.uv
+        pkgs.python313
         pkgs.poetry
         pkgs.pdm
         pkgs.ansible
 
         # rust
-        pkgs.gcc12
+        pkgs.gcc
         pkgs.rustup
 
         # haskell
         pkgs.ghc
         pkgs.cabal-install
 
+        # JS
+        nodejs
+        pnpm
+
         # tex
-        pkgs.texlive.combined.scheme-full
+        # pkgs.texlive.combined.scheme-full
+        pkgs.typst
 
         # fun
         pkgs.cowsay
@@ -97,5 +114,5 @@
       "0 * * * *      pars  nix-channel --update"
     ];
   };
-  services.logind.extraConfig = "RuntimeDirectorySize=4G";
+  # services.logind.extraConfig = "RuntimeDirectorySize=4G";
 }
