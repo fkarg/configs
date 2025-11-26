@@ -59,8 +59,9 @@
   # Enable sound.
   # sound.enable = true;
   # sound.mediaKeys.enable = true;  # enable audio control through default media keys
-  hardware.pulseaudio.enable = true;
-  hardware.pulseaudio.package = pkgs.pulseaudioFull;
+  services.pulseaudio.enable = true;
+  services.pulseaudio.package = pkgs.pulseaudioFull;
+  services.pipewire.enable = false;
 
 
   # Enable CUPS to print documents.
