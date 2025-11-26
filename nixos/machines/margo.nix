@@ -193,4 +193,8 @@
   #     experimental-features = nix-command flakes
   #   '';
   # };
+
+  # solaar is a manager for logitech unifying devices
+  # services.solaar.enable = true;
+  hardware.logitech.wireless.enable = true;
 }
