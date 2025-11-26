@@ -108,9 +108,39 @@
     vscode.fhs
   ];
 
-  hardware.graphics.enable32Bit = true;
-  hardware.graphics.extraPackages32 = with pkgs.pkgsi686Linux; [ libva ];
-  # hardware.pulseaudio.support32Bit = true;
+  programs.steam.package = pkgs.steam.override {
+    extraPkgs = pkgs: with pkgs; [
+        mono
+        gtk3
+        gtk3-x11
+        libgdiplus
+        zlib
+        dbus
+        glib
+        atk
+        cairo
+        pango
+        fontconfig
+        xorg.libxcb
+        mesa
+        libva
+        intel-media-driver
+        intel-vaapi-driver
+        libvdpau-va-gl
+    ];
+  };
+
+  programs.steam.enable = true;
+  # hardware.graphics.extraPackages = [ pkgs.amdvlk ]; # Vulkan driver for AMD
+  hardware.steam-hardware.enable = true; # additional controller support
+
+  services.pulseaudio.support32Bit = true;
+  nixpkgs.config.allowUnfreePredicate = pkg: builtins.elem (lib.getName pkg) [
+    "steam"
+    "steam-original"
+    "steam-unwrapped"
+    "steam-run"
+  ];
   # steam end
 
   # experiment to enable more hardware accel and lower power draw on videos?
@@ -119,10 +149,15 @@
   };
   hardware.graphics = {
     enable = true;
+    enable32Bit = true;
+    extraPackages32 = with pkgs.pkgsi686Linux; [ libva ];
     extraPackages = with pkgs; [
       intel-media-driver # LIBVA_DRIVER_NAME=iHD
-      vaapiIntel         # LIBVA_DRIVER_NAME=i965 (older but works better for Firefox/Chromium)
-      vaapiVdpau
+      # vaapiIntel         # LIBVA_DRIVER_NAME=i965 (older but works better for Firefox/Chromium)
+      # vaapiVdpau
+      intel-vaapi-driver
+      vaapi-intel-hybrid
+      libva-vdpau-driver
       libvdpau-va-gl
     ];
   };
