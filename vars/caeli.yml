@@ -2,42 +2,86 @@ cowfile: llama
 username: felix
 link_nixos: false
 
-# common brew formulae for macOS host
+# common brew formulae for macOS host (top-level only, deps auto-installed)
 brew_packages_common:
-  - git
-  - wget
-  - node
+  - ansible
+  - ansible-language-server
+  - ansible-lint
+  - bat
   - cowsay
-  - fortune
-  - neovim
-  - tokei
-  - fish
-  - fzf
+  - direnv
+  - docker
+  - docker-buildx
+  - docker-compose
   - eza
-  - zoxide
-  - ripgrep
-  - ripgrep-all
-  - scroll-reverser
-  - htop
-  - tmux
-  - jq
-  - tree
-  - broot
-  - fd
-  - rust
+  - fish
+  - fortune
+  - gh
   - ghc
+  - ghostscript
+  - git
+  - graphviz
+  - htop
+  - lazygit
+  - minio-mc
+  - ncdu
+  - neofetch
+  - neovim
+  - nmap
+  - node@24
+  - pnpm
+  - postgresql@17
+  - qpdf
+  - ripgrep-all
+  - rust
+  - tokei
   - typst
   - uv
-  - postgresql
-  - tor-browser
-  - logi-options+
-  - whatsapp
-  - signal-desktop
-  - obsidian
+  - wget
+  - yq
+  - zoxide
 brew_packages_extra: []
 
 # GUI apps / casks
 brew_casks_common:
+  - amethyst
+  - docker-desktop
+  - firefox
+  - google-chrome
+  - hammerspoon
+  - karabiner-elements
   - kitty
+  - logi-options+
+  - microsoft-excel
+  - microsoft-outlook
+  - microsoft-powerpoint
+  - microsoft-teams
+  - microsoft-word
+  - obsidian
+  - ollama-app
+  - proton-drive
+  - proton-mail
+  - proton-pass
+  - protonvpn
   - rectangle
+  - raycast
+  - scroll-reverser
+  - signal
+  - stats
+  - telegram-desktop
+  - tor-browser
+  - utm
+  - visual-studio-code
+  - vlc
+  - whatsapp
+  - yt-music
 brew_casks_extra: []
+
+# Non-brew applications (manually installed / App Store)
+# - AusweisApp
+# - Pages
+# - PDFgear
+# - Proton Pass for Safari (Safari extension)
+# - Steam
+# - Tapo
+# - MultiViewer
