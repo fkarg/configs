@@ -26,4 +26,14 @@ or, if you prefer colorful output:
 
 `env ANSIBLE_FORCE_COLOR=true ansible-pull --diff --clean -U git@github.com:fkarg/configs.git general.yml -e client_role=<client>`
 
+### Overwriting Existing Config Directories
+
+Some applications (fish, kitty, nvim, broot) create their own config directories on first launch. If these exist as real directories (not symlinks), the playbook will fail by default to avoid data loss.
+
+To allow overwriting existing config directories with symlinks, pass `confirm_overwrite=true`:
+
+`ansible-pull --diff --clean -U git@github.com:fkarg/configs.git general.yml -e client_role=<client> -e confirm_overwrite=true`
+
+This flag is ignored in check mode (`--check`), so you can safely preview changes without risk.
+
 Make sure you have an ssh key which is registered on your github account for this computer already.
