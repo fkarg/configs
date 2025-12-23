@@ -41,6 +41,22 @@
 
 
 # fish config
+- name: Check if fish config is a directory (not symlink)
+  stat:
+    path: ~/.config/fish
+  register: fish_config_stat
+
+- name: Remove existing fish config directory (requires confirm_overwrite=true)
+  file:
+    path: ~/.config/fish
+    state: absent
+  when:
+    - fish_config_stat.stat.exists
+    - fish_config_stat.stat.isdir
+    - not fish_config_stat.stat.islnk
+    - confirm_overwrite | default(false) | bool
+    - not ansible_check_mode
+
 - name: Link config/fish directory
   file:
     src: "~/{{ configs_repo }}/{{ dotconfigdir }}/fish"
@@ -60,12 +76,44 @@
     path: ~/.config/nvimplugins
     state: directory
 
+- name: Check if nvim config is a directory (not symlink)
+  stat:
+    path: ~/.config/nvim
+  register: nvim_config_stat
+
+- name: Remove existing nvim config directory (requires confirm_overwrite=true)
+  file:
+    path: ~/.config/nvim
+    state: absent
+  when:
+    - nvim_config_stat.stat.exists
+    - nvim_config_stat.stat.isdir
+    - not nvim_config_stat.stat.islnk
+    - confirm_overwrite | default(false) | bool
+    - not ansible_check_mode
+
 - name: Link nvim directory
   file:
     src: "~/{{ configs_repo }}/{{ dotconfigdir }}/nvim"
     dest: ~/.config/nvim
     state: link
   when: repo is succeeded
+
+- name: Check if vim config is a directory (not symlink)
+  stat:
+    path: ~/.config/vim
+  register: vim_config_stat
+
+- name: Remove existing vim config directory (requires confirm_overwrite=true)
+  file:
+    path: ~/.config/vim
+    state: absent
+  when:
+    - vim_config_stat.stat.exists
+    - vim_config_stat.stat.isdir
+    - not vim_config_stat.stat.islnk
+    - confirm_overwrite | default(false) | bool
+    - not ansible_check_mode
 
 - name: Link vim directory
   file:
@@ -75,7 +123,23 @@
   when: repo is succeeded
 
 
-# set up 'b' 
+# set up 'b'
+- name: Check if broot config is a directory (not symlink)
+  stat:
+    path: ~/.config/broot
+  register: broot_config_stat
+
+- name: Remove existing broot config directory (requires confirm_overwrite=true)
+  file:
+    path: ~/.config/broot
+    state: absent
+  when:
+    - broot_config_stat.stat.exists
+    - broot_config_stat.stat.isdir
+    - not broot_config_stat.stat.islnk
+    - confirm_overwrite | default(false) | bool
+    - not ansible_check_mode
+
 - name: Link broot directory
   file:
     src: "~/{{ configs_repo }}/{{ dotconfigdir }}/broot"

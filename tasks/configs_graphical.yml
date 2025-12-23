@@ -34,6 +34,22 @@
   notify: "restart i3"
   when: ansible_system == 'Linux'
 
+- name: Check if kitty config is a directory (not symlink)
+  stat:
+    path: ~/.config/kitty
+  register: kitty_config_stat
+
+- name: Remove existing kitty config directory (requires confirm_overwrite=true)
+  file:
+    path: ~/.config/kitty
+    state: absent
+  when:
+    - kitty_config_stat.stat.exists
+    - kitty_config_stat.stat.isdir
+    - not kitty_config_stat.stat.islnk
+    - confirm_overwrite | default(false) | bool
+    - not ansible_check_mode
+
 - name: Link kitty config
   file:
     src: "~/{{ configs_repo }}/{{ dotconfigdir }}/kitty"
