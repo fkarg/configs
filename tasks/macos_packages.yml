@@ -5,37 +5,37 @@
 - name: Check if on macOS
   debug:
     msg: "Running macOS package tasks"
-  when: ansible_system == 'Darwin'
+  when: ansible_facts['system'] == 'Darwin'
 
 - name: Detect existing brew (Apple Silicon default path)
   stat:
     path: /opt/homebrew/bin/brew
   register: brew_opt
-  when: ansible_system == 'Darwin'
+  when: ansible_facts['system'] == 'Darwin'
 
 - name: Detect existing brew (Intel default path)
   stat:
     path: /usr/local/bin/brew
   register: brew_usr
-  when: ansible_system == 'Darwin'
+  when: ansible_facts['system'] == 'Darwin'
 
 - name: Install Homebrew
   shell: /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-  when: ansible_system == 'Darwin' and not brew_opt.stat.exists and not brew_usr.stat.exists
+  when: ansible_facts['system'] == 'Darwin' and not brew_opt.stat.exists and not brew_usr.stat.exists
 
 - name: Set brew_bin fact
   set_fact:
     brew_bin: >-
       {{ '/opt/homebrew/bin/brew' if brew_opt.stat.exists else (
            '/usr/local/bin/brew' if brew_usr.stat.exists else '/opt/homebrew/bin/brew') }}
-  when: ansible_system == 'Darwin'
+  when: ansible_facts['system'] == 'Darwin'
 
 - name: Ensure brew is in PATH for fish (simple append)
   lineinfile:
     path: ~/.config/fish/config.fish
     insertafter: EOF
     line: "fish_add_path (dirname {{ brew_bin }})"
-  when: ansible_system == 'Darwin'
+  when: ansible_facts['system'] == 'Darwin'
   ignore_errors: true
 
 - name: Install brew formulae (common)
@@ -44,7 +44,7 @@
     state: present
     path: "{{ brew_bin | dirname }}"
   loop: "{{ (brew_packages_common | default([])) + (brew_packages_extra | default([])) }}"
-  when: ansible_system == 'Darwin'
+  when: ansible_facts['system'] == 'Darwin'
 
 - name: Install brew casks (common)
   community.general.homebrew_cask:
@@ -52,5 +52,5 @@
     state: present
     path: "{{ brew_bin | dirname }}"
   loop: "{{ (brew_casks_common | default([])) + (brew_casks_extra | default([])) }}"
-  when: ansible_system == 'Darwin'
+  when: ansible_facts['system'] == 'Darwin'
   ignore_errors: true  # some casks may be unavailable; keep run resilient

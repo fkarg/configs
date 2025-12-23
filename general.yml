@@ -3,14 +3,14 @@
   connection: local
 
   pre_tasks:
-    - debug: 
+    - debug:
         msg: "{{ ansible_facts }}"
 
     - name: update apt repositories
       apt: update_cache=yes
       become: True
       changed_when: False
-      when: ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu'
+      when: ansible_facts['distribution'] == 'Debian' or ansible_facts['distribution'] == 'Ubuntu'
       ignore_errors: True
 
     # # different required roles:
@@ -116,7 +116,7 @@
 
     # macOS specific packages (homebrew etc.) before terminal setup so fish/neovim exist
     - import_tasks: tasks/macos_packages.yml
-      when: client_role is defined and ansible_system == 'Darwin'
+      when: client_role is defined and ansible_facts['system'] == 'Darwin'
 
     - import_tasks: tasks/terminal.yml
       when: client_role is defined

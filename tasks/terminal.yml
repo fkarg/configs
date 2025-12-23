@@ -62,6 +62,7 @@
     src: "~/{{ configs_repo }}/{{ dotconfigdir }}/fish"
     dest: ~/.config/fish
     state: link
+  when: not (fish_config_stat.stat.exists and fish_config_stat.stat.isdir and not fish_config_stat.stat.islnk and not (confirm_overwrite | default(false) | bool))
 
 - name: Template fish config
   template:
@@ -97,7 +98,9 @@
     src: "~/{{ configs_repo }}/{{ dotconfigdir }}/nvim"
     dest: ~/.config/nvim
     state: link
-  when: repo is succeeded
+  when:
+    - repo is succeeded
+    - not (nvim_config_stat.stat.exists and nvim_config_stat.stat.isdir and not nvim_config_stat.stat.islnk and not (confirm_overwrite | default(false) | bool))
 
 - name: Check if vim config is a directory (not symlink)
   stat:
@@ -120,7 +123,9 @@
     src: "~/{{ configs_repo }}/{{ dotconfigdir }}/nvim"
     dest: ~/.config/vim
     state: link
-  when: repo is succeeded
+  when:
+    - repo is succeeded
+    - not (vim_config_stat.stat.exists and vim_config_stat.stat.isdir and not vim_config_stat.stat.islnk and not (confirm_overwrite | default(false) | bool))
 
 
 # set up 'b'
@@ -145,7 +150,9 @@
     src: "~/{{ configs_repo }}/{{ dotconfigdir }}/broot"
     dest: ~/.config/broot
     state: link
-  when: repo is succeeded
+  when:
+    - repo is succeeded
+    - not (broot_config_stat.stat.exists and broot_config_stat.stat.isdir and not broot_config_stat.stat.islnk and not (confirm_overwrite | default(false) | bool))
   notify: "install br"
 
 - name: Create .local/bin

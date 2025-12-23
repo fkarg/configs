@@ -4,9 +4,9 @@
   shell: nix --version
   register: nix_exist
   ignore_failure: true
-  when: ansible_distribution != 'NixOS'
+  when: ansible_facts['distribution'] != 'NixOS'
 
 - name: We're on nixos or nix is installed
   shell: ":"
   register: nix_exists
-  when: ansible_distribution != 'NixOS' or nix_exist
+  when: ansible_facts['distribution'] != 'NixOS' or nix_exist

@@ -4,7 +4,7 @@
   file:
     path: ~/.config/i3
     state: directory
-  when: ansible_system == 'Linux'
+  when: ansible_facts['system'] == 'Linux'
 
 - name: Template on_startup.sh
   template:
@@ -12,27 +12,27 @@
     dest: ~/on_startup.sh
     mode: 0500 # u=rx
   notify: "restart i3"
-  when: ansible_system == 'Linux'
+  when: ansible_facts['system'] == 'Linux'
 
 - name: Template i3 config
   template:
     src: templates/i3config.j2
     dest: ~/.config/i3/config
   notify: "restart i3"
-  when: ansible_system == 'Linux'
+  when: ansible_facts['system'] == 'Linux'
 
 - name: Create config/i3status directory
   file:
     path: ~/.config/i3status
     state: directory
-  when: ansible_system == 'Linux'
+  when: ansible_facts['system'] == 'Linux'
 
 - name: Template i3status config
   template:
     src: templates/i3statusconfig.j2
     dest: ~/.config/i3status/config.toml
   notify: "restart i3"
-  when: ansible_system == 'Linux'
+  when: ansible_facts['system'] == 'Linux'
 
 - name: Check if kitty config is a directory (not symlink)
   stat:
@@ -55,7 +55,9 @@
     src: "~/{{ configs_repo }}/{{ dotconfigdir }}/kitty"
     dest: ~/.config/kitty
     state: link
-  when: repo is succeeded and terminal == "kitty"
+  when:
+    - repo is succeeded and terminal == "kitty"
+    - not (kitty_config_stat.stat.exists and kitty_config_stat.stat.isdir and not kitty_config_stat.stat.islnk and not (confirm_overwrite | default(false) | bool))
 
 # Background picture
 - name: Create folder for background picture

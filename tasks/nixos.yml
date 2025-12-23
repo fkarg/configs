@@ -8,7 +8,7 @@
   become: true
   ignore_errors: true
   # when: repo is succeeded
-  when: ansible_system == 'Linux'
+  when: ansible_facts['system'] == 'Linux'
 
 
 - name: Template /etc/nixos/configuration.nix
@@ -20,7 +20,7 @@
   notify:
     - "nixos-rebuild build"
     - "nixos-rebuild boot"
-  when: ansible_system == 'Linux'
+  when: ansible_facts['system'] == 'Linux'
 
       # - name: Install local nixos programs
       #   list:

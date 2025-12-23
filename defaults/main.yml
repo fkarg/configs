@@ -11,7 +11,7 @@ finances_repo: finances
 username: pars
 
 # computed home dir (linux vs macos)
-home_dir: "{{ (ansible_system == 'Darwin') | ternary('/Users','/home') }}/{{ username }}"
+home_dir: "{{ (ansible_facts['system'] == 'Darwin') | ternary('/Users','/home') }}/{{ username }}"
 
 # cowfile on this machine
 cowfile: default
