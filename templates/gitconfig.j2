@@ -2,7 +2,7 @@
 [user]
     email = {{ git_email }}
     name = {{ git_name }}
-    signingkey = /home/{{ username}}/.ssh/id_ed25519.pub
+    signingkey = /{{ home_dir }}/.ssh/id_ed25519.pub
 [pull]
     rebase = true
 [push]
@@ -54,4 +54,4 @@
 [commit]
     gpgSign = true
 [gpg "ssh"]
-    allowedSignersFile = /home/{{ username }}/.ssh/allowed_signers
+    allowedSignersFile = /{{ home_dir }}/.ssh/allowed_signers

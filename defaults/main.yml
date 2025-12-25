@@ -41,6 +41,13 @@ ensure_nix: true
 # if nix is available, install a number of packages for the user
 install_nix_programs: true
 
+# shell integrations
+direnv: false
+zoxide: false
+
+# broot file manager
+enable_broot: false
+
 
 repos_list:
   - "{{ home_dir }}/configs"

@@ -3,6 +3,7 @@
 - name: Create local broot links
   shell: broot --install
   listen: "install br"
+  when: enable_broot | default(false) | bool
 
 - name: Restart i3 with new config
   shell: i3 restart

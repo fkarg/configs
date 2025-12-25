@@ -30,14 +30,6 @@
            '/usr/local/bin/brew' if brew_usr.stat.exists else '/opt/homebrew/bin/brew') }}
   when: ansible_facts['system'] == 'Darwin'
 
-- name: Ensure brew is in PATH for fish (simple append)
-  lineinfile:
-    path: ~/.config/fish/config.fish
-    insertafter: EOF
-    line: "fish_add_path (dirname {{ brew_bin }})"
-  when: ansible_facts['system'] == 'Darwin'
-  ignore_errors: true
-
 - name: Install brew formulae (common)
   community.general.homebrew:
     name: "{{ item }}"
@@ -51,6 +43,7 @@
     name: "{{ item }}"
     state: present
     path: "{{ brew_bin | dirname }}"
+    greedy: true  # adopt existing apps into brew management
   loop: "{{ (brew_casks_common | default([])) + (brew_casks_extra | default([])) }}"
   when: ansible_facts['system'] == 'Darwin'
   ignore_errors: true  # some casks may be unavailable; keep run resilient

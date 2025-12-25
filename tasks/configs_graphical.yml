@@ -106,11 +106,12 @@
   when: ssh is succeeded
   ignore_errors: True
 
-# Get Fontin font
+# Get Fontin font (Linux only - macOS uses different font paths)
 - name: Create fonts directory
   file:
     path: ~/.local/share/fonts
     state: directory
+  when: ansible_facts['system'] == 'Linux'
 
 - name: Unarchive Fontin font
   ansible.builtin.unarchive:
@@ -118,12 +119,14 @@
     src: https://wfonts.com/download/data/2015/03/10/fontin/fontin.zip
     dest: ~/.local/share/fonts
     remote_src: yes
+  when: ansible_facts['system'] == 'Linux'
 
 - name: Duplicate Regular Fontin File
   copy:
     src: ~/.local/share/fonts/Fontin-Regular.otf
     dest: ~/.local/share/fonts/Fontin.otf
     mode: 0644
+  when: ansible_facts['system'] == 'Linux'
 
 # - name: link alacritty config
 #   file:

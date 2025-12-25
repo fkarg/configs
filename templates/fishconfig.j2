@@ -1,6 +1,15 @@
 # fish config file.
 # {{ ansible_managed }}
 
+{% if ansible_facts['system'] == 'Darwin' %}
+# Homebrew PATH (macOS)
+if test -d /opt/homebrew/bin
+    fish_add_path /opt/homebrew/bin
+else if test -d /usr/local/bin
+    fish_add_path /usr/local/bin
+end
+{% endif %}
+
 {% if link_nixos %}
 # maybe only import these if they are not in there already. How to do that?
 # set -x PATH /run/wrappers/bin $PATH

@@ -2,6 +2,10 @@ cowfile: llama
 username: felix
 link_nixos: false
 
+# shell integrations
+direnv: true
+zoxide: true
+
 # common brew formulae for macOS host (top-level only, deps auto-installed)
 brew_packages_common:
   - ansible

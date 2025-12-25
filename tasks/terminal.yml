@@ -69,6 +69,13 @@
     src: templates/fishconfig.j2
     dest: ~/.config/fish/config.fish
   notify: "install br"
+  when: enable_broot | default(false) | bool
+
+- name: Template fish config (without broot)
+  template:
+    src: templates/fishconfig.j2
+    dest: ~/.config/fish/config.fish
+  when: not (enable_broot | default(false) | bool)
 
 
 # vim files
@@ -128,20 +135,22 @@
     - not (vim_config_stat.stat.exists and vim_config_stat.stat.isdir and not vim_config_stat.stat.islnk and not (confirm_overwrite | default(false) | bool))
 
 
-# set up 'b'
+# broot setup (controlled by enable_broot variable)
 - name: Check if broot config is a directory (not symlink)
   stat:
     path: ~/.config/broot
   register: broot_config_stat
+  when: enable_broot | default(false) | bool
 
 - name: Remove existing broot config directory (requires confirm_overwrite=true)
   file:
     path: ~/.config/broot
     state: absent
   when:
-    - broot_config_stat.stat.exists
-    - broot_config_stat.stat.isdir
-    - not broot_config_stat.stat.islnk
+    - enable_broot | default(false) | bool
+    - broot_config_stat.stat.exists | default(false)
+    - broot_config_stat.stat.isdir | default(false)
+    - not (broot_config_stat.stat.islnk | default(false))
     - confirm_overwrite | default(false) | bool
     - not ansible_check_mode
 
@@ -151,8 +160,9 @@
     dest: ~/.config/broot
     state: link
   when:
+    - enable_broot | default(false) | bool
     - repo is succeeded
-    - not (broot_config_stat.stat.exists and broot_config_stat.stat.isdir and not broot_config_stat.stat.islnk and not (confirm_overwrite | default(false) | bool))
+    - not (broot_config_stat.stat.exists | default(false) and broot_config_stat.stat.isdir | default(false) and not (broot_config_stat.stat.islnk | default(false)) and not (confirm_overwrite | default(false) | bool))
   notify: "install br"
 
 - name: Create .local/bin
@@ -165,7 +175,9 @@
     src: "~/{{ configs_repo }}/scripts/b.sh"
     dest: ~/.local/bin/b
     state: link
-  when: repo is succeeded
+  when:
+    - enable_broot | default(false) | bool
+    - repo is succeeded
   notify: "install br"
 
 - name: Make sure text_stuff is present
