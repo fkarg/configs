@@ -124,7 +124,7 @@
 
       # fin
       beancount
-      fava
+      # fava is temporarily disabled due to upstream build failure in current nixpkgs
 
       # signal
       clang
