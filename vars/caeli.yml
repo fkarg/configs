@@ -12,20 +12,35 @@ brew_packages_common:
   - ansible-language-server
   - ansible-lint
   - bat
+  - batt
+  - beancount
+  - beancount-language-server
+  - beanquery
+  - coreutils
   - cowsay
   - direnv
   - docker
   - docker-buildx
   - docker-compose
   - eza
+  - fava
   - fish
   - fortune
+  - gemini-cli
   - gh
   - ghc
   - ghostscript
   - git
+  - git-filter-repo
   - graphviz
   - htop
+  - iperf
+  - k3d
+  - k9s
+  - kubecfg
+  - kubernetes-cli
+  - kustomize
+  - languagetool
   - lazygit
   - minio-mc
   - ncdu
@@ -33,14 +48,22 @@ brew_packages_common:
   - neovim
   - nmap
   - node@24
+  - opencode
+  - oven-sh/bun/bun
   - pnpm
   - postgresql@17
+  - psutils
+  - python-setuptools
   - qpdf
   - ripgrep-all
   - rust
+  - sleepwatcher
+  - socat
+  - tinymist
   - tokei
   - typst
   - uv
+  - watch
   - wget
   - yq
   - zoxide
@@ -49,8 +72,16 @@ brew_packages_extra: []
 # GUI apps / casks
 brew_casks_common:
   - amethyst
+  - betterdiscord-installer
+  - caffeine
+  - claude-code
+  - codex
+  - comfyui
+  - copilot-cli
   - docker-desktop
   - firefox
+  - foxit-pdf-editor
+  - foxitreader
   - google-chrome
   - hammerspoon
   - karabiner-elements
@@ -72,6 +103,7 @@ brew_casks_common:
   - scroll-reverser
   - signal
   - stats
+  - telegram
   - telegram-desktop
   - tor-browser
   - utm
