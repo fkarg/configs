@@ -14,6 +14,8 @@ SETUVAR _fish_abbr_ca:cargo\x20build\x3b\x20cargo\x20doc\x3b\x20cargo\x20test
 SETUVAR _fish_abbr_cl:clear
 SETUVAR _fish_abbr_com:gs\x20\x2dsDEVICE\x3dpdfwrite\x20\x2ddNOPAUSE\x20\x2ddQUIET\x20\x2ddBATCH\x20\x2ddPDFSETTINGS\x3d/default\x20\x2dsOutputFile\x3dout\x2epdf
 SETUVAR _fish_abbr_de:deactivate
+SETUVAR _fish_abbr_d:docker
+SETUVAR _fish_abbr_dc:docker\x20compose
 SETUVAR _fish_abbr_do:docker\x20compose
 SETUVAR _fish_abbr_e:evince
 SETUVAR _fish_abbr_f:feh
@@ -78,3 +80,4 @@ SETUVAR _fish_abbr_ug:sudo\x20apt\x20upgrade
 SETUVAR _fish_abbr_v:nvim
 SETUVAR _fish_abbr_vd:vimdiff
 SETUVAR fish_greeting:Welcome\x20to\x20fish\x2c\x20the\x20friendly\x20interactive\x20shell
+SETUVAR fish_user_paths:/opt/homebrew/bin
