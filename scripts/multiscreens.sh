@@ -1,5 +1,6 @@
 #! /bin/bash
 
+exit
 # Script 
 
 # execution should toggle between states: multi-display (external above normal)

@@ -1,0 +1,18 @@
+---
+
+cowfile: default
+
+# network interfaces
+lan: enp10s0
+# enp15s0u5u3u3 is a USB ethernet adapter
+
+# no battery (desktop)
+battery: false
+
+link_nixos: true
+nixos_state_version: "25.11"
+
+# USB audio DAC (main output)
+pactl_sink_name: alsa_output.usb-Generic_USB_Audio-00.HiFi__Speaker__sink
+
+background_image: "{{ home_dir }}/{{ configs_repo }}/pictures/IMAG7297.JPG"

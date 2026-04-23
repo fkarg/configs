@@ -2,156 +2,211 @@
 { config, pkgs, ...}: with pkgs;
 
 {
-  environment.systemPackages = with pkgs; [
-      # 'basic os functionality'
-      wget
-      git
-      git-lfs
-      eza
-      curl
-      fish
-      htop
-      btop
-      iftop
-      zip
-      unzip
-      gnutar
-      screen
-      xclip
-      xorg.xkill
-      xorg.xinit
-      inetutils
-      gparted
-      poppler-utils # pdfunite etc
-      lm_sensors
-      tree
-      usbutils
+   environment.systemPackages = with pkgs; [
+       # 'basic os functionality'
+       wget
+       git
+       git-lfs
+       eza
+       curl
+       fish
+       htop
+       btop
+       iftop
+       zip
+       unzip
+       gnutar
+       screen
+       xclip
+       inetutils
+       gparted
+       poppler-utils # pdfunite etc
+       lm_sensors
+       tree
+       usbutils
 
-      # network debugging
-      dig
-      nmap
+       # network debugging
+       dig
+       nmap
 
-      # misc productivity
-      neovim
-      vim  # vimdiff
-      ripgrep
-      ripgrep-all
-      broot
-      direnv
-      redshift
-      feh
-      vlc
-      jq
-      lsof
-      screen-message
-      klavaro
-      baobab
-      pdftk
-      ghostscript
-      scrot
-      tokei
-      pulseaudioFull
-      gnumake
-      docker-compose
-      openvpn
-      shutter
-      zellij
-      zoxide
+# misc productivity
+        neovim
+        vim  # vimdiff
+        ripgrep
+        ripgrep-all
+        broot
+        direnv
+        redshift
+        feh
+        vlc
+        jq
+        lsof
+        screen-message
+        klavaro
+        baobab
+        pdftk
+        ghostscript
+        scrot
+        tokei
+        pulseaudioFull
+        gnumake
+        docker-compose
+        openvpn
+        shutter
+        zellij
+        zoxide
+        bat
+        coreutils
+        gh
+        yq
+        socat
 
-      # python is in user: `pars.nix`
-      # poetry
-      # pdm
-      # python311Packages.virtualenv
-      # python311Packages.python
+       # python is in user: `pars.nix`
+       # poetry
+       # pdm
+       # python311Packages.virtualenv
+       # python311Packages.python
 
-      # global for generating correct xdg-open/mime bindings
-      # located at /run/current-system/sw/share/applications/
+       # global for generating correct xdg-open/mime bindings
+       # located at /run/current-system/sw/share/applications/
 
-      # 'office'
-      libreoffice-fresh
-      gimp
-      # pstoedit
-      # inkscape
+       # 'office'
+       libreoffice-fresh
+       gimp
+       # pstoedit
+       # inkscape
 
-      # browser
-      chromium
-      firefox
-      # tor-browser-bundle-bin
+       # browser
+       chromium
+       firefox
+       # tor-browser-bundle-bin
 
-      # messenger
-      telegram-desktop
-      slack
-      thunderbird
-      signal-desktop
+	# llm stuff
+	ollama
 
-      # viewing pdfs
-      evince
-      pdfpc
+# messenger
+        telegram-desktop
+        slack
+        thunderbird
+        signal-desktop
+        protonmail-desktop
 
-      # for building i3status-rs
-      pkg-config
-      dbus.dev
-      # for building in general
-      binutils-unwrapped
-      # gui open zip archives
-      file-roller
-      # audio
-      pavucontrol
-      # 'better' terminal
-      kitty
-      alacritty
-      tmux
-      # composer for transparent terminal
-      xcompmgr
-      # extended uname
-      neofetch
-      # progress bar for cp/mv
-      progress
-      watch
-      # for scientific research
-      zotero
+        # proton-drive: no Linux package available yet (macOS only per 2026)
+        proton-vpn
 
-      # games
-      steam-run
+       # viewing pdfs
+       evince
+       pdfpc
 
-      # other / util
-      subsurface # diving records
-      networkmanagerapplet
-      intel-gpu-tools
-      libva-utils
-      wireguard-tools
-      nettools
+	# other?
+	vscode.fhs
+        nix-output-monitor
 
-      # fin
-      beancount
-      # fava is temporarily disabled due to upstream build failure in current nixpkgs
+       # for building i3status-rs
+       pkg-config
+       dbus.dev
+       # for building in general
+       binutils-unwrapped
+       # gui open zip archives
+       file-roller
+       # audio
+       pavucontrol
+       # 'better' terminal
+       kitty
+       alacritty
+       tmux
+# extended uname
+        fastfetch
+       # progress bar for cp/mv
+       progress
+       watch
+       # for scientific research
+       zotero
 
-      # signal
-      clang
-      libclang
-      cmake
-      gnumake
-      protobuf
-  ];
-  nixpkgs.config.allowUnfree = true;
-  nixpkgs.config.pulseaudio = true;
+       # games
+       steam-run
 
-  programs.ausweisapp = {
-    openFirewall = true;
-    enable = true;
-  };
+       # other / util
+       subsurface # diving records
+       networkmanagerapplet
+       intel-gpu-tools
+       libva-utils
+       wireguard-tools
+       nettools
 
-  # fonts.
-  fonts.packages = with pkgs; [
-    noto-fonts
-    noto-fonts-cjk-sans
-    noto-fonts-color-emoji
-    liberation_ttf
-    fira-code
-    fira-code-symbols
-    # mplus-outline-fonts
-    dina-font
-    proggyfonts
-    font-awesome_4
-  ];
+# fin
+        beancount
+        proton-pass
+        # fava is temporarily disabled due to upstream build failure in current nixpkgs
+
+       # signal
+       clang
+       libclang
+       cmake
+       gnumake
+       protobuf
+
+# Wayland utilities (replacing xorg equivalents)
+        wlr-randr        # xrandr analogue
+        wtype           # wtype - wayland xdotool equivalent
+        wev             # wayland equivalent to xev
+        wf-recorder     # screen recording
+        wayland-utils   # various wayland utilities
+
+        # kubernetes / k3d
+        k3d
+        kubectl
+        kubecfg
+        kustomize
+        k9s
+
+        # containers / docker
+        docker
+        docker-buildx
+
+        # from brew_packages_common (CLI tools not yet present)
+        lazydocker
+        lazygit
+        graphviz
+        iperf
+        ncdu
+        psutils
+        qpdf
+        tokei
+        watch
+        typst
+
+        # language servers / dev tooling from brew_packages_common
+        ansible
+        ansible-language-server
+        ansible-lint
+        beancount
+        languagetool
+        git-filter-repo
+        tinymist
+        gemini-cli
+
+        # nodejs is in user packages
+    ];
+   nixpkgs.config.allowUnfree = true;
+   nixpkgs.config.pulseaudio = true;
+
+programs.ausweisapp = {
+      openFirewall = true;
+      enable = true;
+    };
+
+   # fonts.
+   fonts.packages = with pkgs; [
+     noto-fonts
+     noto-fonts-cjk-sans
+     noto-fonts-color-emoji
+     liberation_ttf
+     fira-code
+     fira-code-symbols
+     # mplus-outline-fonts
+     dina-font
+     proggyfonts
+     font-awesome_4
+   ];
 }

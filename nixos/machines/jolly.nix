@@ -1,101 +1,59 @@
-# # put here:
-# modify config for i3status-rs (battery, network)
-# adapt fish/config (greet on tux)
-# add /datadisk to fstab
-#
-# modify startup script:
-# - setting background
-{ config, pkgs, ... }: with pkgs; rec
+# jolly — AMD Ryzen / RTX 3070 desktop with Wayland
+{ config, lib, pkgs, ... }:
 
 {
+  # Keep jolly on a manually controlled update path until the host baseline
+  # is cleaned up and reproducible again.
+  system.autoUpgrade.enable = lib.mkForce false;
+  services.cron.systemCronJobs = lib.mkForce [
+    "0 * * * *      pars  /home/pars/passive_update.sh"
+  ];
 
-  # `i915.enable_psr=1`:  force-enable psr (should be enabled default in >=5.14) to reach deeper suspend states on idle
-  # `mem_sleep_default=deep`: 'shutdown' system and go to deep suspension instead of `s2idle`. This trades reduced energy consumption for increased resume time delay.
-  # boot.kernelParams = [ "mem_sleep_default=deep" "nvme.noacpi=1" "mitigations=off" "fsck.mode=force" "fsck.repair=yes" "i915.enable_psr=1"];
-  boot.kernelParams = [ "fsck.mode=force" "fsck.repair=yes"];
-  # boot.kernelParams = [ "mem_sleep_default=deep" ];
-  # run `sudo powertop --auto-tune` on startup. Reduces power consumption on idle
-  powerManagement.powertop.enable = true;
+boot.kernelParams = [ 
+      "fsck.mode=force" 
+      "fsck.repair=yes" 
+      "usbcore.autosuspend=-1" 
+    ];
 
-  # fileSystems."/" =
-  #   { device = "/dev/disk/by-uuid/ba2ef340-5436-4a5e-a39c-791de5bf38a7";
-  #     fsType = "ext4";
-  #   };
+   boot.loader.systemd-boot.enable = true;
+   boot.loader.efi.canTouchEfiVariables = true;
 
-  # boot.initrd.luks.devices."crypted".device = "/dev/disk/by-uuid/3b04250a-2b83-4498-a590-c2de44dd7b60";
+    # Greetd with true auto-login to Hyprland (no password)
+    services.greetd.enable = true;
+    services.greetd.settings = rec {
+      initial_session = {
+        command = "${pkgs.hyprland}/bin/start-hyprland";
+        user = "pars";
+      };
+      default_session = initial_session;
+    };
 
-  # fileSystems."/boot" =
-  #   { device = "/dev/disk/by-uuid/4135-4CBC";
-  #     fsType = "vfat";
-  #   };
+    # Hyprland
+    programs.hyprland.enable = true;
 
-  swapDevices = [ ];
+   networking.hostName = "jolly";
+   virtualisation.docker.enable = true;
 
-  # Use the systemd-boot EFI boot loader.
-  boot.loader.systemd-boot.enable = true;
-  boot.loader.efi.canTouchEfiVariables = true;
+   services.xserver.videoDrivers = [ "nvidia" "modesetting" "fbdev" ];
 
-  # networking
-  networking.hostName = "jolly";
-  # networking.wireless.enable = true;  # Enables wireless support via wpa_supplicant.
-  # networking.networkmanager.enable = true;
+   services.libinput.enable = true;
 
-  # The global useDHCP flag is deprecated, therefore explicitly set to false here.
-  # Per-interface useDHCP will be mandatory in the future, so this generated config
-  # replicates the default behaviour.
-  # networking.interfaces.wlp170s0.useDHCP = true;
-  # networking.useDHCP = true;
+   hardware.bluetooth.enable = true;
+   hardware.bluetooth.powerOnBoot = true;
+   services.blueman.enable = true;
 
-  # virtualisation.lxd.enable = true;
-  virtualisation.docker.enable = true;
+   hardware.enableRedistributableFirmware = true;
 
-  # enable touchpad support
-  services.libinput = {
-    enable = true;
-    touchpad.disableWhileTyping = true;
-    # touchpad.naturalScrolling = true;
-  };
+boot.initrd.kernelModules = [ "mt7925e" "amdgpu" "xhci_pci" "usb_storage" ];
 
-  # bluetooth
-  # $ bluetoothctl
-  # [bluetooth] # power on
-  # [bluetooth] # agent on
-  # [bluetooth] # default-agent
-  # [bluetooth] # scan on
-  # ...put device in pairing mode and wait [hex-address] to appear here...
-  # [bluetooth] # pair [hex-address]
-  # [bluetooth] # connect [hex-address]
-  hardware.bluetooth.enable = true;
-  hardware.bluetooth.powerOnBoot = true; # powers up the default Bluetooth controller on boot
-  services.blueman.enable = true;
+hardware.nvidia = {
+      package = config.boot.kernelPackages.nvidiaPackages.stable;
+      open = true;
+      modesetting.enable = true;
+      powerManagement.enable = true;
+    };
 
-  hardware.acpilight.enable = true;
-  # hardware.pulseaudio.extraConfig = "load-module module-udev-detect use_ucm=0 tsched=0\nload-module module-echo-cancel source_name=noechosource sink_name=noechosink\nset-default-source noechosource\nset-default-sink noechosink";
-  # hardware.pulseaudio.daemon.config = {
-  #   # flat-volumes=no
-  #   resample-method="speex-float-5";
-  #   default-sample-rate = 48000;
-  #   # resample-method = "src-sinc-best-quality";
-  #   default-sample-format = "s16le";
-  # };
-
-  # imports =
-  #   [
-  #     /home/pars/vpn/vpn_config.nix
-  #   ];
-
-  # firmware updates
-  services.fwupd.enable = true;
-
-  # this disables nix-env ?
-  # nix = {
-  #   package = pkgs.nixFlakes; # or versioned attributes like nix_2_7
-  #   extraOptions = ''
-  #     experimental-features = nix-command flakes
-  #   '';
-  # };
-
-  # solaar is a manager for logitech unifying devices
-  # services.solaar.enable = true;
-  hardware.logitech.wireless.enable = true;
+   boot.blacklistedKernelModules = [ "nouveau" ];
+   hardware.graphics.enable = true;
+   hardware.graphics.enable32Bit = true;
 }

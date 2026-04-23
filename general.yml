@@ -106,10 +106,15 @@
         file: vars/caeli.yml
       when: client_role is defined and client_role == 'caeli'
 
+    - name: Load jolly variables
+      include_vars:
+        file: vars/jolly.yml
+      when: client_role is defined and client_role == 'jolly'
+
     - name: Fail if client role not defined
       fail:
         msg: "Unsupported or undefined client_role='{{ client_role | default('UNSET') }}'"
-      when: "client_role is not defined or (client_role not in ['tux','desktop','terminal','serf','artus','novo','margo','SNB','hp440g5','caeli'])"
+      when: "client_role is not defined or (client_role not in ['tux','desktop','terminal','serf','artus','novo','margo','SNB','hp440g5','caeli','jolly'])"
 
       # - import_tasks: tasks/testing.yml
       #   when: client_role is defined

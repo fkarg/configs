@@ -61,15 +61,29 @@
         # dev
         pkgs.postgresql
 
+        # minio client
+        pkgs.minio-client
+
+        # rust (user-level toolchain via rustup)
+        # gcc is system-level, rustup/cargo managed per-user
+
+        # nodejs + pnpm already above
+
         # global python
         pkgs.python313Packages.ipython
         pkgs.python313Packages.pygments
         pkgs.python313Packages.virtualenv
         pkgs.python313Packages.uv
+        pkgs.python313Packages.setuptools
         pkgs.python313
         pkgs.poetry
         pkgs.pdm
         pkgs.ansible
+
+        # beancount ecosystem
+        pkgs.beancount
+        pkgs.beanquery
+        pkgs.fava
 
         # rust
         pkgs.gcc
@@ -86,12 +100,18 @@
         # tex
         # pkgs.texlive.combined.scheme-full
         pkgs.typst
+        pkgs.tinymist
 
-        # fun
-        pkgs.cowsay
-        pkgs.fortune
-        pkgs.sl
-        pkgs.doge
+         # fun
+         pkgs.cowsay
+         pkgs.fortune
+         pkgs.sl
+         pkgs.doge
+         pkgs.opencode
+         pkgs.gemini-cli
+
+        # from brew_packages_common (CLI tools)
+        # batt: no nixpkgs equivalent — use system upower/acpi instead
 
         pkgs.xdg-user-dirs
     ];
@@ -99,7 +119,7 @@
 
   environment.variables = {
     EDITOR = "nvim";
-    BROWSER = "chromium";
+    BROWSER = "firefox";
     PAGER = "less -R";
     TZ = "Europe/Berlin";
     # LD_LIBRARY_PATH = "$LD_LIBRARY_PATH:${pkgs.gcc12.cc.lib}/lib64/:${stdenv.cc.cc.lib}/lib/";

@@ -21,7 +21,7 @@
       ./configs/{{ username }}.nix
     ];
 
-  system.stateVersion = "21.05";
+  system.stateVersion = "{{ nixos_state_version | default('25.11') }}";
   system.autoUpgrade.enable = true;
 }
 

@@ -4,8 +4,23 @@ This is a collection of configuration files and related automation parts.
 
 Especially of interest could be the nix-configuration files (mainly in the `nixos` folder), and the ansible setup of local files.
 
-### Client\_Roles
+## Migration Notes
+
+Additional host-specific documentation:
+
+- `docs/jolly-hardening-plan.md` contains the stabilization plan for the `jolly` NixOS host.
+- `docs/hyprland-migration-guide.md` documents the i3/X11 to Hyprland/Wayland migration, including replacement options for bars, lockers, audio, and other desktop tooling.
+
+Top-level `configuration.nix` note:
+
+- `configuration.nix` in this repo is a reference/example entrypoint, not the authoritative live entrypoint for every machine.
+- The repo is shared across multiple machines, including non-NixOS hosts.
+- Machine-local generated hardware details may intentionally stay in `/etc/nixos/hardware-configuration.nix` on the target host.
+
+## Client\_Roles
+
 Currently available `client_role`s are:
+
 - tux
 - hp440g5
 - desktop

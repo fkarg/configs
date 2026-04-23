@@ -120,12 +120,14 @@
     dest: ~/.local/share/fonts
     remote_src: yes
   when: ansible_facts['system'] == 'Linux'
+  ignore_errors: true
 
 - name: Duplicate Regular Fontin File
   copy:
     src: ~/.local/share/fonts/Fontin-Regular.otf
     dest: ~/.local/share/fonts/Fontin.otf
     mode: 0644
+  ignore_errors: true
   when: ansible_facts['system'] == 'Linux'
 
 # - name: link alacritty config
