@@ -6,11 +6,6 @@ Especially of interest could be the nix-configuration files (mainly in the `nixo
 
 ## Migration Notes
 
-Additional host-specific documentation:
-
-- `docs/jolly-hardening-plan.md` contains the stabilization plan for the `jolly` NixOS host.
-- `docs/hyprland-migration-guide.md` documents the i3/X11 to Hyprland/Wayland migration, including replacement options for bars, lockers, audio, and other desktop tooling.
-
 Top-level `configuration.nix` note:
 
 - `configuration.nix` in this repo is a reference/example entrypoint, not the authoritative live entrypoint for every machine.
