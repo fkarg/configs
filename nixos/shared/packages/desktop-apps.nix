@@ -2,17 +2,11 @@
 
 {
   environment.systemPackages = with pkgs; [
-    # desktop utilities
-    redshift
-    feh
+    # media and document tools
     vlc
-    screen-message
     klavaro
-    baobab
     pdftk
     ghostscript
-    scrot
-    shutter
 
     # office and content creation
     # libreoffice-fresh
@@ -35,15 +29,10 @@
     evince
     pdfpc
 
-    # desktop applications and integration helpers
+    # desktop applications
     vscode.fhs
-    file-roller
-    pavucontrol
     zotero
     subsurface
-    networkmanagerapplet
-    intel-gpu-tools
-    libva-utils
 
     # misc heavy applications
     steam-run

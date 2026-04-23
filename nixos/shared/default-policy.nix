@@ -5,6 +5,5 @@
   imports = [
     ./policy/kernel.nix
     ./policy/pulseaudio.nix
-    ./policy/auto-upgrade.nix
   ];
 }

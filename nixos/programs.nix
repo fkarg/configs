@@ -7,7 +7,8 @@
                 ./shared/packages/nixpkgs-policy.nix
                 ./shared/packages/base-cli.nix
                 ./shared/packages/desktop-apps.nix
-                ./shared/packages/dev-tools.nix
+                ./shared/packages/desktop-integration.nix
+                ./shared/packages/developer-tooling.nix
                 ./shared/packages/wayland-tools.nix
                 ./shared/packages/system-fonts.nix
                 ./shared/programs/ausweisapp.nix

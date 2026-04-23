@@ -5,8 +5,6 @@
     # build and compilation tools
     tokei
     gnumake
-    docker-compose
-    openvpn
     pkg-config
     dbus.dev
     binutils-unwrapped
@@ -15,7 +13,9 @@
     cmake
     protobuf
 
-    # kubernetes and containers
+    # infrastructure and containers
+    docker-compose
+    openvpn
     k3d
     kubectl
     kubecfg
@@ -25,7 +25,7 @@
     docker-buildx
     lazydocker
 
-    # general development utilities
+    # general developer utilities
     lazygit
     graphviz
     iperf
@@ -34,7 +34,7 @@
     qpdf
     typst
 
-    # language tooling
+    # language and repository tooling
     ansible
     ansible-language-server
     ansible-lint
