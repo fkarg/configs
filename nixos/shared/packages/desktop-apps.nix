@@ -19,7 +19,7 @@
 
     # communication
     telegram-desktop
-    slack
+    teams-for-linux
     thunderbird
     signal-desktop
     protonmail-desktop
@@ -35,7 +35,6 @@
     subsurface
 
     # misc heavy applications
-    steam-run
     proton-pass
     ollama
   ];

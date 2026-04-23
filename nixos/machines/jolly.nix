@@ -2,6 +2,12 @@
 { config, lib, pkgs, ... }:
 
 {
+  imports = [
+    ../shared/packages/gaming-compat.nix
+    ../shared/programs/steam-defaults.nix
+    ../shared/desktops/hyprland-session.nix
+  ];
+
   # Keep jolly on a manually controlled update path until the host baseline
   # is cleaned up and reproducible again.
   system.autoUpgrade.enable = lib.mkForce false;
@@ -9,10 +15,10 @@
     "0 * * * *      pars  /home/pars/passive_update.sh"
   ];
 
-boot.kernelParams = [ 
-      "fsck.mode=force" 
-      "fsck.repair=yes" 
-      "usbcore.autosuspend=-1" 
+boot.kernelParams = [
+      "fsck.mode=force"
+      "fsck.repair=yes"
+      "usbcore.autosuspend=-1"
     ];
 
    boot.loader.systemd-boot.enable = true;
@@ -27,9 +33,6 @@ boot.kernelParams = [
       };
       default_session = initial_session;
     };
-
-    # Hyprland
-    programs.hyprland.enable = true;
 
    networking.hostName = "jolly";
    virtualisation.docker.enable = true;
