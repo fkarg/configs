@@ -5,7 +5,6 @@
   # Prefer supported module options over per-machine steam.override hacks.
   programs.steam = {
     enable = true;
-    extest.enable = true;
     protontricks.enable = true;
     extraCompatPackages = with pkgs; [
       proton-ge-bin

@@ -13,14 +13,15 @@
     pkgs.minio-client
 
     # global python
-    pkgs.python313Packages.ipython
-    pkgs.python313Packages.pygments
-    pkgs.python313Packages.virtualenv
-    pkgs.python313Packages.uv
-    pkgs.python313Packages.setuptools
-    pkgs.python313
-    pkgs.poetry
-    pkgs.pdm
+    pkgs.python314Packages.ipython
+    pkgs.python314Packages.uv
+    pkgs.python314Packages.setuptools
+    pkgs.python314
+    # pkgs.poetry
+    # Temporarily disabled on current nixpkgs: pdm-2.26.6 declares
+    # installer<0.8 but nixpkgs provides installer 1.0.0, which fails the
+    # Python runtime dependency check and blocks system builds.
+    # pkgs.pdm
     pkgs.ansible
 
     # beancount ecosystem

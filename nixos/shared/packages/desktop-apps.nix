@@ -30,6 +30,8 @@
     pdfpc
 
     # desktop applications
+    kdePackages.dolphin
+    kdePackages.kio-extras
     vscode.fhs
     zotero
     subsurface
@@ -37,5 +39,6 @@
     # misc heavy applications
     proton-pass
     ollama
+    lmstudio
   ];
 }
