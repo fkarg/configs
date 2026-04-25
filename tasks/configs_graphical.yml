@@ -39,6 +39,21 @@
     path: ~/.config/kitty
   register: kitty_config_stat
 
+- name: Check if hypr config is a directory (not symlink)
+  stat:
+    path: ~/.config/hypr
+  register: hypr_config_stat
+
+- name: Check if hyprland.conf is already a symlink
+  stat:
+    path: ~/.config/hypr/hyprland.conf
+  register: hyprland_conf_stat
+
+- name: Check if legacy Mozilla Firefox path exists
+  stat:
+    path: ~/.mozilla/firefox
+  register: mozilla_firefox_legacy_stat
+
 - name: Remove existing kitty config directory (requires confirm_overwrite=true)
   file:
     path: ~/.config/kitty
@@ -50,6 +65,12 @@
     - confirm_overwrite | default(false) | bool
     - not ansible_check_mode
 
+- name: Ensure hypr config directory exists
+  file:
+    path: ~/.config/hypr
+    state: directory
+  when: ansible_facts['system'] == 'Linux'
+
 - name: Link kitty config
   file:
     src: "~/{{ configs_repo }}/{{ dotconfigdir }}/kitty"
@@ -58,6 +79,41 @@
   when:
     - repo is succeeded and terminal == "kitty"
     - not (kitty_config_stat.stat.exists and kitty_config_stat.stat.isdir and not kitty_config_stat.stat.islnk and not (confirm_overwrite | default(false) | bool))
+
+- name: Remove existing hyprland.conf file (requires confirm_overwrite=true for regular files)
+  file:
+    path: ~/.config/hypr/hyprland.conf
+    state: absent
+  when:
+    - hyprland_conf_stat.stat.exists
+    - not hyprland_conf_stat.stat.islnk
+    - confirm_overwrite | default(false) | bool
+    - not ansible_check_mode
+
+- name: Link hyprland config file
+  file:
+    src: "~/{{ configs_repo }}/{{ dotconfigdir }}/hypr/hyprland.conf"
+    dest: ~/.config/hypr/hyprland.conf
+    state: link
+  when:
+    - repo is succeeded
+    - ansible_facts['system'] == 'Linux'
+    - not (hyprland_conf_stat.stat.exists and not hyprland_conf_stat.stat.islnk and not (confirm_overwrite | default(false) | bool))
+
+- name: Ensure legacy Mozilla directory exists
+  file:
+    path: ~/.mozilla
+    state: directory
+  when: ansible_facts['system'] == 'Linux'
+
+- name: Link legacy Firefox profile path to XDG location
+  file:
+    src: ~/.config/mozilla/firefox
+    dest: ~/.mozilla/firefox
+    state: link
+  when:
+    - ansible_facts['system'] == 'Linux'
+    - not (mozilla_firefox_legacy_stat.stat.exists and not mozilla_firefox_legacy_stat.stat.islnk and not (confirm_overwrite | default(false) | bool))
 
 # Background picture
 - name: Create folder for background picture
