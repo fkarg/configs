@@ -8,12 +8,15 @@
     ../shared/desktops/hyprland-session.nix
   ];
 
-  # Keep jolly on a manually controlled update path until the host baseline
-  # is cleaned up and reproducible again.
-  system.autoUpgrade.enable = lib.mkForce false;
-  services.cron.systemCronJobs = lib.mkForce [
-    "0 * * * *      pars  /home/pars/passive_update.sh"
-  ];
+  # Keep automatic upgrades, but never live-switch the graphical/Nvidia stack
+  # out from under a running Hyprland session. A new generation is prepared for
+  # the next boot instead.
+  system.autoUpgrade = {
+    enable = lib.mkForce true;
+    operation = "boot";
+    allowReboot = false;
+  };
+  services.cron.systemCronJobs = lib.mkForce [];
 
 boot.kernelParams = [
       "fsck.mode=force"
@@ -37,13 +40,22 @@ boot.kernelParams = [
    networking.hostName = "jolly";
    virtualisation.docker.enable = true;
 
-   services.xserver.videoDrivers = [ "nvidia" "modesetting" "fbdev" ];
+    services.xserver.videoDrivers = [ "nvidia" "modesetting" "fbdev" ];
 
-   services.libinput.enable = true;
+    services.libinput.enable = true;
 
-   hardware.bluetooth.enable = true;
-   hardware.bluetooth.powerOnBoot = true;
-   services.blueman.enable = true;
+    services.hardware.openrgb.enable = true;
+
+    hardware.i2c.enable = true;
+    boot.kernelModules = [ "i2c-dev" ];
+
+    environment.systemPackages = with pkgs; [
+      openrgb-with-all-plugins
+    ];
+
+    hardware.bluetooth.enable = true;
+    hardware.bluetooth.powerOnBoot = true;
+    services.blueman.enable = true;
 
    hardware.enableRedistributableFirmware = true;
 
