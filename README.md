@@ -12,7 +12,14 @@ Top-level `configuration.nix` note:
 - The repo is shared across multiple machines, including non-NixOS hosts.
 - Machine-local generated hardware details may intentionally stay in `/etc/nixos/hardware-configuration.nix` on the target host.
 
-## Client\_Roles
+NixOS notes:
+
+- The active NixOS entrypoint on a host can be `/etc/nixos/configuration.nix`, which may import this repo through `/etc/nixos/configs`.
+- Host-specific NixOS behavior belongs in the matching machine module under `nixos/machines/`.
+- Shared desktop plumbing for Hyprland, PipeWire, and app defaults lives under `nixos/shared/`.
+- For `jolly`, the important recovery rule is to prepare upgrades for the next boot instead of live-switching the graphical stack.
+
+## Client Roles
 
 Currently available `client_role`s are:
 
@@ -20,9 +27,11 @@ Currently available `client_role`s are:
 - hp440g5
 - desktop
 - terminal
+- artus/margo (NixOS on Framework)
 - caeli (macOS)
+- jolly (NixOS on tower PC)
 
-each has it's own little modifications.
+each has it's own modifications.
 
 ### Usage
 
