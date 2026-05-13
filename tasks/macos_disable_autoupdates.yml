@@ -1,0 +1,63 @@
+---
+# Disable in-app auto-update mechanisms for casks that ship Sparkle or
+# vendor-specific updaters, so Homebrew remains the source of truth.
+#
+# Only apps with a documented, idempotent on-disk setting are handled here.
+# Apps that gate updates behind an in-app toggle only (Discord, Telegram,
+# WhatsApp, Signal, Proton suite, Ollama, ComfyUI, Wispr Flow, YT Music,
+# Logi Options+, Raycast, Obsidian, Tor Browser) are intentionally skipped.
+
+- name: Disable Sparkle auto-update checks
+  community.general.osx_defaults:
+    domain: "{{ item.domain }}"
+    key: "{{ item.key }}"
+    type: bool
+    value: false
+    state: present
+  loop:
+    - { domain: com.amethyst.Amethyst,        key: SUEnableAutomaticChecks }
+    - { domain: com.amethyst.Amethyst,        key: SUAutomaticallyUpdate }
+    - { domain: org.hammerspoon.Hammerspoon,  key: SUEnableAutomaticChecks }
+    - { domain: org.hammerspoon.Hammerspoon,  key: SUAutomaticallyUpdate }
+    - { domain: com.knollsoft.Rectangle,      key: SUEnableAutomaticChecks }
+    - { domain: com.knollsoft.Rectangle,      key: SUAutomaticallyUpdate }
+    - { domain: eu.exelban.Stats,             key: SUEnableAutomaticChecks }
+    - { domain: eu.exelban.Stats,             key: SUAutomaticallyUpdate }
+    - { domain: org.videolan.vlc,             key: SUEnableAutomaticChecks }
+    - { domain: org.videolan.vlc,             key: SUAutomaticallyUpdate }
+  when: ansible_facts['system'] == 'Darwin'
+
+- name: Disable Microsoft AutoUpdate (controls Excel, Word, PowerPoint, Outlook, Teams)
+  community.general.osx_defaults:
+    domain: com.microsoft.autoupdate2
+    key: HowToCheck
+    type: string
+    value: Manual
+    state: present
+  when: ansible_facts['system'] == 'Darwin'
+
+- name: Disable Microsoft AutoUpdate automatic download
+  community.general.osx_defaults:
+    domain: com.microsoft.autoupdate2
+    key: AutomaticDownload
+    type: bool
+    value: false
+    state: present
+  when: ansible_facts['system'] == 'Darwin'
+
+- name: Disable Google Keystone (Chrome) update checks
+  community.general.osx_defaults:
+    domain: com.google.Keystone.Agent
+    key: checkInterval
+    type: float
+    value: 0
+    state: present
+  when: ansible_facts['system'] == 'Darwin'
+
+# VS Code: not handled here. Its updater is governed by user settings.json
+# ("update.mode": "none") and "extensions.autoUpdate": false — add those to
+# dotconfig/Code/User/settings.json if/when that config is tracked.
+#
+# Firefox / Tor Browser: managed via app.update.auto in profile prefs or via
+# /Library/Application Support/Mozilla/distribution/policies.json (enterprise
+# policy). Not configured here to avoid touching profiles.

@@ -123,6 +123,9 @@
     - import_tasks: tasks/macos_packages.yml
       when: client_role is defined and ansible_facts['system'] == 'Darwin'
 
+    - import_tasks: tasks/macos_disable_autoupdates.yml
+      when: client_role is defined and ansible_facts['system'] == 'Darwin'
+
     - import_tasks: tasks/terminal.yml
       when: client_role is defined
 
