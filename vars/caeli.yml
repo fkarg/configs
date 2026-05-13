@@ -104,6 +104,7 @@ brew_casks_common:
   - hammerspoon
   - karabiner-elements
   - logi-options+
+  - raycast
   - rectangle
   - scroll-reverser
   - stats
