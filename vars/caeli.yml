@@ -8,108 +8,154 @@ zoxide: true
 
 # common brew formulae for macOS host (top-level only, deps auto-installed)
 brew_packages_common:
-  - ansible
-  - ansible-language-server
-  - ansible-lint
+  # shell, prompt & file utilities
   - bat
-  - batt
-  - beancount
-  - beancount-language-server
-  - beanquery
   - coreutils
   - cowsay
   - direnv
+  - eza
+  - fish
+  - fortune
+  - htop
+  - ncdu
+  - neofetch
+  - ripgrep-all
+  - watch
+  - wget
+  - zoxide
+
+  # editor, language servers & linters
+  - languagetool
+  - neovim
+  - tinymist
+  - yamllint
+
+  # git & dev workflow
+  - gh
+  - git
+  - git-filter-repo
+  - glow
+  - lazygit
+  - tokei
+
+  # programming languages & runtimes
+  - ghc
+  - node@24
+  - oven-sh/bun/bun
+  - pnpm
+  - python-setuptools
+  - rust
+  - uv
+
+  # containers & kubernetes
   - docker
   - docker-buildx
   - docker-compose
-  - eza
-  - fava
-  - fish
-  - fortune
-  - gemini-cli
-  - gh
-  - ghc
-  - ghostscript
-  - git
-  - git-filter-repo
-  - graphviz
-  - htop
-  - iperf
   - k3d
   - k9s
   - kubecfg
   - kubernetes-cli
   - kustomize
-  - languagetool
-  - lazygit
-  - minio-mc
-  - ncdu
-  - neofetch
-  - neovim
+
+  # networking & remote access
+  - iperf
+  - ldns
   - nmap
-  - node@24
-  - opencode
-  - oven-sh/bun/bun
-  - pnpm
-  - postgresql@17
-  - psutils
-  - python-setuptools
-  - qpdf
-  - ripgrep-all
-  - rust
-  - sleepwatcher
   - socat
-  - tinymist
-  - tokei
+  - xpipe
+
+  # storage & databases
+  - minio-mc
+  - postgresql@17
+
+  # documents & typesetting
+  - ghostscript
+  - graphviz
+  - psutils
+  - qpdf
   - typst
-  - uv
-  - watch
-  - wget
-  - yq
-  - zoxide
+
+  # finance / accounting
+  - beancount
+  - beancount-language-server
+  - beanquery
+  - fava
+
+  # infrastructure / config management
+  - ansible
+  - ansible-language-server
+  - ansible-lint
+
+  # AI / coding agents
+  - ccusage
+  - gemini-cli
+  - opencode
+
+  # macOS-specific helpers
+  - batt
+  - sleepwatcher
 brew_packages_extra: []
 
 # GUI apps / casks
 brew_casks_common:
+  # window management & system tweaks
   - amethyst
-  - betterdiscord-installer
   - caffeine
-  - claude-code
-  - codex
-  - comfyui
-  - copilot-cli
-  - docker-desktop
-  - firefox
-  - foxit-pdf-editor
-  - foxitreader
-  - google-chrome
   - hammerspoon
   - karabiner-elements
-  - kitty
   - logi-options+
-  - microsoft-excel
-  - microsoft-outlook
-  - microsoft-powerpoint
+  - rectangle
+  - scroll-reverser
+  - stats
+
+  # terminals & editors
+  - kitty
+  - visual-studio-code
+
+  # browsers
+  - firefox
+  - google-chrome
+  - tor-browser
+
+  # communication & messaging
+  - betterdiscord-installer
+  - discord
   - microsoft-teams
-  - microsoft-word
-  - obsidian
-  - ollama-app
+  - signal
+  - telegram
+  - telegram-desktop
+  - whatsapp
+
+  # proton suite
   - proton-drive
   - proton-mail
   - proton-pass
   - protonvpn
-  - rectangle
-  - raycast
-  - scroll-reverser
-  - signal
-  - stats
-  - telegram
-  - telegram-desktop
-  - tor-browser
+
+  # microsoft office
+  - microsoft-excel
+  - microsoft-outlook
+  - microsoft-powerpoint
+  - microsoft-word
+
+  # productivity & documents
+  - libreoffice
+  - obsidian
+
+  # AI / coding agents
+  - claude-code
+  - codex
+  - comfyui
+  - copilot-cli
+  - ollama-app
+  - wispr-flow
+
+  # containers & virtualization
+  - docker-desktop
   - utm
-  - visual-studio-code
+
+  # media
   - vlc
-  - whatsapp
   - yt-music
 brew_casks_extra: []
 
