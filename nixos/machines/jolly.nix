@@ -12,6 +12,10 @@
 
   networking.hostName = "jolly";
 
+  # GRUB generation labels use system.nixos.label instead of the systemd-boot
+  # "version" field. Keep the kernel visible in the generation selector.
+  system.nixos.label = "${config.system.nixos.version}-linux-${config.boot.kernelPackages.kernel.version}";
+
   # Keep automatic upgrades, but never live-switch the graphical/NVIDIA stack
   # out from under a running desktop session.
   system.autoUpgrade = {
@@ -33,7 +37,9 @@
     })
   ];
 
-  boot.kernelPackages = pkgs.linuxPackages_latest;
+  # Keep the default generation on the kernel line that is known to reach GNOME
+  # on this host. Newer kernels are available as explicit test specialisations.
+  boot.kernelPackages = pkgs.linuxPackages_6_12;
   boot.kernelParams = [
     "fsck.mode=force"
     "fsck.repair=yes"
@@ -56,11 +62,16 @@
   ];
   boot.initrd.supportedFilesystems = [ "vfat" "ext4" ];
   boot.initrd.systemd.services.copy-luks-keyfile = {
+    requiredBy = [ "systemd-cryptsetup@cryptroot.service" ];
     before = [ "systemd-cryptsetup@cryptroot.service" ];
+    after = [ "systemd-udev-settle.service" ];
+    requires = [ "systemd-udev-settle.service" ];
+    unitConfig.DefaultDependencies = false;
     serviceConfig.TimeoutSec = 70;
     script = lib.mkForce ''
       mkdir -p /tmp/usbkey
       echo "copy-luks-keyfile: starting USB/removable search..."
+      udevadm settle --timeout=15 || true
 
       try_key_device() {
         dev="$1"
@@ -116,6 +127,8 @@
       }
 
       for attempt in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30; do
+        udevadm settle --timeout=2 || true
+
         for dev in $(candidate_devices); do
           try_key_device "$dev"
         done
@@ -141,14 +154,23 @@
   boot.loader.generic-extlinux-compatible.enable = false;
 
   hardware.enableRedistributableFirmware = true;
+  hardware.mediatek-mt7927.enable = lib.mkOverride 90 false;
+  hardware.mediatek-mt7927.enableBluetooth = lib.mkOverride 90 false;
   hardware.bluetooth.enable = true;
   hardware.bluetooth.powerOnBoot = true;
   services.blueman.enable = true;
 
+  specialisation.mt7927-6-18.configuration = {
+    boot.kernelPackages = lib.mkForce pkgs.linuxPackages_6_18;
+    boot.loader.grub.configurationName = "MT7927 Bluetooth test - Linux 6.18";
+    hardware.mediatek-mt7927.enable = lib.mkForce true;
+    hardware.mediatek-mt7927.enableBluetooth = lib.mkForce true;
+  };
+
   virtualisation.docker.enable = true;
 
   hardware.i2c.enable = true;
-  boot.kernelModules = [ "i2c-dev" ];
+  boot.kernelModules = lib.mkAfter [ "i2c-dev" ];
   services.hardware.openrgb.enable = true;
 
   services.pipewire.wireplumber.extraConfig."51-swap-analog-stereo" = {
