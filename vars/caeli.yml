@@ -6,6 +6,20 @@ link_nixos: false
 direnv: true
 zoxide: true
 
+# INVARIANT — Top-level only.
+# Both `brew_packages_common` and `brew_casks_common` below must list ONLY
+# top-level (manually installed) packages, never transitive dependencies.
+#
+# Sources of truth on the live host:
+#   - formulae: `brew leaves`            (formulae not depended on by any other)
+#   - casks:    `brew list --cask`       (with dep-only casks like
+#                                         `microsoft-auto-update` filtered out)
+#
+# To refresh: ask Claude to "update the caeli homebrew list" — it will diff
+# these two commands against this file, add new top-level installs into the
+# appropriate category, and drop entries that no longer appear (unless the
+# entry was intentionally re-added in a recent commit but not yet installed).
+
 # common brew formulae for macOS host (top-level only, deps auto-installed)
 brew_packages_common:
   # shell, prompt & file utilities
@@ -22,6 +36,7 @@ brew_packages_common:
   - ripgrep-all
   - watch
   - wget
+  - yq
   - zoxide
 
   # editor, language servers & linters
@@ -60,6 +75,7 @@ brew_packages_common:
   # networking & remote access
   - iperf
   - ldns
+  - mosh
   - nmap
   - socat
   - xpipe
