@@ -62,6 +62,7 @@
     "lz4"
   ];
   boot.initrd.supportedFilesystems = [ "vfat" "ext4" ];
+  boot.initrd.systemd.services.initrd-switch-root.description = "Switch Root";
   boot.initrd.systemd.services.copy-luks-keyfile = {
     after = lib.mkForce [ ];
     requires = lib.mkForce [ ];
@@ -251,8 +252,4 @@
     wayland-utils
     wlr-randr
   ];
-
-  documentation.nixos.enable = false;
-  documentation.man.enable = false;
-  documentation.info.enable = false;
 }
