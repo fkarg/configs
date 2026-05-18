@@ -6,22 +6,27 @@
     vlc
     klavaro
     pdftk
-    ghostscript
 
     # office and content creation
-    # libreoffice-fresh
+    libreoffice-fresh
+    languagetool
+    tinymist
     # gimp
 
     # browsers and desktop-entry providers
     # Keep browsers here when they should be selectable as system defaults.
     chromium
     firefox
+    google-chrome
+    tor-browser
 
     # communication
+    discord
     telegram-desktop
     teams-for-linux
     thunderbird
     signal-desktop
+    karere  # gtk4 client for whatsapp
     protonmail-desktop
     proton-vpn
 
@@ -32,6 +37,7 @@
     # desktop applications
     kdePackages.dolphin
     kdePackages.kio-extras
+    obsidian
     vscode.fhs
     zotero
     subsurface
@@ -40,5 +46,6 @@
     proton-pass
     ollama
     lmstudio
+    ytmdesktop
   ];
 }

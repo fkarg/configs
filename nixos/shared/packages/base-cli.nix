@@ -27,7 +27,10 @@
     lsof
     bat
     coreutils
+    cowsay
+    fortune
     gh
+    glow
     yq
     socat
     zellij
@@ -40,6 +43,8 @@
 
     # network debugging
     dig
+    ldns
+    mosh
     nmap
 
     # terminal and editor baseline

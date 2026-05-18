@@ -34,14 +34,33 @@
     qpdf
     typst
 
-    # language and repository tooling
+    # financial organization
+    beancount
+    beancount-language-server
+    beanquery
+    fava
+
+    # agent harnesses
+    claude-code
+    codex
+    gemini-cli
+    opencode
+
+    # devOps
     ansible
     ansible-language-server
     ansible-lint
-    beancount
-    languagetool
+
+    # package managers and misc
+    bun
+    cabal-install
+    ghc
     git-filter-repo
-    tinymist
-    gemini-cli
+    nodejs_24
+    pnpm
+    postgresql_17
+    minio-client
+    rustup
+    uv
   ];
 }
