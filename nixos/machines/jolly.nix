@@ -39,7 +39,7 @@
 
   # Keep the default generation on the kernel line that is known to reach GNOME
   # on this host. Newer kernels are available as explicit test specialisations.
-  boot.kernelPackages = pkgs.linuxPackages_6_12;
+  boot.kernelPackages = pkgs.linuxPackages_latest;
   boot.kernelParams = [
     "fsck.mode=force"
     "fsck.repair=yes"
@@ -63,10 +63,10 @@
   ];
   boot.initrd.supportedFilesystems = [ "vfat" "ext4" ];
   boot.initrd.systemd.services.copy-luks-keyfile = {
+    after = lib.mkForce [ ];
+    requires = lib.mkForce [ ];
     requiredBy = [ "systemd-cryptsetup@cryptroot.service" ];
     before = [ "systemd-cryptsetup@cryptroot.service" ];
-    after = [ "systemd-udev-settle.service" ];
-    requires = [ "systemd-udev-settle.service" ];
     unitConfig.DefaultDependencies = false;
     serviceConfig.TimeoutSec = 70;
     script = lib.mkForce ''
@@ -170,9 +170,8 @@
 
   virtualisation.docker.enable = true;
 
-  hardware.i2c.enable = true;
-  boot.kernelModules = lib.mkAfter [ "i2c-dev" ];
-  services.hardware.openrgb.enable = true;
+  hardware.i2c.enable = false;
+  services.hardware.openrgb.enable = false;
 
   services.pipewire.wireplumber.extraConfig."51-swap-analog-stereo" = {
     "monitor.alsa.rules" = [
@@ -251,7 +250,6 @@
     vulkan-tools
     wayland-utils
     wlr-randr
-    openrgb-with-all-plugins
   ];
 
   documentation.nixos.enable = false;
