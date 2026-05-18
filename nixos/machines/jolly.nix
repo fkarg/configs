@@ -8,6 +8,7 @@
     ../pars.nix
     ../shared/desktops/hyprland-session.nix
     ../shared/hardware/mediatek-mt7927.nix
+    ../shared/programs/steam-defaults.nix
   ];
 
   networking.hostName = "jolly";
@@ -151,22 +152,73 @@
     enable = true;
     efiSupport = true;
     device = "nodev";
+    configurationLimit = 1;
+    extraEntries = ''
+      menuentry "NixOS - Known-good fallback generation 8 (Linux 6.12.89)" --class nixos {
+        search --set=drive1 --fs-uuid DC22-8B46
+        linux ($drive1)//kernels/ss16kh3phklqxgn1dpaa8bwz14wwp84c-linux-6.12.89-bzImage init=/nix/store/5j58nn0b768qlxa3f408k8b3s2pa86j6-nixos-system-jolly-26.05pre998534.d233902339c0/init zswap.enabled=1 zswap.compressor=lz4 zswap.max_pool_percent=25 systemd.log_level=info loglevel=4 root=fstab loglevel=4 lsm=landlock,yama,bpf
+        initrd ($drive1)//kernels/kxny1jr30pbfigdjxlyaqp172h4h160d-initrd-linux-6.12.89-initrd
+      }
+    '';
   };
   boot.loader.efi.canTouchEfiVariables = true;
   boot.loader.generic-extlinux-compatible.enable = false;
 
   hardware.enableRedistributableFirmware = true;
-  hardware.mediatek-mt7927.enable = lib.mkOverride 90 false;
-  hardware.mediatek-mt7927.enableBluetooth = lib.mkOverride 90 false;
   hardware.bluetooth.enable = true;
   hardware.bluetooth.powerOnBoot = true;
   services.blueman.enable = true;
 
-  specialisation.mt7927-6-18.configuration = {
+  specialisation.manual-unlock.configuration = {
+    boot.loader.grub.configurationName = "Manual unlock";
+    boot.initrd.systemd.services.copy-luks-keyfile = {
+      enable = lib.mkForce false;
+      requiredBy = lib.mkForce [ ];
+      before = lib.mkForce [ ];
+    };
+    boot.initrd.luks.devices."cryptroot".keyFileTimeout = lib.mkForce 1;
+  };
+
+  specialisation.diagnostic.configuration = {
+    boot.loader.grub.configurationName = "Diagnostic verbose";
+    boot.kernelParams = [
+      "ignore_loglevel"
+      "log_buf_len=16M"
+      "systemd.log_level=debug"
+      "systemd.show_status=1"
+      "rd.systemd.show_status=1"
+    ];
+  };
+
+  specialisation.kernel-6-18.configuration = {
     boot.kernelPackages = lib.mkForce pkgs.linuxPackages_6_18;
-    boot.loader.grub.configurationName = "MT7927 Bluetooth test - Linux 6.18";
-    hardware.mediatek-mt7927.enable = lib.mkForce true;
-    hardware.mediatek-mt7927.enableBluetooth = lib.mkForce true;
+    boot.loader.grub.configurationName = "Kernel test - Linux 6.18";
+  };
+
+  specialisation.mt7927-latest-bt-usb-retry.configuration = {
+    boot.loader.grub.configurationName = "MT7927 Bluetooth USB retry - TEST";
+    boot.kernelParams = [
+      "usbcore.old_scheme_first=1"
+      "usbcore.initial_descriptor_timeout=10000"
+      "usbcore.quirks=13d3:3588:k"
+      "btusb.enable_autosuspend=0"
+    ];
+    systemd.services.reset-mt7927-bluetooth-usb = {
+      description = "Reset MT7927 Bluetooth USB port before BlueZ";
+      requiredBy = [ "bluetooth.service" ];
+      before = [ "bluetooth.service" ];
+      path = [ pkgs.coreutils pkgs.systemd ];
+      serviceConfig.Type = "oneshot";
+      script = ''
+        port=/sys/bus/usb/devices/usb1/1-0:1.0/usb1-port9
+        if [ -e "$port/disable" ]; then
+          echo 1 > "$port/disable" || true
+          sleep 2
+          echo 0 > "$port/disable" || true
+          udevadm settle --timeout=10 || true
+        fi
+      '';
+    };
   };
 
   virtualisation.docker.enable = true;
@@ -234,7 +286,7 @@
 
   services.xserver.videoDrivers = [ "nvidia" "modesetting" ];
   hardware.graphics.enable = true;
-  hardware.graphics.enable32Bit = false;
+  hardware.graphics.enable32Bit = true;
   hardware.nvidia = {
     package = config.boot.kernelPackages.nvidiaPackages.latest;
     open = true;
