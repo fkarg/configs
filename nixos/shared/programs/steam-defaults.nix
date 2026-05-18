@@ -1,6 +1,14 @@
 { pkgs, ... }:
 
 {
+  environment.systemPackages = with pkgs; [
+    # Steam and Proton compatibility tools
+    steam-run
+    protonup-qt
+    mangohud
+    goverlay
+  ];
+
   # Modern Steam defaults based on the current NixOS Steam module.
   # Prefer supported module options over per-machine steam.override hacks.
   programs.steam = {
