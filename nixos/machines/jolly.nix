@@ -59,6 +59,7 @@
     "vfat"
     "nls_cp437"
     "nls_iso8859_1"
+    "lz4"
   ];
   boot.initrd.supportedFilesystems = [ "vfat" "ext4" ];
   boot.initrd.systemd.services.copy-luks-keyfile = {
