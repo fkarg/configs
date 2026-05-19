@@ -51,6 +51,8 @@
 - include_role:
     name: terminal_dotfiles
     tasks_from: link_dotdir
+    apply:
+      tags: [kitty]
   vars: { link_src: kitty, link_dest: ~/.config/kitty }
   when: terminal == "kitty"
   tags: [kitty]
@@ -211,6 +213,8 @@
 - include_role:
     name: terminal_dotfiles
     tasks_from: link_dotdir
+    apply:
+      tags: [broot]
   vars: { link_src: broot, link_dest: ~/.config/broot }
   when: enable_broot | default(false) | bool
   tags: [broot]
