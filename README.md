@@ -35,29 +35,53 @@ each has it's own modifications.
 
 ### Usage
 
-`ansible-pull --diff --clean -U git@github.com:fkarg/configs.git general.yml -e client_role=<client>`
+**Fresh server, single-paste pull-mode** (installs ansible if missing, runs base + terminal_dotfiles):
 
-if you would like to see what would change first:
+```
+curl -fsSL https://raw.githubusercontent.com/fkarg/configs/master/bootstrap.sh | sh
+```
 
-`ansible-pull --check --diff --clean -U git@github.com:fkarg/configs.git general.yml -e client_role=<client>`
+For a registered host, set `BOOTSTRAP_HOST_ID` so site.yml runs instead:
 
-or, if you prefer colorful output:
+```
+BOOTSTRAP_HOST_ID=jolly curl -fsSL https://raw.githubusercontent.com/fkarg/configs/master/bootstrap.sh | sh
+```
 
-`env ANSIBLE_FORCE_COLOR=true ansible-pull --diff --clean -U git@github.com:fkarg/configs.git general.yml -e client_role=<client>`
+**Registered host, ongoing config (push from workstation):**
+
+```
+ansible-playbook ansible/site.yml -l caeli
+ansible-playbook ansible/site.yml -l caeli --check --diff   # dry-run
+ansible-playbook ansible/site.yml -l caeli --tags fish      # just fish
+ansible-playbook ansible/site.yml -l caeli --tags coding_agents
+```
+
+**Registered host, on-host pull:**
+
+```
+ansible-pull -U git@github.com:fkarg/configs.git ansible/site.yml -e host_id=$(hostname)
+```
+
+**First-boot SSH hardening of a fresh Debian/Ubuntu server (run from your workstation as root@22):**
+
+```
+ansible-playbook ansible/playbooks/bootstrap.yml -l new-host \
+  -e ansible_user=root -e ansible_port=22 -e bootstrap_user=pars
+```
+
+After this completes, the host is reachable as `pars@<bootstrap_ssh_port>` (default 2244). Update `~/.ssh/config`, add `ansible/inventory/host_vars/new-host.yml`, then run `site.yml`.
 
 ### Overwriting Existing Config Directories
 
-Some applications (fish, kitty, nvim, broot) create their own config directories on first launch. If these exist as real directories (not symlinks), the playbook will fail by default to avoid data loss.
+Some applications (fish, kitty, nvim, broot) create their own config directories on first launch. If these exist as real directories (not symlinks), the playbook skips the symlink by default to avoid data loss. To force the symlink (deleting the existing directory first):
 
-To allow overwriting existing config directories with symlinks, pass `confirm_overwrite=true`:
+```
+ansible-playbook ansible/site.yml -l caeli -e confirm_overwrite=true
+```
 
-`ansible-pull --diff --clean -U git@github.com:fkarg/configs.git general.yml -e client_role=<client> -e confirm_overwrite=true`
-
-This flag is ignored in check mode (`--check`), so you can safely preview changes without risk.
+This flag is ignored under `--check` mode for safety.
 
 Make sure you have an ssh key which is registered on your github account for this computer already.
 
 
 ## TODO
-
-- repo pull tasks: ignore_errors:true
