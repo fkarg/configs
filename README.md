@@ -23,10 +23,10 @@ NixOS notes:
 
 Currently available `client_role`s are:
 
-- tux
-- hp440g5
-- desktop
-- terminal
+- tux (Tuxedo laptop, defunct)
+- hp440g5 (previous work laptop, defunct)
+- desktop (old tower, defunct)
+- terminal (generic server config, active)
 - artus/margo (NixOS on Framework)
 - caeli (macOS)
 - jolly (NixOS on tower PC)
