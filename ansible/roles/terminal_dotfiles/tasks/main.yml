@@ -60,14 +60,6 @@
     src: fishconfig.j2
     dest: ~/.config/fish/config.fish
   notify: "install br"
-  when: enable_broot | default(false) | bool
-  tags: [fish]
-
-- name: Template fish config (broot disabled)
-  template:
-    src: fishconfig.j2
-    dest: ~/.config/fish/config.fish
-  when: not (enable_broot | default(false) | bool)
   tags: [fish]
 
 # ============================================

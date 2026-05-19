@@ -10,19 +10,19 @@ icons = "awesome4"
 # Show Entropia club status
 [[block]]
 block = "custom"
-command = "/home/{{ username }}/{{ configs_repo }}/scripts/status.sh"
+command = "{{ home_dir }}/{{ configs_repo }}/scripts/status.sh"
 interval = 1800
 
 # Show battery state of wireless mouse and keyboard (or other devices, really)
 [[block]]
 block = "custom"
-command = "/home/{{ username }}/{{ configs_repo }}/scripts/wireless_battery.sh"
+command = "{{ home_dir }}/{{ configs_repo }}/scripts/wireless_battery.sh"
 interval = 1800
 
 # showing the current state of an external display (and switch, if necessary)
 [[block]]
 block = "custom"
-command = "/home/{{ username }}/{{ configs_repo }}/scripts/multiscreens.sh"
+command = "{{ home_dir }}/{{ configs_repo }}/scripts/multiscreens.sh"
 interval = 10
 
 [[block]]
