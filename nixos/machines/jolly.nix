@@ -238,8 +238,6 @@
   };
 
   services.xserver.enable = true;
-  services.xserver.displayManager.lightdm.enable = false;
-  services.xserver.desktopManager.xfce.enable = true;
   services.xserver.monitorSection = ''
     HorizSync 30-240
     VertRefresh 48-144
@@ -256,11 +254,10 @@
 
   services.displayManager.gdm.enable = true;
   services.desktopManager.gnome.enable = true;
-  services.desktopManager.cosmic.enable = true;
   programs.ssh.startAgent = lib.mkForce false;
   programs.ssh.askPassword = lib.mkForce "${pkgs.seahorse}/libexec/seahorse/ssh-askpass";
 
-  # TTY fallback if GDM or GNOME/COSMIC are unhappy. Hyprland is installed as a
+  # TTY fallback if GDM, GNOME, or Hyprland are unhappy. Hyprland is installed as a
   # selectable GDM session by ../shared/desktops/hyprland-session.nix.
   programs.sway = {
     enable = true;
