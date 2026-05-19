@@ -142,6 +142,11 @@
   register: broot_config_stat
   when: enable_broot | default(false) | bool
 
+- name: Check if lf config is a directory (not symlink)
+  stat:
+    path: ~/.config/lf
+  register: lf_config_stat
+
 - name: Remove existing broot config directory (requires confirm_overwrite=true)
   file:
     path: ~/.config/broot
@@ -151,6 +156,17 @@
     - broot_config_stat.stat.exists | default(false)
     - broot_config_stat.stat.isdir | default(false)
     - not (broot_config_stat.stat.islnk | default(false))
+    - confirm_overwrite | default(false) | bool
+    - not ansible_check_mode
+
+- name: Remove existing lf config directory (requires confirm_overwrite=true)
+  file:
+    path: ~/.config/lf
+    state: absent
+  when:
+    - lf_config_stat.stat.exists
+    - lf_config_stat.stat.isdir
+    - not lf_config_stat.stat.islnk
     - confirm_overwrite | default(false) | bool
     - not ansible_check_mode
 
@@ -164,6 +180,15 @@
     - repo is succeeded
     - not (broot_config_stat.stat.exists | default(false) and broot_config_stat.stat.isdir | default(false) and not (broot_config_stat.stat.islnk | default(false)) and not (confirm_overwrite | default(false) | bool))
   notify: "install br"
+
+- name: Link lf directory
+  file:
+    src: "~/{{ configs_repo }}/{{ dotconfigdir }}/lf"
+    dest: ~/.config/lf
+    state: link
+  when:
+    - repo is succeeded
+    - not (lf_config_stat.stat.exists and lf_config_stat.stat.isdir and not lf_config_stat.stat.islnk and not (confirm_overwrite | default(false) | bool))
 
 - name: Create .local/bin
   file:
