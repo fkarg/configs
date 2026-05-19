@@ -1,6 +1,43 @@
 ---
-# Placeholder. Real orchestration written in Task 13.
-- hosts: localhost
-  connection: local
+# Main playbook. Loops over each host's host_roles list with include_role,
+# applying the role name as a tag for filtering.
+#
+# Invocation:
+#   # push from workstation
+#   ansible-playbook ansible/site.yml -l caeli
+#
+#   # pull on host (resolves host_vars via -e host_id=<name> because
+#   # inventory_hostname is always 'localhost' under ansible-pull)
+#   ansible-pull -U <repo-url> ansible/site.yml -e host_id=$(hostname)
+
+- hosts: all
+  gather_facts: true
+
+  pre_tasks:
+    - name: Resolve host_id (defaults to inventory_hostname)
+      set_fact:
+        resolved_host_id: "{{ host_id | default(inventory_hostname) }}"
+      tags: [always]
+
+    - name: Load host_vars for resolved host_id
+      include_vars:
+        file: "inventory/host_vars/{{ resolved_host_id }}.yml"
+      when: host_id is defined and host_id != inventory_hostname
+      tags: [always]
+
+    - name: Assert host_roles is set
+      assert:
+        that:
+          - host_roles is defined
+          - host_roles | length > 0
+        fail_msg: "Host '{{ resolved_host_id }}' has no host_roles list. Add ansible/inventory/host_vars/{{ resolved_host_id }}.yml or pass -e host_id=<registered_host>."
+      tags: [always]
+
   tasks:
-    - debug: msg="ansible/ scaffolding present; site.yml not yet implemented"
+    - name: Apply role {{ item }}
+      include_role:
+        name: "{{ item }}"
+        apply:
+          tags: ["{{ item }}"]
+      loop: "{{ host_roles }}"
+      tags: [always]

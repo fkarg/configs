@@ -1,0 +1,21 @@
+---
+# Ad-hoc playbook for unregistered hosts. Applies base + terminal_dotfiles
+# with sensible defaults and does NOT set the hostname.
+#
+# Invocation (push, after bootstrap):
+#   ansible-playbook ansible/playbooks/terminal.yml -l <host>
+#
+# Invocation (pull, from on the host):
+#   ansible-pull -U <repo-url> ansible/playbooks/terminal.yml
+
+- hosts: all
+  gather_facts: true
+
+  vars:
+    # Force these off for ad-hoc invocation — only registered hosts opt in.
+    confirm_overwrite: false
+
+  roles:
+    - role: base
+      when: "ansible_facts['os_family'] == 'Debian'"
+    - role: terminal_dotfiles

@@ -1,0 +1,63 @@
+---
+# First-boot playbook. Runs ONLY the bootstrap role.
+# Connection identity passed at the command line:
+#   ansible-playbook ansible/playbooks/bootstrap.yml -l <host> \
+#     -e ansible_user=root -e ansible_port=22 -e bootstrap_user=pars
+#
+# After this completes, the host is reachable only as
+# <bootstrap_user>@<bootstrap_ssh_port>. Add ansible/inventory/host_vars/<host>.yml
+# and run ansible/site.yml next.
+
+- hosts: all
+  become: true
+  gather_facts: true
+
+  vars_prompt:
+    - name: confirm_bootstrap
+      prompt: |
+
+        ⚠️  BOOTSTRAP MODE — will:
+          • Create user '{{ bootstrap_user | default("pars") }}'
+          • Copy /root SSH keys to the new user
+          • Move sshd to port {{ bootstrap_ssh_port | default(2244) }}
+          • Disable root SSH login and password auth
+
+        Continue? (yes/no)
+      private: false
+      default: "no"
+
+  pre_tasks:
+    - name: Abort if not confirmed
+      fail:
+        msg: "Bootstrap cancelled."
+      when: confirm_bootstrap != "yes"
+
+    - name: Display target info
+      debug:
+        msg: |
+          ================================================
+          BOOTSTRAPPING: {{ inventory_hostname }}
+          OS:   {{ ansible_distribution }} {{ ansible_distribution_version }}
+          IP:   {{ ansible_default_ipv4.address | default('N/A') }}
+          User: {{ ansible_user_id }}
+          New SSH port: {{ bootstrap_ssh_port | default(2244) }}
+          ================================================
+
+  roles:
+    - bootstrap
+
+  post_tasks:
+    - debug:
+        msg: |
+          ================================================
+          ✅ BOOTSTRAP COMPLETE
+          ================================================
+          NEXT STEPS:
+          1. Update ~/.ssh/config on your workstation:
+             Host {{ inventory_hostname }}
+                 Hostname {{ ansible_host | default(inventory_hostname) }}
+                 User {{ bootstrap_user | default('pars') }}
+                 Port {{ bootstrap_ssh_port | default(2244) }}
+          2. Create ansible/inventory/host_vars/{{ inventory_hostname }}.yml
+          3. Run: ansible-playbook ansible/site.yml -l {{ inventory_hostname }}
+          ================================================
