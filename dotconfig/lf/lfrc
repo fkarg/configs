@@ -1,1 +1,29 @@
 set previewer ~/.config/lf/pv.sh
+
+# Open text-ish files in $EDITOR (nvim), everything else via xdg-open.
+cmd open ${{
+    editor=${EDITOR:-nvim}
+    case "$f" in
+        *.md|*.markdown|*.txt|*.rst|*.org|*.adoc|*.tex) exec "$editor" "$f" ;;
+        *.json|*.yaml|*.yml|*.toml|*.ini|*.conf|*.cfg|*.env|*.properties) exec "$editor" "$f" ;;
+        *.xml|*.html|*.htm|*.css|*.scss|*.sass|*.js|*.ts|*.jsx|*.tsx|*.mjs|*.cjs) exec "$editor" "$f" ;;
+        *.py|*.rb|*.pl|*.php|*.lua|*.go|*.rs|*.java|*.kt|*.swift) exec "$editor" "$f" ;;
+        *.c|*.cpp|*.cc|*.cxx|*.h|*.hpp|*.hh) exec "$editor" "$f" ;;
+        *.sh|*.bash|*.zsh|*.fish) exec "$editor" "$f" ;;
+        *.nix|*.dhall|*.tf|*.hcl) exec "$editor" "$f" ;;
+        *.csv|*.tsv|*.log|*.diff|*.patch) exec "$editor" "$f" ;;
+        */Makefile|*/Dockerfile|*/.*rc|*/*rc|*.lock|*/.gitignore) exec "$editor" "$f" ;;
+        */CMakeLists.txt|*/Gemfile|*/Rakefile|*/Vagrantfile|*/Justfile|*/Procfile) exec "$editor" "$f" ;;
+        */PKGBUILD|*/SRCINFO|*/LICENSE|*/COPYING|*/README|*/CHANGELOG|*/AUTHORS|*/TODO) exec "$editor" "$f" ;;
+    esac
+    if command -v file >/dev/null 2>&1; then
+        case "$(file --mime-type -bL -- "$f" 2>/dev/null)" in
+            text/*|application/json|application/javascript|application/xml|application/x-shellscript|application/x-yaml|application/toml|application/x-perl|application/x-python|application/x-ruby|application/x-php|application/x-tex|application/x-empty|inode/x-empty)
+                exec "$editor" "$f" ;;
+        esac
+    fi
+    (setsid xdg-open "$f" >/dev/null 2>&1 &)
+}}
+
+# Inspect/scroll preview in a pager (preview pane itself can't scroll).
+map i $LESSOPEN='| ~/.config/lf/pv.sh %s' less -R "$f"
