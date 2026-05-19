@@ -1,0 +1,231 @@
+---
+# Graphical-host dotfiles: kitty, hyprland, i3, broot, fonts, background,
+# todo, gtd/finances repos. Most tasks are Linux-only (i3, hyprland, fonts);
+# kitty is cross-platform. Each tool has a concern tag.
+
+# ============================================
+# I3 (Linux only)
+# ============================================
+- name: Create config/i3 directory
+  file:
+    path: ~/.config/i3
+    state: directory
+  when: ansible_facts['system'] == 'Linux'
+  tags: [i3]
+
+- name: Template on_startup.sh
+  template:
+    src: on_startup.j2
+    dest: ~/on_startup.sh
+    mode: '0500'
+  notify: "restart i3"
+  when: ansible_facts['system'] == 'Linux'
+  tags: [i3]
+
+- name: Template i3 config
+  template:
+    src: i3config.j2
+    dest: ~/.config/i3/config
+  notify: "restart i3"
+  when: ansible_facts['system'] == 'Linux'
+  tags: [i3]
+
+- name: Create config/i3status directory
+  file:
+    path: ~/.config/i3status
+    state: directory
+  when: ansible_facts['system'] == 'Linux'
+  tags: [i3]
+
+- name: Template i3status config
+  template:
+    src: i3statusconfig.j2
+    dest: ~/.config/i3status/config.toml
+  notify: "restart i3"
+  when: ansible_facts['system'] == 'Linux'
+  tags: [i3]
+
+# ============================================
+# KITTY (cross-platform)
+# ============================================
+- include_role:
+    name: terminal_dotfiles
+    tasks_from: link_dotdir
+  vars: { link_src: kitty, link_dest: ~/.config/kitty }
+  when: terminal == "kitty"
+  tags: [kitty]
+
+# ============================================
+# HYPRLAND (Linux only)
+# ============================================
+- name: Ensure hypr config directory exists
+  file:
+    path: ~/.config/hypr
+    state: directory
+  when: ansible_facts['system'] == 'Linux'
+  tags: [hyprland]
+
+- name: Check if hyprland.conf is already a symlink
+  stat:
+    path: ~/.config/hypr/hyprland.conf
+  register: _hyprland_conf
+  when: ansible_facts['system'] == 'Linux'
+  tags: [hyprland]
+
+- name: Remove existing hyprland.conf file (confirm_overwrite=true)
+  file:
+    path: ~/.config/hypr/hyprland.conf
+    state: absent
+  when:
+    - ansible_facts['system'] == 'Linux'
+    - _hyprland_conf.stat.exists | default(false)
+    - not (_hyprland_conf.stat.islnk | default(false))
+    - confirm_overwrite | default(false) | bool
+    - not ansible_check_mode
+  tags: [hyprland]
+
+- name: Link hyprland config file
+  file:
+    src: "~/{{ configs_repo }}/{{ dotconfigdir }}/hypr/hyprland.conf"
+    dest: ~/.config/hypr/hyprland.conf
+    state: link
+  when:
+    - ansible_facts['system'] == 'Linux'
+    - not (_hyprland_conf.stat.exists | default(false) and not (_hyprland_conf.stat.islnk | default(false)) and not (confirm_overwrite | default(false) | bool))
+  tags: [hyprland]
+
+# ============================================
+# FIREFOX LEGACY PATH (Linux only)
+# ============================================
+- name: Check legacy Mozilla Firefox path
+  stat:
+    path: ~/.mozilla/firefox
+  register: _moz_firefox
+  when: ansible_facts['system'] == 'Linux'
+  tags: [firefox]
+
+- name: Ensure legacy Mozilla directory exists
+  file:
+    path: ~/.mozilla
+    state: directory
+  when: ansible_facts['system'] == 'Linux'
+  tags: [firefox]
+
+- name: Link legacy Firefox profile path to XDG location
+  file:
+    src: ~/.config/mozilla/firefox
+    dest: ~/.mozilla/firefox
+    state: link
+  when:
+    - ansible_facts['system'] == 'Linux'
+    - not (_moz_firefox.stat.exists | default(false) and not (_moz_firefox.stat.islnk | default(false)) and not (confirm_overwrite | default(false) | bool))
+  tags: [firefox]
+
+# ============================================
+# BACKGROUND PICTURE
+# ============================================
+- name: Create folder for background picture
+  file:
+    path: ~/Pictures/Space
+    state: directory
+  tags: [background]
+
+- name: Copy initial background picture
+  copy:
+    src: "~/{{ configs_repo }}/pictures/IMAG7297.JPG"
+    dest: "~/Pictures/Space/IMAG7297.JPG"
+  tags: [background]
+
+# ============================================
+# TODO
+# ============================================
+- name: Create todo.sh config dir
+  file:
+    path: ~/.config/todo
+    state: directory
+  tags: [todo]
+
+- name: Template todo.sh config
+  template:
+    src: todoconfig.j2
+    dest: ~/.config/todo/config
+  tags: [todo]
+
+- name: Create empty todo.sh actions file
+  copy:
+    content: ""
+    dest: ~/.config/todo/actions
+    force: no
+  tags: [todo]
+
+- name: Make sure gtd repository is present
+  git:
+    repo: "git@github.com:{{ git_username }}/{{ todotxtrepo }}.git"
+    dest: "~/{{ todotxtrepo }}"
+    update: yes
+  ignore_errors: true
+  tags: [todo, repos]
+
+# ============================================
+# FINANCES
+# ============================================
+- name: Make sure finances repository is present
+  git:
+    repo: "git@github.com:{{ git_username }}/{{ finances_repo }}.git"
+    dest: "~/{{ finances_repo }}"
+    update: yes
+  ignore_errors: true
+  tags: [repos]
+
+# ============================================
+# FONTS (Linux only)
+# ============================================
+- name: Create fonts directory
+  file:
+    path: ~/.local/share/fonts
+    state: directory
+  when: ansible_facts['system'] == 'Linux'
+  tags: [fonts]
+
+- name: Unarchive Fontin font
+  ansible.builtin.unarchive:
+    src: https://wfonts.com/download/data/2015/03/10/fontin/fontin.zip
+    dest: ~/.local/share/fonts
+    remote_src: yes
+  when: ansible_facts['system'] == 'Linux'
+  ignore_errors: true
+  tags: [fonts]
+
+- name: Duplicate Regular Fontin File
+  copy:
+    src: ~/.local/share/fonts/Fontin-Regular.otf
+    dest: ~/.local/share/fonts/Fontin.otf
+    mode: '0644'
+  ignore_errors: true
+  when: ansible_facts['system'] == 'Linux'
+  tags: [fonts]
+
+# ============================================
+# BROOT (cross-platform, gated by enable_broot)
+# ============================================
+- include_role:
+    name: terminal_dotfiles
+    tasks_from: link_dotdir
+  vars: { link_src: broot, link_dest: ~/.config/broot }
+  when: enable_broot | default(false) | bool
+  tags: [broot]
+
+- name: Create .local/bin
+  file:
+    path: ~/.local/bin
+    state: directory
+  when: enable_broot | default(false) | bool
+  tags: [broot]
+
+- name: Link broot launcher script
+  file:
+    src: "~/{{ configs_repo }}/scripts/b.sh"
+    dest: ~/.local/bin/b
+    state: link
+  when: enable_broot | default(false) | bool
+  tags: [broot]

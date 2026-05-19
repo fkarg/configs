@@ -1,0 +1,120 @@
+# i3status-rs configuration settings.
+# {{ ansible_managed }}
+
+[theme]
+theme = "plain"
+
+[icons]
+icons = "awesome4"
+
+# Show Entropia club status
+[[block]]
+block = "custom"
+command = "/home/{{ username }}/{{ configs_repo }}/scripts/status.sh"
+interval = 1800
+
+# Show battery state of wireless mouse and keyboard (or other devices, really)
+[[block]]
+block = "custom"
+command = "/home/{{ username }}/{{ configs_repo }}/scripts/wireless_battery.sh"
+interval = 1800
+
+# showing the current state of an external display (and switch, if necessary)
+[[block]]
+block = "custom"
+command = "/home/{{ username }}/{{ configs_repo }}/scripts/multiscreens.sh"
+interval = 10
+
+[[block]]
+block = "docker"
+interval = 20
+format = "$icon$running/$total"
+
+[[block]]
+block = "memory"
+format = "$icon $mem_used_percents.eng(w:2) $mem_used.eng(w:4)"
+warning_mem = 60.0
+critical_mem = 80.0
+interval = 10
+
+[[block]]
+block = "memory"
+format = "$icon_swap $swap_used_percents.eng(w:2) $swap_used.eng(w:4)"
+warning_swap = 60.0
+interval = 10
+
+{% if lan is defined %}
+[[block]]
+block = "net"
+device = "{{ lan }}"
+format = "$icon $bitrate.eng(w:3)"
+interval = 10
+{% endif %}
+
+{% if wifi is defined %}
+[[block]]
+block = "net"
+device = "{{ wifi }}"
+format = "$icon $signal_strength.eng(w:2) $ssid"
+interval = 10
+{% endif %}
+
+{% if wifi2 is defined %}
+[[block]]
+block = "net"
+device = "{{ wifi2 }}"
+format = "$icon $signal_strength.eng(w:2) $ssid"
+interval = 10
+{% endif %}
+
+# [[block]]
+# block = "networkmanager"
+# on_click = "alacritty -e nmtui"
+# interface_name_exclude = ["br\\-[0-9a-f]{12}", "docker\\d+"]
+# interface_name_include = []
+# ap_format = "{ssid^10}"
+
+{% if gpu is defined %}
+[[block]]
+block = "nvidia_gpu"
+label = "{{ gpu }}"
+show_clocks = true
+interval = 5
+{% endif %}
+
+[[block]]
+block = "cpu"
+format = "$icon$barchart $utilization.eng(w:4) $frequency.eng(w:4)"
+interval = 5
+
+[[block]]
+block = "temperature"
+interval = 10
+format = "$icon $min min $max max $average avg"
+format_alt = " $icon "
+
+[[block]]
+block = "load"
+interval = 5
+format = "$1m.eng(w:4) $5m.eng(w:4) $15m.eng(w:4)"
+
+{% if battery is defined and battery %}
+[[block]]
+block = "battery"
+# driver = "sysfs"
+interval = 5
+format = "$icon $percentage {$time}h $power"
+good = 99
+info = 99
+{% endif %}
+
+[[block]]
+block = "time"
+interval = 5
+format = "$icon $timestamp.datetime(f:'%Y-%m-%d %R:%S', l:de_DE)"
+
+[[block]]
+block = "sound"
+driver = "pulseaudio"
+device = "@DEFAULT_SINK@"
+device_kind = "sink"
