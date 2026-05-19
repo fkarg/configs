@@ -1,0 +1,6 @@
+---
+# Placeholder. Real orchestration written in Task 13.
+- hosts: localhost
+  connection: local
+  tasks:
+    - debug: msg="ansible/ scaffolding present; site.yml not yet implemented"
