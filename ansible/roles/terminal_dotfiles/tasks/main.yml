@@ -1,0 +1,100 @@
+---
+# Base profile installation: repo clone, gitconfig, fish, nvim/vim, optionally
+# broot, text_zeug clone. Runs on every host.
+
+# ============================================
+# CONFIGS REPO PRESENCE
+# ============================================
+- name: Check if .ssh key present
+  stat:
+    path: ~/.ssh/id_rsa.pub
+  register: _ssh
+  tags: [repos, always]
+
+- name: Make sure ~/configs/ is present (via SSH)
+  git:
+    repo: "git@github.com:{{ git_username }}/{{ configs_repo }}.git"
+    dest: "~/{{ configs_repo }}"
+    accept_hostkey: true
+    update: no
+  register: _repo
+  when: _ssh is succeeded and _ssh.stat.exists
+  tags: [repos]
+
+- name: Make sure ~/configs/ is present (via HTTPS fallback)
+  git:
+    repo: "https://github.com/{{ git_username }}/{{ configs_repo }}.git"
+    dest: "~/{{ configs_repo }}"
+    accept_hostkey: true
+    update: no
+  register: _repo
+  when: not (_ssh.stat.exists | default(false))
+  tags: [repos]
+
+- name: Update ~/configs/ repository
+  git:
+    repo: "git@github.com:{{ git_username }}/{{ configs_repo }}.git"
+    dest: "~/{{ configs_repo }}"
+  when: _repo is succeeded and _ssh.stat.exists
+  ignore_errors: true
+  tags: [repos]
+
+# ============================================
+# GIT CONFIG
+# ============================================
+- name: Template .gitconfig
+  template:
+    src: gitconfig.j2
+    dest: ~/.gitconfig
+  tags: [git]
+
+# ============================================
+# FISH
+# ============================================
+- include_tasks: link_dotdir.yml
+  vars: { link_src: fish, link_dest: ~/.config/fish }
+  tags: [fish]
+
+- name: Template fish config
+  template:
+    src: fishconfig.j2
+    dest: ~/.config/fish/config.fish
+  notify: "install br"
+  when: enable_broot | default(false) | bool
+  tags: [fish]
+
+- name: Template fish config (broot disabled)
+  template:
+    src: fishconfig.j2
+    dest: ~/.config/fish/config.fish
+  when: not (enable_broot | default(false) | bool)
+  tags: [fish]
+
+# ============================================
+# NVIM + VIM
+# ============================================
+- name: Create nvim plugin directory
+  file:
+    path: ~/.config/nvimplugins
+    state: directory
+  tags: [nvim]
+
+- include_tasks: link_dotdir.yml
+  vars: { link_src: nvim, link_dest: ~/.config/nvim }
+  tags: [nvim]
+
+- include_tasks: link_dotdir.yml
+  vars: { link_src: nvim, link_dest: ~/.config/vim }
+  tags: [nvim]
+
+# ============================================
+# TEXT_ZEUG
+# ============================================
+- name: Make sure text_zeug is present
+  git:
+    repo: "git@github.com:{{ git_username }}/text_zeug.git"
+    dest: ~/text_zeug
+    update: no
+  when: _ssh.stat.exists | default(false)
+  ignore_errors: true
+  tags: [repos]

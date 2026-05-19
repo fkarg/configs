@@ -1,0 +1,37 @@
+---
+# Reusable "stat → optionally remove → symlink" helper.
+# Inputs:
+#   link_src   — subpath under {{ dotconfigdir }} in the configs repo
+#   link_dest  — target path (e.g. ~/.config/fish)
+# Behavior:
+#   - If link_dest is a real directory and confirm_overwrite is true and we're
+#     not in check mode: remove it.
+#   - Otherwise, if it's a real directory and we're not in check mode: skip
+#     the symlink to preserve user data (matches existing safety behavior).
+#   - Otherwise: create/refresh the symlink.
+
+- name: "link_dotdir: stat {{ link_dest }}"
+  stat:
+    path: "{{ link_dest }}"
+  register: _ld_stat
+
+- name: "link_dotdir: remove existing real dir {{ link_dest }} (confirm_overwrite=true)"
+  file:
+    path: "{{ link_dest }}"
+    state: absent
+  when:
+    - _ld_stat.stat.exists
+    - _ld_stat.stat.isdir | default(false)
+    - not (_ld_stat.stat.islnk | default(false))
+    - confirm_overwrite | default(false) | bool
+    - not ansible_check_mode
+
+- name: "link_dotdir: symlink {{ link_dest }} -> ~/{{ configs_repo }}/{{ dotconfigdir }}/{{ link_src }}"
+  file:
+    src: "~/{{ configs_repo }}/{{ dotconfigdir }}/{{ link_src }}"
+    dest: "{{ link_dest }}"
+    state: link
+  when: >
+    not (_ld_stat.stat.exists and _ld_stat.stat.isdir | default(false)
+         and not (_ld_stat.stat.islnk | default(false))
+         and not (confirm_overwrite | default(false) | bool))

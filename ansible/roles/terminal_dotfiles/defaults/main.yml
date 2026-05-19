@@ -1,0 +1,4 @@
+---
+# Toggled from host_vars or group_vars.
+enable_broot: false
+confirm_overwrite: false
