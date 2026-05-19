@@ -1,0 +1,18 @@
+---
+# Optional passive-update cron job. Opt-in via base_cron_passive_update.
+
+- name: Template passive_update.sh
+  template:
+    src: passive_update.j2
+    dest: "~{{ username }}/passive_update.sh"
+    mode: '0500'
+    owner: "{{ username }}"
+  become: true
+
+- name: Set up Cronjob to passively update common Repositories
+  ansible.builtin.cron:
+    name: Passively update common Repositories
+    minute: "0"
+    user: "{{ username }}"
+    job: "~/passive_update.sh"
+  become: true

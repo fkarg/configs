@@ -1,0 +1,209 @@
+---
+# Server base setup. Runs as the deploy user (sudo via become) on the
+# already-hardened SSH port (bootstrap moved it). Linux/Debian only.
+
+- name: base — confirm Linux
+  assert:
+    that: ansible_facts['system'] == 'Linux'
+    fail_msg: "base role only supports Linux servers"
+  tags: [always]
+
+# ============================================
+# APT
+# ============================================
+- name: Update apt cache
+  apt:
+    update_cache: true
+    cache_valid_time: 3600
+  become: true
+  when: ansible_facts['os_family'] == 'Debian'
+
+- name: Dist-upgrade all packages
+  apt:
+    upgrade: dist
+  become: true
+  when:
+    - ansible_facts['os_family'] == 'Debian'
+    - base_upgrade_packages | bool
+
+- name: Install base packages
+  apt:
+    name: "{{ base_packages + (base_packages_extra | default([])) }}"
+    state: present
+  become: true
+  when: ansible_facts['os_family'] == 'Debian'
+
+# ============================================
+# MOSH WRAPPER
+# ============================================
+- name: Install mosh-server wrapper with default port range
+  copy:
+    dest: /usr/local/bin/mosh-server
+    content: |
+      #!/bin/sh
+      # Managed by Ansible — base role. Injects the site UDP port range
+      # ({{ base_mosh_port_range }}) so mosh clients don't need --port=.
+      for arg in "$@"; do
+        case "$arg" in
+          -p|-p*) exec /usr/bin/mosh-server "$@" ;;
+        esac
+      done
+      exec /usr/bin/mosh-server "$@" -p {{ base_mosh_port_range }}
+    mode: '0755'
+  become: true
+  tags: [mosh]
+
+# ============================================
+# TIMEZONE + HOSTNAME (conditional)
+# ============================================
+- name: Set timezone
+  command: timedatectl set-timezone {{ base_server_timezone }}
+  changed_when: false
+  become: true
+
+- name: Set hostname (only when server_hostname is defined)
+  hostname:
+    name: "{{ server_hostname }}"
+  become: true
+  when: server_hostname is defined
+
+- name: Add hostname to /etc/hosts
+  lineinfile:
+    path: /etc/hosts
+    regexp: '^127\.0\.1\.1'
+    line: "127.0.1.1 {{ server_hostname }}"
+    state: present
+  become: true
+  when: server_hostname is defined
+
+# ============================================
+# SWAP
+# ============================================
+- name: Check swap file
+  stat:
+    path: /swapfile
+  register: _swap
+
+- name: Create and configure swap file
+  when:
+    - base_swap_size_mb > 0
+    - not _swap.stat.exists
+    - not ansible_check_mode
+  become: true
+  block:
+    - name: Create swap file
+      command: fallocate -l {{ base_swap_size_mb }}M /swapfile
+      changed_when: true
+    - name: Set swap file permissions
+      file:
+        path: /swapfile
+        mode: '0600'
+    - name: Format swap file
+      command: mkswap /swapfile
+      changed_when: true
+    - name: Enable swap file
+      command: swapon /swapfile
+      changed_when: true
+    - name: Add swap to fstab
+      lineinfile:
+        path: /etc/fstab
+        regexp: '^/swapfile'
+        line: '/swapfile none swap sw 0 0'
+        state: present
+  tags: [swap]
+
+- name: Tune vm.swappiness
+  ansible.posix.sysctl:
+    name: vm.swappiness
+    value: "{{ base_vm_swappiness }}"
+    state: present
+    sysctl_file: /etc/sysctl.d/90-swap-tuning.conf
+    reload: true
+  become: true
+  tags: [swap]
+
+# ============================================
+# UFW
+# ============================================
+- name: Install UFW
+  apt:
+    name: ufw
+    state: present
+  become: true
+  when: ansible_facts['os_family'] == 'Debian'
+  tags: [firewall]
+
+- name: Set UFW default incoming policy
+  community.general.ufw:
+    direction: incoming
+    policy: "{{ base_ufw_default_incoming }}"
+  become: true
+  when: base_ufw_enabled
+  tags: [firewall]
+
+- name: Set UFW default outgoing policy
+  community.general.ufw:
+    direction: outgoing
+    policy: "{{ base_ufw_default_outgoing }}"
+  become: true
+  when: base_ufw_enabled
+  tags: [firewall]
+
+- name: Configure UFW rules
+  community.general.ufw:
+    rule: "{{ item.rule }}"
+    port: "{{ item.port }}"
+    proto: "{{ item.proto }}"
+    comment: "{{ item.comment | default(omit) }}"
+  loop: "{{ base_ufw_rules + (ufw_rules_extra | default([])) }}"
+  become: true
+  when: base_ufw_enabled
+  tags: [firewall]
+
+- name: Enable UFW
+  community.general.ufw:
+    state: enabled
+  become: true
+  when: base_ufw_enabled
+  tags: [firewall]
+
+# ============================================
+# FAIL2BAN
+# ============================================
+- name: Configure fail2ban for SSH
+  copy:
+    dest: /etc/fail2ban/jail.local
+    content: |
+      [DEFAULT]
+      bantime = 86400
+      findtime = 600
+      maxretry = 3
+      bantime.increment = true
+      bantime.factor = 2
+      bantime.maxtime = 604800
+
+      [sshd]
+      enabled = true
+      port = {{ ansible_port | default(22) }}
+      filter = sshd
+      logpath = /var/log/auth.log
+      maxretry = 3
+      mode = aggressive
+    mode: '0644'
+  become: true
+  notify: Restart fail2ban
+
+- name: Enable and start fail2ban
+  systemd:
+    name: fail2ban
+    enabled: true
+    state: started
+  become: true
+  when: not ansible_check_mode
+
+# ============================================
+# OPTIONAL: PASSIVE UPDATE CRON
+# ============================================
+- include_tasks: cron.yml
+  when: base_cron_passive_update | bool
+  tags: [cron]

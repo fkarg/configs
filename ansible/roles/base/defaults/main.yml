@@ -1,0 +1,57 @@
+---
+# Packages installed on every base-managed server.
+base_packages:
+  - curl
+  - wget
+  - vim
+  - htop
+  - tmux
+  - git
+  - unzip
+  - jq
+  - tree
+  - ncdu
+  - iotop
+  - net-tools
+  - dnsutils
+  - fail2ban
+  - logrotate
+  - mosh
+  - fish
+  - neovim
+  - ripgrep
+
+# Per-host extras (merged with base_packages).
+base_packages_extra: []
+
+# mosh-server wrapper uses this UDP port range.
+base_mosh_port_range: "60842:60849"
+
+# Timezone (timedatectl list-timezones).
+base_server_timezone: "Europe/Berlin"
+
+# Swap file size in MB (0 disables swap).
+base_swap_size_mb: 2048
+
+# Whether to dist-upgrade on every run.
+base_upgrade_packages: true
+
+# zswap — compressed swap cache in front of disk swap.
+base_zswap_enabled: false
+base_zswap_compressor: zstd
+base_zswap_zpool: zsmalloc
+base_zswap_max_pool_percent: 35
+base_vm_swappiness: 60
+
+# UFW firewall.
+base_ufw_enabled: true
+base_ufw_default_incoming: deny
+base_ufw_default_outgoing: allow
+base_ufw_rules:
+  - { rule: allow, port: "{{ base_mosh_port_range }}", proto: udp, comment: "mosh" }
+
+# Passive-update cron job (kept off by default; opt-in per host).
+base_cron_passive_update: false
+
+# server_hostname intentionally has no default — base only sets the hostname
+# when host_vars/<host>.yml explicitly defines it.
