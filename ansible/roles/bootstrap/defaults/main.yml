@@ -1,0 +1,16 @@
+---
+# Bootstrap creates this user with passwordless sudo and copies SSH keys
+# from /root/.ssh/authorized_keys (the keys you used to log in as root).
+bootstrap_user: pars
+bootstrap_user_shell: /bin/bash
+bootstrap_user_groups:
+  - sudo
+
+# SSH hardening.
+bootstrap_ssh_port: 2244
+bootstrap_disable_root_login: true
+bootstrap_ssh_password_auth: false
+bootstrap_ssh_max_auth_tries: 3
+bootstrap_ssh_x11_forwarding: false
+bootstrap_ssh_client_alive_interval: 300
+bootstrap_ssh_client_alive_count_max: 2

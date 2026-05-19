@@ -1,0 +1,21 @@
+---
+- name: bootstrap reload systemd
+  systemd:
+    daemon_reload: true
+  listen: bootstrap_reload_systemd
+
+- name: bootstrap restart SSH
+  systemd:
+    name: ssh
+    state: restarted
+  listen: bootstrap_restart_ssh
+
+- name: bootstrap restart SSH socket
+  systemd:
+    name: ssh.socket
+    state: restarted
+  register: _bootstrap_ssh_socket
+  failed_when: >
+    _bootstrap_ssh_socket.failed and
+    'Could not find' not in (_bootstrap_ssh_socket.msg | default(''))
+  listen: bootstrap_restart_ssh_socket

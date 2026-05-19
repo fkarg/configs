@@ -1,0 +1,138 @@
+---
+# Runs as root@22. Creates {{ bootstrap_user }}, copies SSH keys, opens new
+# SSH port in ufw, switches sshd to new port, disables root login + password
+# auth. After this completes, the host is reachable ONLY as
+# {{ bootstrap_user }}@{{ bootstrap_ssh_port }}.
+
+- name: Install required packages
+  apt:
+    name: [sudo, ufw]
+    state: present
+    update_cache: true
+
+# ============================================
+# USER
+# ============================================
+- name: Create bootstrap user
+  user:
+    name: "{{ bootstrap_user }}"
+    shell: "{{ bootstrap_user_shell }}"
+    groups: "{{ bootstrap_user_groups }}"
+    append: true
+    createhome: true
+    state: present
+
+- name: Passwordless sudo for bootstrap user
+  lineinfile:
+    path: "/etc/sudoers.d/{{ bootstrap_user }}"
+    line: "{{ bootstrap_user }} ALL=(ALL) NOPASSWD:ALL"
+    create: true
+    mode: '0440'
+    validate: "visudo -cf %s"
+
+- name: Create .ssh dir for bootstrap user
+  file:
+    path: "/home/{{ bootstrap_user }}/.ssh"
+    state: directory
+    owner: "{{ bootstrap_user }}"
+    group: "{{ bootstrap_user }}"
+    mode: '0700'
+
+- name: Stat root authorized_keys
+  stat:
+    path: /root/.ssh/authorized_keys
+  register: _root_keys
+
+- name: Copy SSH authorized keys from root to bootstrap user
+  copy:
+    src: /root/.ssh/authorized_keys
+    dest: "/home/{{ bootstrap_user }}/.ssh/authorized_keys"
+    remote_src: true
+    owner: "{{ bootstrap_user }}"
+    group: "{{ bootstrap_user }}"
+    mode: '0600'
+  when: _root_keys.stat.exists
+
+# ============================================
+# FIREWALL — open new port BEFORE switching
+# ============================================
+- name: Allow new SSH port through UFW
+  community.general.ufw:
+    rule: allow
+    port: "{{ bootstrap_ssh_port }}"
+    proto: tcp
+    comment: "SSH"
+
+- name: Keep port 22 open during transition
+  community.general.ufw:
+    rule: allow
+    port: "22"
+    proto: tcp
+    comment: "SSH (transitional)"
+  when: bootstrap_ssh_port != 22
+
+- name: Enable UFW
+  community.general.ufw:
+    state: enabled
+    default: deny
+    direction: incoming
+
+# ============================================
+# SSH HARDENING
+# ============================================
+- name: Configure sshd
+  lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: "{{ item.regexp }}"
+    line: "{{ item.line }}"
+    state: present
+    validate: 'sshd -t -f %s'
+  loop:
+    - { regexp: '^#?Port ',                       line: 'Port {{ bootstrap_ssh_port }}' }
+    - { regexp: '^#?PermitRootLogin',             line: 'PermitRootLogin {{ "no" if bootstrap_disable_root_login else "yes" }}' }
+    - { regexp: '^#?PasswordAuthentication',      line: 'PasswordAuthentication {{ "no" if not bootstrap_ssh_password_auth else "yes" }}' }
+    - { regexp: '^#?PubkeyAuthentication',        line: 'PubkeyAuthentication yes' }
+    - { regexp: '^#?ChallengeResponseAuthentication', line: 'ChallengeResponseAuthentication no' }
+    - { regexp: '^#?UsePAM',                      line: 'UsePAM yes' }
+    - { regexp: '^#?X11Forwarding',               line: 'X11Forwarding {{ "yes" if bootstrap_ssh_x11_forwarding else "no" }}' }
+    - { regexp: '^#?MaxAuthTries',                line: 'MaxAuthTries {{ bootstrap_ssh_max_auth_tries }}' }
+    - { regexp: '^#?ClientAliveInterval',         line: 'ClientAliveInterval {{ bootstrap_ssh_client_alive_interval }}' }
+    - { regexp: '^#?ClientAliveCountMax',         line: 'ClientAliveCountMax {{ bootstrap_ssh_client_alive_count_max }}' }
+  notify: bootstrap_restart_ssh
+
+- name: Create SSH socket override directory (Ubuntu 24.04+ socket-activated sshd)
+  file:
+    path: /etc/systemd/system/ssh.socket.d
+    state: directory
+    mode: '0755'
+
+- name: Configure SSH socket port
+  copy:
+    dest: /etc/systemd/system/ssh.socket.d/override.conf
+    content: |
+      [Socket]
+      ListenStream=
+      ListenStream=0.0.0.0:{{ bootstrap_ssh_port }}
+      ListenStream=[::]:{{ bootstrap_ssh_port }}
+    mode: '0644'
+  notify:
+    - bootstrap_reload_systemd
+    - bootstrap_restart_ssh_socket
+
+# Force handlers now so the next play can reconnect on the new port.
+- name: Apply SSH changes immediately
+  meta: flush_handlers
+
+# ============================================
+# VERIFICATION
+# ============================================
+- name: Test bootstrap user sudo
+  command: sudo -u {{ bootstrap_user }} sudo whoami
+  register: _sudo_test
+  changed_when: false
+
+- name: Verify sudo works
+  assert:
+    that: _sudo_test.stdout == "root"
+    fail_msg: "Bootstrap user cannot sudo — SSH changes may have been applied unsafely."
+    success_msg: "Bootstrap user has working sudo access."
