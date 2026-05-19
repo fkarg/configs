@@ -1,0 +1,25 @@
+---
+# Desktop NixOS tower. Managed locally via ansible-pull.
+ansible_connection: local
+ansible_user: pars
+ansible_port: 22
+
+host_roles:
+  - terminal_dotfiles
+  - graphical_dotfiles
+  - coding_agents
+
+# identity
+username: pars
+cowfile: default
+
+# network interfaces
+lan: enp10s0
+
+# no battery (desktop)
+battery: false
+
+# USB audio DAC (main output)
+pactl_sink_name: alsa_output.usb-Generic_USB_Audio-00.HiFi__Speaker__sink
+
+background_image: "{{ home_dir }}/{{ configs_repo }}/pictures/IMAG7297.JPG"

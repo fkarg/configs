@@ -1,0 +1,14 @@
+---
+ansible_connection: local
+ansible_user: pars
+
+host_roles:
+  - terminal_dotfiles
+  - graphical_dotfiles
+  - coding_agents
+
+username: pars
+cowfile: default
+lan: enp0s31f6
+wifi: wlp1s0
+battery: true

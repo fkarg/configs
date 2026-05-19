@@ -1,0 +1,157 @@
+---
+# Personal Mac. No bootstrap/base — managed locally via ansible-pull.
+ansible_connection: local
+ansible_user: felix
+
+host_roles:
+  - terminal_dotfiles
+  - os_macos
+  - graphical_dotfiles
+  - coding_agents
+
+# identity
+username: felix
+cowfile: llama
+
+# shell integrations
+direnv: true
+zoxide: true
+
+# INVARIANT — Top-level only. (See spec for refresh procedure.)
+# Both `brew_packages_common` and `brew_casks_common` below must list ONLY
+# top-level (manually installed) packages, never transitive dependencies.
+# Sources of truth: `brew leaves` and `brew list --cask` on the live host.
+
+brew_packages_common:
+  # shell, prompt & file utilities
+  - bat
+  - coreutils
+  - cowsay
+  - direnv
+  - eza
+  - fish
+  - fortune
+  - htop
+  - ncdu
+  - neofetch
+  - ripgrep-all
+  - watch
+  - wget
+  - yq
+  - zoxide
+  # editor, language servers & linters
+  - languagetool
+  - neovim
+  - tinymist
+  - yamllint
+  # git & dev workflow
+  - gh
+  - git
+  - git-filter-repo
+  - glow
+  - lazygit
+  - tokei
+  # programming languages & runtimes
+  - ghc
+  - node@24
+  - oven-sh/bun/bun
+  - pnpm
+  - python-setuptools
+  - rust
+  - uv
+  # containers & kubernetes
+  - docker
+  - docker-buildx
+  - docker-compose
+  - k3d
+  - k9s
+  - kubecfg
+  - kubernetes-cli
+  - kustomize
+  # networking & remote access
+  - iperf
+  - ldns
+  - mosh
+  - nmap
+  - socat
+  - xpipe
+  # storage & databases
+  - minio-mc
+  - postgresql@17
+  # documents & typesetting
+  - ghostscript
+  - graphviz
+  - psutils
+  - qpdf
+  - typst
+  # finance / accounting
+  - beancount
+  - beancount-language-server
+  - beanquery
+  - fava
+  # infrastructure / config management
+  - ansible
+  - ansible-language-server
+  - ansible-lint
+  # AI / coding agents
+  - ccusage
+  - gemini-cli
+  - opencode
+  # macOS-specific helpers
+  - batt
+  - sleepwatcher
+brew_packages_extra: []
+
+brew_casks_common:
+  # window management & system tweaks
+  - amethyst
+  - caffeine
+  - hammerspoon
+  - karabiner-elements
+  - logi-options+
+  - raycast
+  - rectangle
+  - scroll-reverser
+  - stats
+  # terminals & editors
+  - kitty
+  - visual-studio-code
+  # browsers
+  - firefox
+  - google-chrome
+  - tor-browser
+  # communication & messaging
+  - betterdiscord-installer
+  - discord
+  - microsoft-teams
+  - signal
+  - telegram
+  - telegram-desktop
+  - whatsapp
+  # proton suite
+  - proton-drive
+  - proton-mail
+  - proton-pass
+  - protonvpn
+  # microsoft office
+  - microsoft-excel
+  - microsoft-outlook
+  - microsoft-powerpoint
+  - microsoft-word
+  # productivity & documents
+  - libreoffice
+  - obsidian
+  # AI / coding agents
+  - claude-code
+  - codex
+  - comfyui
+  - copilot-cli
+  - ollama-app
+  - wispr-flow
+  # containers & virtualization
+  - docker-desktop
+  - utm
+  # media
+  - vlc
+  - yt-music
+brew_casks_extra: []
