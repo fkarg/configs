@@ -15,3 +15,6 @@ dotconfig/fish/config.fish
 dotconfig/fish/completions/
 dotconfig/fish/conf.d/
 dotconfig/fish/fishfile
+
+# per-tool agent files built from coding-agents/source/ on each ansible run
+coding-agents/generated/

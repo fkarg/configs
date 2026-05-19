@@ -138,4 +138,8 @@
     - import_tasks: tasks/configs_graphical.yml
       when: "client_role is defined and client_role != 'terminal'"
 
+    - import_tasks: tasks/coding_agents.yml
+      when: client_role is defined
+      tags: [coding-agents]
+
     - meta: flush_handlers

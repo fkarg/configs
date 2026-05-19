@@ -56,3 +56,8 @@ To allow overwriting existing config directories with symlinks, pass `confirm_ov
 This flag is ignored in check mode (`--check`), so you can safely preview changes without risk.
 
 Make sure you have an ssh key which is registered on your github account for this computer already.
+
+
+## TODO
+
+- repo pull tasks: ignore_errors:true
