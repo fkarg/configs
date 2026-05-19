@@ -80,11 +80,20 @@
   };
 
   environment.systemPackages = with pkgs; [
-    # launcher, notifications, and bar
+    # launchers, notifications, and bar
     bibata-cursors
     fuzzel
+    hyprlauncher
     mako
+    rofi
+    tofi
     waybar
+    walker
+    wofi
+    bemenu
+    nwg-drawer
+    sherlock-launcher
+    anyrun
 
     # status, sensors, and system monitors
     btop
@@ -100,12 +109,17 @@
 
     # screenshots and clipboard
     grim
+    hyprshot
+    satty
     slurp
+    swappy
     wl-clipboard
     cliphist
 
-    # session controls
+    # file manager and session controls
+    lf
     brightnessctl
     playerctl
+    socat
   ];
 }
