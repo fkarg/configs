@@ -44,6 +44,16 @@
     path: ~/.config/hypr
   register: hypr_config_stat
 
+- name: Check if sway config is a directory (not symlink)
+  stat:
+    path: ~/.config/sway
+  register: sway_config_stat
+
+- name: Check if waybar config is a directory (not symlink)
+  stat:
+    path: ~/.config/waybar
+  register: waybar_config_stat
+
 - name: Check if hyprland.conf is already a symlink
   stat:
     path: ~/.config/hypr/hyprland.conf
@@ -65,6 +75,28 @@
     - confirm_overwrite | default(false) | bool
     - not ansible_check_mode
 
+- name: Remove existing sway config directory (requires confirm_overwrite=true)
+  file:
+    path: ~/.config/sway
+    state: absent
+  when:
+    - sway_config_stat.stat.exists
+    - sway_config_stat.stat.isdir
+    - not sway_config_stat.stat.islnk
+    - confirm_overwrite | default(false) | bool
+    - not ansible_check_mode
+
+- name: Remove existing waybar config directory (requires confirm_overwrite=true)
+  file:
+    path: ~/.config/waybar
+    state: absent
+  when:
+    - waybar_config_stat.stat.exists
+    - waybar_config_stat.stat.isdir
+    - not waybar_config_stat.stat.islnk
+    - confirm_overwrite | default(false) | bool
+    - not ansible_check_mode
+
 - name: Ensure hypr config directory exists
   file:
     path: ~/.config/hypr
@@ -79,6 +111,26 @@
   when:
     - repo is succeeded and terminal == "kitty"
     - not (kitty_config_stat.stat.exists and kitty_config_stat.stat.isdir and not kitty_config_stat.stat.islnk and not (confirm_overwrite | default(false) | bool))
+
+- name: Link sway config
+  file:
+    src: "~/{{ configs_repo }}/{{ dotconfigdir }}/sway"
+    dest: ~/.config/sway
+    state: link
+  when:
+    - repo is succeeded
+    - ansible_facts['system'] == 'Linux'
+    - not (sway_config_stat.stat.exists and sway_config_stat.stat.isdir and not sway_config_stat.stat.islnk and not (confirm_overwrite | default(false) | bool))
+
+- name: Link waybar config
+  file:
+    src: "~/{{ configs_repo }}/{{ dotconfigdir }}/waybar"
+    dest: ~/.config/waybar
+    state: link
+  when:
+    - repo is succeeded
+    - ansible_facts['system'] == 'Linux'
+    - not (waybar_config_stat.stat.exists and waybar_config_stat.stat.isdir and not waybar_config_stat.stat.islnk and not (confirm_overwrite | default(false) | bool))
 
 - name: Remove existing hyprland.conf file (requires confirm_overwrite=true for regular files)
   file:
