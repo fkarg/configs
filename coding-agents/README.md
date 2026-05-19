@@ -1,7 +1,8 @@
 # coding-agents
 
 Shared subagent / custom-agent definitions, synced across the four coding-agent
-CLIs (OpenCode, Claude Code, Codex, GitHub Copilot CLI) by `tasks/coding_agents.yml`.
+CLIs (OpenCode, Claude Code, Codex, GitHub Copilot CLI) by the `coding_agents`
+Ansible role (`ansible/roles/coding_agents/`).
 
 ## Layout
 
@@ -16,7 +17,7 @@ generated/              built each ansible run — do not edit
 1. Edit `source/<name>.md`.
 2. From `~/configs`, run:
    ```sh
-   ansible-playbook general.yml -e client_role=<host> --tags coding-agents
+   ansible-playbook ansible/site.yml -l <host> --tags coding-agents
    ```
 3. Test in your tool.
 
