@@ -1,0 +1,6 @@
+---
+# All brew lists default to empty here; populated in host_vars/<host>.yml.
+brew_packages_common: []
+brew_packages_extra: []
+brew_casks_common: []
+brew_casks_extra: []

@@ -1,0 +1,9 @@
+---
+# All tasks gated by Darwin at the include level.
+- include_tasks: packages.yml
+  when: ansible_facts['system'] == 'Darwin'
+  tags: [brew_formulae, brew_casks]
+
+- include_tasks: autoupdates.yml
+  when: ansible_facts['system'] == 'Darwin'
+  tags: [autoupdates]

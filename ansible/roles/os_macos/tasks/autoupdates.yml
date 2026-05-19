@@ -1,0 +1,45 @@
+---
+# Disable in-app auto-update mechanisms so Homebrew remains source of truth.
+
+- name: Disable Sparkle auto-update checks
+  community.general.osx_defaults:
+    domain: "{{ item.domain }}"
+    key: "{{ item.key }}"
+    type: bool
+    value: false
+    state: present
+  loop:
+    - { domain: com.amethyst.Amethyst,        key: SUEnableAutomaticChecks }
+    - { domain: com.amethyst.Amethyst,        key: SUAutomaticallyUpdate }
+    - { domain: org.hammerspoon.Hammerspoon,  key: SUEnableAutomaticChecks }
+    - { domain: org.hammerspoon.Hammerspoon,  key: SUAutomaticallyUpdate }
+    - { domain: com.knollsoft.Rectangle,      key: SUEnableAutomaticChecks }
+    - { domain: com.knollsoft.Rectangle,      key: SUAutomaticallyUpdate }
+    - { domain: eu.exelban.Stats,             key: SUEnableAutomaticChecks }
+    - { domain: eu.exelban.Stats,             key: SUAutomaticallyUpdate }
+    - { domain: org.videolan.vlc,             key: SUEnableAutomaticChecks }
+    - { domain: org.videolan.vlc,             key: SUAutomaticallyUpdate }
+
+- name: Disable Microsoft AutoUpdate (Excel, Word, PowerPoint, Outlook, Teams)
+  community.general.osx_defaults:
+    domain: com.microsoft.autoupdate2
+    key: HowToCheck
+    type: string
+    value: Manual
+    state: present
+
+- name: Disable Microsoft AutoUpdate automatic download
+  community.general.osx_defaults:
+    domain: com.microsoft.autoupdate2
+    key: AutomaticDownload
+    type: bool
+    value: false
+    state: present
+
+- name: Disable Google Keystone (Chrome) update checks
+  community.general.osx_defaults:
+    domain: com.google.Keystone.Agent
+    key: checkInterval
+    type: float
+    value: 0
+    state: present

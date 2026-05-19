@@ -1,0 +1,38 @@
+---
+- name: Detect existing brew (Apple Silicon)
+  stat:
+    path: /opt/homebrew/bin/brew
+  register: _brew_opt
+
+- name: Detect existing brew (Intel)
+  stat:
+    path: /usr/local/bin/brew
+  register: _brew_usr
+
+- name: Install Homebrew
+  shell: /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+  when: not _brew_opt.stat.exists and not _brew_usr.stat.exists
+
+- name: Set brew_bin fact
+  set_fact:
+    brew_bin: >-
+      {{ '/opt/homebrew/bin/brew' if _brew_opt.stat.exists else (
+           '/usr/local/bin/brew' if _brew_usr.stat.exists else '/opt/homebrew/bin/brew') }}
+
+- name: Install brew formulae
+  community.general.homebrew:
+    name: "{{ item }}"
+    state: present
+    path: "{{ brew_bin | dirname }}"
+  loop: "{{ (brew_packages_common | default([])) + (brew_packages_extra | default([])) }}"
+  tags: [brew_formulae]
+
+- name: Install brew casks
+  community.general.homebrew_cask:
+    name: "{{ item }}"
+    state: present
+    path: "{{ brew_bin | dirname }}"
+    greedy: true
+  loop: "{{ (brew_casks_common | default([])) + (brew_casks_extra | default([])) }}"
+  ignore_errors: true
+  tags: [brew_casks]
