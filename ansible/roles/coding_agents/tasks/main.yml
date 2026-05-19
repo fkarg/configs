@@ -1,0 +1,84 @@
+---
+# Sync shared coding-agent / subagent definitions across tools.
+# Canonical source: <repo>/coding-agents/source/<name>.md
+# build.py renders per-tool variants under coding-agents/generated/.
+
+- name: Ensure global agent directories exist
+  file:
+    path: "{{ item }}"
+    state: directory
+  loop:
+    - "~/.config/opencode/agents"
+    - "~/.claude/agents"
+    - "~/.codex/agents"
+    - "~/.copilot/agents"
+
+- name: Build per-tool agent variants from canonical source
+  command:
+    cmd: python3 build.py
+    chdir: "{{ coding_agents_source_dir }}"
+  changed_when: false
+
+- name: Discover canonical source agents
+  find:
+    paths: "{{ coding_agents_source_dir }}/source"
+    patterns: "*.md"
+  register: ca_sources
+
+- name: Symlink OpenCode agents (canonical format, no transform)
+  file:
+    src: "{{ item.path }}"
+    dest: "~/.config/opencode/agents/{{ item.path | basename }}"
+    state: link
+    force: true
+  loop: "{{ ca_sources.files }}"
+  loop_control:
+    label: "{{ item.path | basename }}"
+
+- name: Discover generated Claude Code agents
+  find:
+    paths: "{{ coding_agents_source_dir }}/generated/claude/agents"
+    patterns: "*.md"
+  register: ca_claude
+
+- name: Symlink Claude Code agents
+  file:
+    src: "{{ item.path }}"
+    dest: "~/.claude/agents/{{ item.path | basename }}"
+    state: link
+    force: true
+  loop: "{{ ca_claude.files }}"
+  loop_control:
+    label: "{{ item.path | basename }}"
+
+- name: Discover generated Codex agents
+  find:
+    paths: "{{ coding_agents_source_dir }}/generated/codex/agents"
+    patterns: "*.toml"
+  register: ca_codex
+
+- name: Symlink Codex agents
+  file:
+    src: "{{ item.path }}"
+    dest: "~/.codex/agents/{{ item.path | basename }}"
+    state: link
+    force: true
+  loop: "{{ ca_codex.files }}"
+  loop_control:
+    label: "{{ item.path | basename }}"
+
+- name: Discover generated Copilot CLI agents
+  find:
+    paths: "{{ coding_agents_source_dir }}/generated/copilot/agents"
+    patterns: "*.agent.md"
+  register: ca_copilot
+
+- name: Symlink Copilot CLI agents
+  file:
+    src: "{{ item.path }}"
+    dest: "~/.copilot/agents/{{ item.path | basename }}"
+    state: link
+    force: true
+  loop: "{{ ca_copilot.files }}"
+  loop_control:
+    label: "{{ item.path | basename }}"

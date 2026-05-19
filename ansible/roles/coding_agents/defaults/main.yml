@@ -1,0 +1,3 @@
+---
+coding_agents_source_dir: "{{ repo_root }}/coding-agents"
+coding_agents_build_script: "{{ coding_agents_source_dir }}/build.py"

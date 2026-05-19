@@ -55,3 +55,8 @@ repos_list:
   - "{{ home_dir }}/Coding/things-to-talk-about"
 
 repos_additional: []
+
+# Repo root — resolves whether the entry playbook is ansible/site.yml or
+# ansible/playbooks/*.yml. Used by tasks that need to reference files
+# outside the ansible/ tree (e.g. coding-agents/build.py).
+repo_root: "{{ playbook_dir | regex_replace('/playbooks$', '') | regex_replace('/ansible$', '') }}"
