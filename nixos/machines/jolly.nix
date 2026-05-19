@@ -258,11 +258,13 @@
   services.desktopManager.gnome.enable = true;
   services.desktopManager.cosmic.enable = true;
   programs.ssh.startAgent = lib.mkForce false;
+  programs.ssh.askPassword = lib.mkForce "${pkgs.seahorse}/libexec/seahorse/ssh-askpass";
 
   # TTY fallback if GDM or GNOME/COSMIC are unhappy. Hyprland is installed as a
   # selectable GDM session by ../shared/desktops/hyprland-session.nix.
   programs.sway = {
     enable = true;
+    extraOptions = [ "--unsupported-gpu" ];
     wrapperFeatures.gtk = true;
     extraPackages = with pkgs; [
       foot

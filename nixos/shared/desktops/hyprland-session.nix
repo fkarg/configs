@@ -10,6 +10,7 @@
   };
 
   programs.hyprlock.enable = true;
+  services.hypridle.enable = lib.mkForce false;
 
   services.pipewire = {
     enable = lib.mkForce true;
@@ -62,6 +63,12 @@
         cursor-theme = "Bibata-Modern-Classic";
         cursor-size = lib.gvariant.mkInt32 24;
       };
+      settings."org/gnome/mutter" = {
+        dynamic-workspaces = false;
+      };
+      settings."org/gnome/desktop/wm/preferences" = {
+        num-workspaces = lib.gvariant.mkInt32 10;
+      };
     }
   ];
 
@@ -69,6 +76,7 @@
     XCURSOR_THEME = "Bibata-Modern-Classic";
     XCURSOR_SIZE = "24";
     NIXOS_OZONE_WL = "1";
+    ELECTRON_OZONE_PLATFORM_HINT = "auto";
   };
 
   environment.systemPackages = with pkgs; [
@@ -77,6 +85,12 @@
     fuzzel
     mako
     waybar
+
+    # status, sensors, and system monitors
+    btop
+    lm_sensors
+    mission-center
+    nvtopPackages.nvidia
 
     # Hyprland ecosystem tools
     hypridle

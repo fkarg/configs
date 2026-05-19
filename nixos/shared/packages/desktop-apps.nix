@@ -15,9 +15,13 @@
 
     # browsers and desktop-entry providers
     # Keep browsers here when they should be selectable as system defaults.
-    chromium
+    (chromium.override {
+      commandLineArgs = "--ozone-platform-hint=auto --enable-features=WaylandWindowDecorations --enable-wayland-ime=true";
+    })
     firefox
-    google-chrome
+    (google-chrome.override {
+      commandLineArgs = "--ozone-platform-hint=auto --enable-features=WaylandWindowDecorations --enable-wayland-ime=true";
+    })
     tor-browser
 
     # communication

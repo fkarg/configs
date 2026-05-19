@@ -11,6 +11,9 @@
     shutter
     file-roller
     pavucontrol
+    desktop-file-utils
+    libnotify
+    xdg-utils
 
     # desktop integration and hardware helpers
     networkmanagerapplet
