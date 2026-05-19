@@ -33,12 +33,6 @@ git_editor: nvim
 git_difft: false
 git_lfs: false
 
-# ensure that nix is installed regardless of of the OS being nixOS
-ensure_nix: true
-
-# if nix is available, install a number of packages for the user
-install_nix_programs: true
-
 # shell integrations
 direnv: false
 zoxide: false

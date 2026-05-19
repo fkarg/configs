@@ -36,11 +36,7 @@ base_swap_size_mb: 2048
 # Whether to dist-upgrade on every run.
 base_upgrade_packages: true
 
-# zswap — compressed swap cache in front of disk swap.
-base_zswap_enabled: false
-base_zswap_compressor: zstd
-base_zswap_zpool: zsmalloc
-base_zswap_max_pool_percent: 35
+# Kernel swappiness (0-200). Lower = prefer evicting file cache over anonymous pages.
 base_vm_swappiness: 60
 
 # UFW firewall.
