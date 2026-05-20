@@ -17,6 +17,26 @@ cowfile: llama
 direnv: true
 zoxide: true
 
+# Monitor KVM (Philips 49B2U5900CH): Ctrl+Shift+F12 sends a DDC input-switch
+# from this host to the *other* machine on the shared monitor. caeli is on
+# USB-C, so kvm_switch_target_input is jolly's input code on the Philips.
+# Discover with:
+#   m1ddc display list                              # copy the Philips UUID
+#   m1ddc display <UUID> get input                  # while sitting on USB-C
+#   # then switch to jolly via the monitor's OSD and rerun:
+#   m1ddc display <UUID> get input                  # → that's the value below
+# kvm_display_id pins the command to the Philips even if display ordering or
+# the built-in's connection state changes. 15 == 0x0F is a placeholder until
+# verified.
+kvm_switch_enabled: true
+kvm_display_id: "0A6C28AE-EE62-41C3-8565-25FEE528B91B"
+# kvm_self_input is *this* host's input on the monitor (caeli = USB-C). When
+# set, the keybind toggles between self and target instead of always firing
+# at target; leave null for one-shot behaviour. Discover with
+# `m1ddc display <id> get input` while connected normally.
+kvm_self_input: null
+kvm_switch_target_input: 15
+
 # INVARIANT — Top-level only. (See spec for refresh procedure.)
 # Both `brew_packages_common` and `brew_casks_common` below must list ONLY
 # top-level (manually installed) packages, never transitive dependencies.
@@ -99,6 +119,7 @@ brew_packages_common:
   - opencode
   # macOS-specific helpers
   - batt
+  - m1ddc
   - sleepwatcher
 brew_packages_extra: []
 
@@ -106,7 +127,6 @@ brew_casks_common:
   # window management & system tweaks
   - amethyst
   - caffeine
-  - hammerspoon
   - karabiner-elements
   - logi-options+
   - raycast

@@ -1,0 +1,24 @@
+#!/usr/bin/env sh
+# Managed by ansible: ansible/roles/graphical_dotfiles/templates/kvm_switch_macos.sh.j2
+# Invoked by the Ctrl+Shift+F12 Karabiner rule. If kvm_self_input is configured,
+# toggles between self and target on the Philips KVM; otherwise just sets target.
+set -eu
+
+M1DDC=/opt/homebrew/bin/m1ddc
+{% if kvm_display_id | default('') | length > 0 %}
+DISPLAY_ARG="display {{ kvm_display_id }}"
+{% else %}
+DISPLAY_ARG=""
+{% endif %}
+TARGET={{ kvm_switch_target_input | int }}
+{% if kvm_self_input not in [None, ''] %}
+SELF={{ kvm_self_input | int }}
+current=$($M1DDC $DISPLAY_ARG get input 2>/dev/null | tr -d '[:space:]')
+if [ "$current" = "$SELF" ]; then
+  exec $M1DDC $DISPLAY_ARG set input "$TARGET"
+else
+  exec $M1DDC $DISPLAY_ARG set input "$SELF"
+fi
+{% else %}
+exec $M1DDC $DISPLAY_ARG set input "$TARGET"
+{% endif %}

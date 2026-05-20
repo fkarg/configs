@@ -58,6 +58,50 @@
   tags: [kitty]
 
 # ============================================
+# KARABINER (Darwin only) — drops a complex-modification asset for the
+# Ctrl+Shift+F12 KVM switch. After the file lands you still have to open
+# Karabiner-Elements → Complex Modifications → Add rule, and enable
+# "Ctrl+Shift+F12 → flip monitor to other input via m1ddc" once. m1ddc itself
+# ships via brew_packages_common.
+# ============================================
+- name: Ensure Karabiner complex_modifications assets directory exists
+  file:
+    path: ~/.config/karabiner/assets/complex_modifications
+    state: directory
+  when:
+    - ansible_facts['system'] == 'Darwin'
+    - kvm_switch_enabled | default(false) | bool
+  tags: [karabiner, kvm]
+
+- name: Ensure ~/.config/kvm directory exists
+  file:
+    path: ~/.config/kvm
+    state: directory
+  when:
+    - ansible_facts['system'] == 'Darwin'
+    - kvm_switch_enabled | default(false) | bool
+  tags: [karabiner, kvm]
+
+- name: Template macOS KVM switch script
+  template:
+    src: kvm_switch_macos.sh.j2
+    dest: ~/.config/kvm/switch.sh
+    mode: '0755'
+  when:
+    - ansible_facts['system'] == 'Darwin'
+    - kvm_switch_enabled | default(false) | bool
+  tags: [karabiner, kvm]
+
+- name: Template Karabiner KVM rule asset
+  template:
+    src: karabiner_kvm.json.j2
+    dest: ~/.config/karabiner/assets/complex_modifications/kvm.json
+  when:
+    - ansible_facts['system'] == 'Darwin'
+    - kvm_switch_enabled | default(false) | bool
+  tags: [karabiner, kvm]
+
+# ============================================
 # HYPRLAND (Linux only)
 # ============================================
 - name: Ensure hypr config directory exists
@@ -95,6 +139,16 @@
     - ansible_facts['system'] == 'Linux'
     - not (_hyprland_conf.stat.exists | default(false) and not (_hyprland_conf.stat.islnk | default(false)) and not (confirm_overwrite | default(false) | bool))
   tags: [hyprland]
+
+- name: Template hyprland KVM switch script
+  template:
+    src: kvm_switch.sh.j2
+    dest: ~/.config/hypr/kvm-switch.sh
+    mode: '0755'
+  when:
+    - ansible_facts['system'] == 'Linux'
+    - kvm_switch_enabled | default(false) | bool
+  tags: [hyprland, kvm]
 
 # ============================================
 # FIREFOX LEGACY PATH (Linux only)

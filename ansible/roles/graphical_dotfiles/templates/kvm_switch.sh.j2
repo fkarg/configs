@@ -1,0 +1,5 @@
+#!/usr/bin/env sh
+# Managed by ansible: ansible/roles/graphical_dotfiles/templates/kvm_switch.sh.j2
+# Bound to Ctrl+Shift+F12 in dotconfig/hypr/hyprland.conf.
+# Requires ddcutil + i2c-dev access (hardware.i2c.enable in jolly.nix).
+exec ddcutil setvcp 60 {{ kvm_switch_target_input | int }}

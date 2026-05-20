@@ -223,6 +223,15 @@
 
   virtualisation.docker.enable = true;
 
+  # i2c is intentionally OFF: previously paired with OpenRGB it caused blackscreens
+  # on this RTX 3070 setup. ddcutil (used by the Ctrl+Shift+F12 KVM keybind in
+  # hyprland) requires i2c-dev access — without it, the bind installs but is a
+  # no-op until i2c is brought back. To re-enable, flip the three lines below
+  # together and add `"i2c"` to pars.extraGroups in
+  # nixos/shared/users/pars/account.nix:
+  #   hardware.i2c.enable = true;
+  #   # services.hardware.openrgb.enable stays off unless you also want RGB
+  #   # control back — that was the combo that blackscreened.
   hardware.i2c.enable = false;
   services.hardware.openrgb.enable = false;
 
@@ -302,5 +311,8 @@
     vulkan-tools
     wayland-utils
     wlr-randr
+    # Used by the Hyprland Ctrl+Shift+F12 KVM bind. Inert until hardware.i2c
+    # is re-enabled (see comment above).
+    ddcutil
   ];
 }

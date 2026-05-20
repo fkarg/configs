@@ -23,3 +23,12 @@ battery: false
 pactl_sink_name: alsa_output.usb-Generic_USB_Audio-00.HiFi__Speaker__sink
 
 background_image: "{{ home_dir }}/{{ configs_repo }}/pictures/IMAG7297.JPG"
+
+# Monitor KVM (Philips 49B2U5900CH): Ctrl+Shift+F12 in Hyprland calls
+# ~/.config/hypr/kvm-switch.sh, which runs `ddcutil setvcp 60 <code>` to flip
+# the shared monitor to caeli's input. jolly is on DisplayPort, so this
+# value should point at the Mac's USB-C input. Discover via `ddcutil
+# capabilities` (feature 0x60) and `ddcutil getvcp 60`. 16 == 0x10.
+# Inert until hardware.i2c is re-enabled on jolly (see nixos/machines/jolly.nix).
+kvm_switch_enabled: true
+kvm_switch_target_input: 16

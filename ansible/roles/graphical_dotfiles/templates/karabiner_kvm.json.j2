@@ -1,0 +1,24 @@
+{
+  "title": "KVM input switch",
+  "rules": [
+    {
+      "description": "Ctrl+Shift+F12 → toggle/flip monitor input via m1ddc",
+      "manipulators": [
+        {
+          "type": "basic",
+          "from": {
+            "key_code": "f12",
+            "modifiers": {
+              "mandatory": ["control", "shift"]
+            }
+          },
+          "to": [
+            {
+              "shell_command": "$HOME/.config/kvm/switch.sh"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
