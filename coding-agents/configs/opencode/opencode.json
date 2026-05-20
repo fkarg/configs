@@ -1,0 +1,59 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "permission": {
+    "doom_loop": "ask",
+    "bash": {
+      "*": "allow",
+
+      "rm *": "deny",
+
+      "git commit": "ask",
+      "git commit *": "ask",
+      "git push": "ask",
+      "git push *": "ask",
+      "git rebase *": "ask",
+      "git reset *": "ask",
+      "git stash *": "ask",
+      "git clean *": "ask",
+      "git tag *": "ask",
+
+      "ssh *": "ask",
+      "scp *": "ask",
+      "rsync *": "ask",
+
+      "docker rm *": "ask",
+      "docker rmi *": "ask",
+      "docker stop *": "ask",
+      "docker system prune *": "ask",
+      "docker volume rm *": "ask",
+      "docker compose down *": "ask",
+
+      "kubectl delete *": "ask",
+      "kubectl apply *": "ask",
+      "kubectl exec *": "ask",
+      "kubectl rollout *": "ask",
+
+      "npm publish *": "ask",
+      "pnpm publish *": "ask",
+
+      "chmod *": "ask",
+      "chown *": "ask",
+      "sudo *": "ask",
+
+      "pkill *": "ask",
+      "kill *": "ask",
+
+      "curl * | *": "ask",
+      "wget * | *": "ask"
+    }
+  },
+  "lsp": {
+    "pyright": {
+      "disabled": true
+    },
+    "pyrefly": {
+      "command": ["pyrefly", "lsp"],
+      "extensions": [".py", ".pyi"]
+    }
+  }
+}

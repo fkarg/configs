@@ -8,10 +8,34 @@
     path: "{{ item }}"
     state: directory
   loop:
+    - "~/.config/opencode"
     - "~/.config/opencode/agents"
+    - "~/.claude"
     - "~/.claude/agents"
+    - "~/.codex"
     - "~/.codex/agents"
+    - "~/.copilot"
     - "~/.copilot/agents"
+
+# Symlink per-tool global config files. Editing on any machine writes back
+# through the symlink into the repo, so changes propagate via git.
+#
+# Note: copilot and codex auto-write host-specific paths into their config
+# (trustedFolders / [projects."..."] blocks). These propagate to git on commit,
+# so review `git status` for project-path leaks before pushing.
+- name: Symlink per-tool global config files
+  file:
+    src: "{{ coding_agents_source_dir }}/configs/{{ item.src }}"
+    dest: "{{ item.dest }}"
+    state: link
+    force: true
+  loop:
+    - { src: "claude/settings.json",   dest: "~/.claude/settings.json" }
+    - { src: "codex/config.toml",      dest: "~/.codex/config.toml" }
+    - { src: "copilot/config.json",    dest: "~/.copilot/config.json" }
+    - { src: "opencode/opencode.json", dest: "~/.config/opencode/opencode.json" }
+  loop_control:
+    label: "{{ item.dest }}"
 
 - name: Build per-tool agent variants from canonical source
   command:

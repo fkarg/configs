@@ -1,0 +1,13 @@
+model = "gpt-5.4"
+model_reasoning_effort = "high"
+personality = "pragmatic"
+
+[projects."/Users/felix/Coding/infrastructure"]
+trust_level = "trusted"
+
+[projects."/Users/felix/Coding/frontend-react"]
+trust_level = "trusted"
+
+[notice.model_migrations]
+gpt-5-codex = "gpt-5.2-codex"
+"gpt-5.2-codex" = "gpt-5.4"
