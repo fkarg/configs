@@ -19,6 +19,7 @@
     update: no
   register: _repo
   when: _ssh is succeeded and _ssh.stat.exists
+  ignore_errors: true
   tags: [repos]
 
 - name: Make sure ~/configs/ is present (via HTTPS fallback)
@@ -29,6 +30,7 @@
     update: no
   register: _repo
   when: not (_ssh.stat.exists | default(false))
+  ignore_errors: true
   tags: [repos]
 
 - name: Update ~/configs/ repository
