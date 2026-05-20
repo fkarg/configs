@@ -165,7 +165,7 @@
     repo: "git@github.com:{{ git_username }}/{{ todotxtrepo }}.git"
     dest: "~/{{ todotxtrepo }}"
     update: yes
-  ignore_errors: true
+  failed_when: false
   tags: [todo, repos]
 
 # ============================================
@@ -176,7 +176,7 @@
     repo: "git@github.com:{{ git_username }}/{{ finances_repo }}.git"
     dest: "~/{{ finances_repo }}"
     update: yes
-  ignore_errors: true
+  failed_when: false
   tags: [repos]
 
 # ============================================
