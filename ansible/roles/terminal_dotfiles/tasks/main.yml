@@ -1,9 +1,10 @@
 ---
-# Base profile installation: repo clone, gitconfig, fish, nvim/vim, optionally
-# broot, text_zeug clone. Runs on every host.
+# Generic terminal dotfiles: configs repo presence, fish, nvim/vim. No
+# personal identity bits (gitconfig, private repos) — those live in the
+# `personal` role so this is safe to apply on any VM/server.
 
 # ============================================
-# CONFIGS REPO PRESENCE
+# CONFIGS REPO PRESENCE (needed because fish/nvim symlinks resolve into it)
 # ============================================
 - name: Check if .ssh key present
   stat:
@@ -42,7 +43,8 @@
   tags: [repos]
 
 # ============================================
-# GIT CONFIG
+# GIT CONFIG (mostly generic preferences — rebase, mergetool, autocorrect;
+# identity lines pull from group_vars/all.yml: git_email, git_name, signingkey)
 # ============================================
 - name: Template .gitconfig
   template:
@@ -80,15 +82,3 @@
 - include_tasks: link_dotdir.yml
   vars: { link_src: nvim, link_dest: ~/.config/vim }
   tags: [nvim]
-
-# ============================================
-# TEXT_ZEUG
-# ============================================
-- name: Make sure text_zeug is present
-  git:
-    repo: "git@github.com:{{ git_username }}/text_zeug.git"
-    dest: ~/text_zeug
-    update: no
-  when: _ssh.stat.exists | default(false)
-  failed_when: false
-  tags: [repos]

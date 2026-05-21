@@ -1,5 +1,6 @@
 ---
-# Optional passive-update cron job. Opt-in via base_cron_passive_update.
+# Optional passive-update cron: pulls/pushes the repos in repos_list +
+# repos_additional. Opt-in per host via personal_cron_passive_update.
 
 - name: Template passive_update.sh
   template:

@@ -1,6 +1,8 @@
 ---
-# Server base setup. Runs as the deploy user (sudo via become) on the
-# already-hardened SSH port (bootstrap moved it). Linux/Debian only.
+# Base profile for any Linux host: apt updates, common shell/editor/network
+# packages, mosh-server wrapper, timezone, vm.swappiness. Safe on transient
+# VMs — does NOT touch UFW, fail2ban, swap files, or the hostname. Those
+# live in the opt-in `server_hardening` role.
 
 - name: base — confirm Linux
   assert:
@@ -54,63 +56,12 @@
   tags: [mosh]
 
 # ============================================
-# TIMEZONE + HOSTNAME (conditional)
+# TIMEZONE + KERNEL TUNING
 # ============================================
 - name: Set timezone
   command: timedatectl set-timezone {{ base_server_timezone }}
   changed_when: false
   become: true
-
-- name: Set hostname (only when server_hostname is defined)
-  hostname:
-    name: "{{ server_hostname }}"
-  become: true
-  when: server_hostname is defined
-
-- name: Add hostname to /etc/hosts
-  lineinfile:
-    path: /etc/hosts
-    regexp: '^127\.0\.1\.1'
-    line: "127.0.1.1 {{ server_hostname }}"
-    state: present
-  become: true
-  when: server_hostname is defined
-
-# ============================================
-# SWAP
-# ============================================
-- name: Check swap file
-  stat:
-    path: /swapfile
-  register: _swap
-
-- name: Create and configure swap file
-  when:
-    - base_swap_size_mb > 0
-    - not _swap.stat.exists
-    - not ansible_check_mode
-  become: true
-  block:
-    - name: Create swap file
-      command: fallocate -l {{ base_swap_size_mb }}M /swapfile
-      changed_when: true
-    - name: Set swap file permissions
-      file:
-        path: /swapfile
-        mode: '0600'
-    - name: Format swap file
-      command: mkswap /swapfile
-      changed_when: true
-    - name: Enable swap file
-      command: swapon /swapfile
-      changed_when: true
-    - name: Add swap to fstab
-      lineinfile:
-        path: /etc/fstab
-        regexp: '^/swapfile'
-        line: '/swapfile none swap sw 0 0'
-        state: present
-  tags: [swap]
 
 - name: Tune vm.swappiness
   ansible.posix.sysctl:
@@ -120,90 +71,4 @@
     sysctl_file: /etc/sysctl.d/90-swap-tuning.conf
     reload: true
   become: true
-  tags: [swap]
-
-# ============================================
-# UFW
-# ============================================
-- name: Install UFW
-  apt:
-    name: ufw
-    state: present
-  become: true
-  when: ansible_facts['os_family'] == 'Debian'
-  tags: [firewall]
-
-- name: Set UFW default incoming policy
-  community.general.ufw:
-    direction: incoming
-    policy: "{{ base_ufw_default_incoming }}"
-  become: true
-  when: base_ufw_enabled
-  tags: [firewall]
-
-- name: Set UFW default outgoing policy
-  community.general.ufw:
-    direction: outgoing
-    policy: "{{ base_ufw_default_outgoing }}"
-  become: true
-  when: base_ufw_enabled
-  tags: [firewall]
-
-- name: Configure UFW rules
-  community.general.ufw:
-    rule: "{{ item.rule }}"
-    port: "{{ item.port }}"
-    proto: "{{ item.proto }}"
-    comment: "{{ item.comment | default(omit) }}"
-  loop: "{{ base_ufw_rules + (ufw_rules_extra | default([])) }}"
-  become: true
-  when: base_ufw_enabled
-  tags: [firewall]
-
-- name: Enable UFW
-  community.general.ufw:
-    state: enabled
-  become: true
-  when: base_ufw_enabled
-  tags: [firewall]
-
-# ============================================
-# FAIL2BAN
-# ============================================
-- name: Configure fail2ban for SSH
-  copy:
-    dest: /etc/fail2ban/jail.local
-    content: |
-      [DEFAULT]
-      bantime = 86400
-      findtime = 600
-      maxretry = 3
-      bantime.increment = true
-      bantime.factor = 2
-      bantime.maxtime = 604800
-
-      [sshd]
-      enabled = true
-      port = {{ ansible_port | default(22) }}
-      filter = sshd
-      logpath = /var/log/auth.log
-      maxretry = 3
-      mode = aggressive
-    mode: '0644'
-  become: true
-  notify: Restart fail2ban
-
-- name: Enable and start fail2ban
-  systemd:
-    name: fail2ban
-    enabled: true
-    state: started
-  become: true
-  when: not ansible_check_mode
-
-# ============================================
-# OPTIONAL: PASSIVE UPDATE CRON
-# ============================================
-- include_tasks: cron.yml
-  when: base_cron_passive_update | bool
-  tags: [cron]
+  tags: [sysctl]

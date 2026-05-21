@@ -6,7 +6,10 @@
 #
 # Env vars:
 #   BOOTSTRAP_HOST_ID — if set, runs ansible/site.yml with -e host_id=<value>
-#                        instead of the ad-hoc terminal.yml.
+#                        instead of the ad-hoc terminal.yml. Use `terminal`
+#                        for the generic VM/server profile that mirrors
+#                        terminal.yml but goes through the standard site.yml
+#                        flow (see ansible/inventory/host_vars/terminal.yml).
 #   CONFIGS_REPO_URL  — override the default repo URL (mainly for testing).
 
 set -eu

@@ -4,6 +4,7 @@ ansible_user: pars
 
 host_roles:
   - terminal_dotfiles
+  - personal
   - graphical_dotfiles
   - coding_agents
 

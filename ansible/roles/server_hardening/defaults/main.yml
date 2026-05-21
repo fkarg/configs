@@ -1,0 +1,14 @@
+---
+# Mosh UDP port range is owned by the `base` role (it provisions the
+# mosh-server wrapper); reuse base_mosh_port_range here so a hardened host
+# opens the same port range that mosh-server actually listens on.
+
+# Swap file size in MB (0 disables swap creation).
+hardening_swap_size_mb: 2048
+
+# UFW firewall — always enabled when this role is applied. Set
+# `ufw_rules_extra` in host_vars to allow your sshd port etc.
+hardening_ufw_default_incoming: deny
+hardening_ufw_default_outgoing: allow
+hardening_ufw_rules:
+  - { rule: allow, port: "{{ base_mosh_port_range }}", proto: udp, comment: "mosh" }

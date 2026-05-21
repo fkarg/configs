@@ -5,6 +5,7 @@ ansible_user: felix
 
 host_roles:
   - terminal_dotfiles
+  - personal
   - os_macos
   - graphical_dotfiles
   - coding_agents

@@ -47,6 +47,33 @@ For a registered host, set `BOOTSTRAP_HOST_ID` so site.yml runs instead:
 BOOTSTRAP_HOST_ID=jolly curl -fsSL https://raw.githubusercontent.com/fkarg/configs/master/bootstrap.sh | sh
 ```
 
+For a **generic terminal/VM** (no per-host file, just `base + terminal_dotfiles` via the normal site.yml flow — no firewall changes, no personal git identity, no private repos), use the shared `terminal` profile:
+
+```
+BOOTSTRAP_HOST_ID=terminal curl -fsSL https://raw.githubusercontent.com/fkarg/configs/master/bootstrap.sh | sh
+```
+
+Or, when the repo is already checked out and you just want to (re)apply the profile locally (`terminal` is a local alias in `hosts.yml`):
+
+```
+ansible-playbook ansible/site.yml -l terminal
+```
+
+See `ansible/inventory/host_vars/terminal.yml` for the knobs it exposes.
+
+#### Role layers
+
+| Role | Scope | Used by |
+|---|---|---|
+| `bootstrap` | Initial SSH/user hardening on a fresh Debian/Ubuntu box (runs as root@22, switches sshd port, creates the deploy user). | Run once via `playbooks/bootstrap.yml`. |
+| `base` | Universally safe Linux baseline: apt updates, common shell/editor/network packages, mosh-server wrapper, timezone, `vm.swappiness`. No firewall, no fail2ban, no swap file, no hostname rewrite. | Every Linux host. |
+| `server_hardening` | Opt-in server lockdown: UFW (deny incoming), fail2ban, swap file, hostname-set (when `server_hostname` is defined). | Production-facing servers only. Add to `host_roles` and set `ufw_rules_extra` with your sshd port. |
+| `terminal_dotfiles` | Generic dotfiles: configs repo clone, `.gitconfig` template (identity comes from `group_vars/all.yml`), fish/nvim/vim symlinks, templated fish config. | Every host that wants the shell setup, including the generic `terminal` profile. |
+| `personal` | Private repos (`text_zeug`, `gtd`, `finances`) and the optional passive-update cron that pulls/pushes them. | Personal machines only. |
+| `graphical_dotfiles` | i3/Hyprland/X resources, GUI dotfiles. | Workstations with a display. |
+| `os_macos` | Homebrew package + cask management, macOS defaults. | macOS hosts. |
+| `coding_agents` | Symlinks for global config of various coding-agent CLIs (claude, etc.). | Hosts that run those agents. |
+
 **Registered host, ongoing config (push from workstation):**
 
 ```

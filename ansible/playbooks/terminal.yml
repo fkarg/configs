@@ -1,6 +1,13 @@
 ---
 # Ad-hoc playbook for unregistered hosts. Applies base + terminal_dotfiles
-# with sensible defaults and does NOT set the hostname.
+# with sensible defaults. Used by bootstrap.sh as the default when
+# BOOTSTRAP_HOST_ID is not set.
+#
+# Prefer the registered `terminal` profile (BOOTSTRAP_HOST_ID=terminal or
+# `ansible-playbook ansible/site.yml -l terminal`) when you can — it goes
+# through site.yml, picks up group_vars, and exposes the same knobs as any
+# other host. This playbook exists for the very first run on a brand new
+# box that doesn't yet have the repo / hosts.yml at hand.
 #
 # Invocation (push, after bootstrap):
 #   ansible-playbook ansible/playbooks/terminal.yml -l <host>

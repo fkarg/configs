@@ -1,0 +1,4 @@
+---
+# Optional cron job that pulls/pushes every repo in repos_list +
+# repos_additional. Opt-in per host.
+personal_cron_passive_update: false

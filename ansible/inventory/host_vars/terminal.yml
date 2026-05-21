@@ -1,0 +1,35 @@
+---
+# Generic terminal/VM profile. Use this on any unregistered server/VM that
+# you want brought to a base + terminal_dotfiles baseline without writing
+# a per-host file. Day-to-day invocation:
+#
+#   # on-host, repo already checked out (`terminal` is a local alias in
+#   # hosts.yml that resolves to the current machine):
+#   ansible-playbook ansible/site.yml -l terminal
+#
+#   # on-host via ansible-pull (e.g. fresh VM bootstrapped from URL):
+#   ansible-pull -U <repo-url> ansible/site.yml -e host_id=terminal
+#
+#   # push from workstation (target host must be in inventory):
+#   ansible-playbook ansible/site.yml -l <host> -e host_id=terminal
+
+ansible_connection: local
+ansible_user: pars
+
+# Deliberately omits `personal` (gitconfig, private repos) and
+# `server_hardening` (UFW, fail2ban, swap, hostname rewrite) so this is
+# safe on any machine — including a VM already SSH'd into on a custom port.
+host_roles:
+  - base
+  - terminal_dotfiles
+
+# Generic VM/server defaults
+battery: false
+
+# Safety: link_dotdir skips symlinking config dirs that already exist as
+# real directories. Keep this off here so a generic re-run is never
+# destructive. Pass -e confirm_overwrite=true to opt in.
+confirm_overwrite: false
+
+# Don't auto-rename the host — hostname-set lives in server_hardening and
+# only fires when server_hostname is defined.

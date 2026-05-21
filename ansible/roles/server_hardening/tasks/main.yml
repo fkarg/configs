@@ -1,0 +1,154 @@
+---
+# Server hardening: UFW, fail2ban, swap, hostname-set. Opt-in via host_roles
+# for hosts that are public-facing servers/VMs. NOT applied to the generic
+# `terminal` profile because (a) UFW with deny-incoming can lock out custom
+# SSH ports, (b) fail2ban defaults assume the bootstrap-managed sshd port,
+# (c) hostname rewrite and swapfile creation aren't wanted on transient VMs.
+
+- name: server_hardening — confirm Linux
+  assert:
+    that: ansible_facts['system'] == 'Linux'
+    fail_msg: "server_hardening role only supports Linux servers"
+  tags: [always]
+
+# ============================================
+# HOSTNAME (conditional)
+# ============================================
+- name: Set hostname (only when server_hostname is defined)
+  hostname:
+    name: "{{ server_hostname }}"
+  become: true
+  when: server_hostname is defined
+  tags: [hostname]
+
+- name: Add hostname to /etc/hosts
+  lineinfile:
+    path: /etc/hosts
+    regexp: '^127\.0\.1\.1'
+    line: "127.0.1.1 {{ server_hostname }}"
+    state: present
+  become: true
+  when: server_hostname is defined
+  tags: [hostname]
+
+# ============================================
+# SWAP
+# ============================================
+- name: Check swap file
+  stat:
+    path: /swapfile
+  register: _swap
+  tags: [swap]
+
+- name: Create and configure swap file
+  when:
+    - hardening_swap_size_mb > 0
+    - not _swap.stat.exists
+    - not ansible_check_mode
+  become: true
+  block:
+    - name: Create swap file
+      command: fallocate -l {{ hardening_swap_size_mb }}M /swapfile
+      changed_when: true
+    - name: Set swap file permissions
+      file:
+        path: /swapfile
+        mode: '0600'
+    - name: Format swap file
+      command: mkswap /swapfile
+      changed_when: true
+    - name: Enable swap file
+      command: swapon /swapfile
+      changed_when: true
+    - name: Add swap to fstab
+      lineinfile:
+        path: /etc/fstab
+        regexp: '^/swapfile'
+        line: '/swapfile none swap sw 0 0'
+        state: present
+  tags: [swap]
+
+# ============================================
+# UFW
+# ============================================
+- name: Install UFW
+  apt:
+    name: ufw
+    state: present
+  become: true
+  when: ansible_facts['os_family'] == 'Debian'
+  tags: [firewall]
+
+- name: Set UFW default incoming policy
+  community.general.ufw:
+    direction: incoming
+    policy: "{{ hardening_ufw_default_incoming }}"
+  become: true
+  tags: [firewall]
+
+- name: Set UFW default outgoing policy
+  community.general.ufw:
+    direction: outgoing
+    policy: "{{ hardening_ufw_default_outgoing }}"
+  become: true
+  tags: [firewall]
+
+- name: Configure UFW rules
+  community.general.ufw:
+    rule: "{{ item.rule }}"
+    port: "{{ item.port }}"
+    proto: "{{ item.proto }}"
+    comment: "{{ item.comment | default(omit) }}"
+  loop: "{{ hardening_ufw_rules + (ufw_rules_extra | default([])) }}"
+  become: true
+  tags: [firewall]
+
+- name: Enable UFW
+  community.general.ufw:
+    state: enabled
+  become: true
+  tags: [firewall]
+
+# ============================================
+# FAIL2BAN
+# ============================================
+- name: Install fail2ban
+  apt:
+    name: fail2ban
+    state: present
+  become: true
+  when: ansible_facts['os_family'] == 'Debian'
+  tags: [fail2ban]
+
+- name: Configure fail2ban for SSH
+  copy:
+    dest: /etc/fail2ban/jail.local
+    content: |
+      [DEFAULT]
+      bantime = 86400
+      findtime = 600
+      maxretry = 3
+      bantime.increment = true
+      bantime.factor = 2
+      bantime.maxtime = 604800
+
+      [sshd]
+      enabled = true
+      port = {{ ansible_port | default(22) }}
+      filter = sshd
+      logpath = /var/log/auth.log
+      maxretry = 3
+      mode = aggressive
+    mode: '0644'
+  become: true
+  notify: Restart fail2ban
+  tags: [fail2ban]
+
+- name: Enable and start fail2ban
+  systemd:
+    name: fail2ban
+    enabled: true
+    state: started
+  become: true
+  when: not ansible_check_mode
+  tags: [fail2ban]

@@ -1,6 +1,7 @@
 ---
 # Graphical-host dotfiles: kitty, hyprland, i3, broot, fonts, background,
-# todo, gtd/finances repos. Most tasks are Linux-only (i3, hyprland, fonts);
+# todo (config only — the gtd/finances repos themselves are cloned by the
+# `personal` role). Most tasks are Linux-only (i3, hyprland, fonts);
 # kitty is cross-platform. Each tool has a concern tag.
 
 # ============================================
@@ -214,24 +215,9 @@
     force: no
   tags: [todo]
 
-- name: Make sure gtd repository is present
-  git:
-    repo: "git@github.com:{{ git_username }}/{{ todotxtrepo }}.git"
-    dest: "~/{{ todotxtrepo }}"
-    update: yes
-  failed_when: false
-  tags: [todo, repos]
-
-# ============================================
-# FINANCES
-# ============================================
-- name: Make sure finances repository is present
-  git:
-    repo: "git@github.com:{{ git_username }}/{{ finances_repo }}.git"
-    dest: "~/{{ finances_repo }}"
-    update: yes
-  failed_when: false
-  tags: [repos]
+# NOTE: gtd and finances repos are cloned by the `personal` role —
+# graphical_dotfiles only sets up the matching GUI config (todo.sh,
+# i3 fava launcher) and assumes those repos exist.
 
 # ============================================
 # FONTS (Linux only)

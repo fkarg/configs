@@ -1,0 +1,47 @@
+---
+# Personal layer: private repositories and personal automation that
+# shouldn't land on generic VMs or servers. Generic git preferences live
+# in terminal_dotfiles; identity defaults come from group_vars/all.yml.
+
+- name: Check if .ssh key present
+  stat:
+    path: ~/.ssh/id_rsa.pub
+  register: _ssh
+  tags: [repos]
+
+# ============================================
+# PRIVATE / PERSONAL REPOS (SSH only; skipped without a key)
+# ============================================
+- name: Make sure text_zeug is present
+  git:
+    repo: "git@github.com:{{ git_username }}/text_zeug.git"
+    dest: ~/text_zeug
+    update: no
+  when: _ssh.stat.exists | default(false)
+  failed_when: false
+  tags: [repos]
+
+- name: Make sure gtd repository is present
+  git:
+    repo: "git@github.com:{{ git_username }}/{{ todotxtrepo }}.git"
+    dest: "~/{{ todotxtrepo }}"
+    update: yes
+  when: _ssh.stat.exists | default(false)
+  failed_when: false
+  tags: [repos, todo]
+
+- name: Make sure finances repository is present
+  git:
+    repo: "git@github.com:{{ git_username }}/{{ finances_repo }}.git"
+    dest: "~/{{ finances_repo }}"
+    update: yes
+  when: _ssh.stat.exists | default(false)
+  failed_when: false
+  tags: [repos]
+
+# ============================================
+# OPTIONAL: PASSIVE UPDATE CRON (off by default)
+# ============================================
+- include_tasks: cron.yml
+  when: personal_cron_passive_update | bool
+  tags: [cron]

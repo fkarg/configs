@@ -1,5 +1,5 @@
 ---
-# Packages installed on every base-managed server.
+# Packages installed on every base-managed host.
 base_packages:
   - curl
   - wget
@@ -14,7 +14,6 @@ base_packages:
   - iotop
   - net-tools
   - dnsutils
-  - fail2ban
   - logrotate
   - mosh
   - fish
@@ -24,14 +23,13 @@ base_packages:
 # Per-host extras (merged with base_packages).
 base_packages_extra: []
 
-# mosh-server wrapper uses this UDP port range.
+# mosh-server wrapper uses this UDP port range. Also referenced by
+# server_hardening to open the matching UFW rule, so it lives in base
+# alongside the wrapper that actually consumes it.
 base_mosh_port_range: "60842:60849"
 
 # Timezone (timedatectl list-timezones).
 base_server_timezone: "Europe/Berlin"
-
-# Swap file size in MB (0 disables swap).
-base_swap_size_mb: 2048
 
 # Whether to dist-upgrade on every run.
 base_upgrade_packages: true
@@ -39,15 +37,5 @@ base_upgrade_packages: true
 # Kernel swappiness (0-200). Lower = prefer evicting file cache over anonymous pages.
 base_vm_swappiness: 60
 
-# UFW firewall.
-base_ufw_enabled: true
-base_ufw_default_incoming: deny
-base_ufw_default_outgoing: allow
-base_ufw_rules:
-  - { rule: allow, port: "{{ base_mosh_port_range }}", proto: udp, comment: "mosh" }
-
-# Passive-update cron job (kept off by default; opt-in per host).
-base_cron_passive_update: false
-
-# server_hostname intentionally has no default — base only sets the hostname
-# when host_vars/<host>.yml explicitly defines it.
+# server_hostname intentionally has no default — the opt-in server_hardening
+# role only sets the hostname when a host_vars file explicitly defines it.
