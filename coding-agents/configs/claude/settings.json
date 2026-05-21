@@ -22,7 +22,8 @@
     "typescript-lsp@claude-plugins-official": true,
     "pr-review-toolkit@claude-plugins-official": true,
     "safety-net@safety-net-dev": true,
-    "pyright-lsp@claude-plugins-official": false
+    "pyright-lsp@claude-plugins-official": false,
+    "rust-analyzer-lsp@claude-plugins-official": true
   },
   "feedbackSurveyRate": 0,
   "spinnerTipsEnabled": false,
