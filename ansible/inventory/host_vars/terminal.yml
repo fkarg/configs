@@ -16,12 +16,16 @@
 ansible_connection: local
 ansible_user: pars
 
-# Deliberately omits `personal` (gitconfig, private repos) and
+# Deliberately omits `personal` (private repos, passive-update cron) and
 # `server_hardening` (UFW, fail2ban, swap, hostname rewrite) so this is
 # safe on any machine — including a VM already SSH'd into on a custom port.
+# `coding_agents` is included because the role only symlinks global config
+# files (claude/codex/copilot/opencode); it's a no-op when the CLIs aren't
+# installed, and useful the moment they are.
 host_roles:
   - base
   - terminal_dotfiles
+  - coding_agents
 
 # Generic VM/server defaults
 battery: false
