@@ -161,6 +161,18 @@
   tags: [hyprland]
 
 # ============================================
+# WAYBAR (Linux only)
+# ============================================
+- include_role:
+    name: terminal_dotfiles
+    tasks_from: link_dotdir
+    apply:
+      tags: [waybar]
+  vars: { link_src: waybar, link_dest: ~/.config/waybar }
+  when: ansible_facts['system'] == 'Linux'
+  tags: [waybar]
+
+# ============================================
 # FIREFOX LEGACY PATH (Linux only)
 # ============================================
 - name: Check legacy Mozilla Firefox path

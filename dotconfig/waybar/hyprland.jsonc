@@ -1,0 +1,139 @@
+{
+  "layer": "top",
+  "position": "top",
+  "exclusive": true,
+  "height": 30,
+  "spacing": 8,
+  "margin-top": 0,
+  "margin-left": 0,
+  "margin-right": 0,
+
+  "modules-left": [
+    "custom/launcher",
+    "hyprland/workspaces",
+    "hyprland/window"
+  ],
+  "modules-center": [
+    "mpris"
+  ],
+  "modules-right": [
+    "custom/screenshot",
+    "tray",
+    "idle_inhibitor",
+    "network",
+    "pulseaudio",
+    "cpu",
+    "memory",
+    "custom/gpu",
+    "disk",
+    "clock#date",
+    "clock"
+  ],
+
+  "custom/launcher": {
+    "format": "run",
+    "tooltip": "Left: hyprlauncher, middle: walker, right: fuzzel",
+    "on-click": "hyprlauncher",
+    "on-click-middle": "walker",
+    "on-click-right": "fuzzel"
+  },
+
+  "hyprland/workspaces": {
+    "format": "{name}",
+    "persistent-workspaces": {
+      "*": 10
+    }
+  },
+
+  "hyprland/window": {
+    "format": "{}",
+    "max-length": 80,
+    "separate-outputs": true
+  },
+
+  "tray": {
+    "icon-size": 16,
+    "spacing": 8
+  },
+
+  "custom/screenshot": {
+    "format": "shot",
+    "tooltip": "Left: region to clipboard, middle: fullscreen to clipboard, right: annotate region",
+    "on-click": "hyprshot -m region --clipboard-only -z",
+    "on-click-middle": "hyprshot -m output --clipboard-only",
+    "on-click-right": "grim -g \"$(slurp -d)\" - | swappy -f -"
+  },
+
+  "idle_inhibitor": {
+    "format": "{icon}",
+    "format-icons": {
+      "activated": "stay awake",
+      "deactivated": "auto"
+    },
+    "tooltip-format-activated": "Idle inhibited — hypridle suspended (click to release)",
+    "tooltip-format-deactivated": "Auto-idle — hypridle will lock/sleep on timeout (click to keep awake)"
+  },
+
+  "network": {
+    "format-wifi": "{essid} {signalStrength}%",
+    "format-ethernet": "{ifname} {bandwidthTotalBytes}",
+    "format-disconnected": "offline",
+    "tooltip-format": "{ifname}: {ipaddr}/{cidr}"
+  },
+
+  "pulseaudio": {
+    "format": "vol {volume}% {format_source}",
+    "format-muted": "muted",
+    "format-source": "mic {volume}%",
+    "format-source-muted": "mic muted",
+    "scroll-step": 5,
+    "on-click": "pavucontrol",
+    "on-click-right": "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle",
+    "on-click-middle": "wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle"
+  },
+
+  "cpu": {
+    "format": "cpu {usage}%",
+    "interval": 3
+  },
+
+  "memory": {
+    "format": "mem {percentage}%",
+    "interval": 5
+  },
+
+  "custom/gpu": {
+    "exec": "nvidia-smi --query-gpu=utilization.gpu,temperature.gpu,memory.used,memory.total --format=csv,noheader,nounits | awk -F ', ' '{ printf \"gpu %s%% %sC %.1f/%.0fG\\n\", $1, $2, $3 / 1024, $4 / 1024 }'",
+    "interval": 5,
+    "return-type": "text",
+    "tooltip": false
+  },
+
+  "disk": {
+    "path": "/",
+    "format": "disk {percentage_used}%",
+    "interval": 30
+  },
+
+  "mpris": {
+    "format": "media {dynamic}",
+    "format-paused": "media {dynamic}",
+    "dynamic-len": 60,
+    "tooltip-format": "{player}: {title} - {artist}",
+    "on-click": "playerctl play-pause",
+    "on-click-right": "playerctl next",
+    "on-click-middle": "playerctl previous"
+  },
+
+  "clock": {
+    "format": "{:%H:%M:%S}",
+    "interval": 1,
+    "tooltip-format": "{:%A, %Y-%m-%d}"
+  },
+
+  "clock#date": {
+    "format": "{:%Y-%m-%d}",
+    "interval": 60,
+    "tooltip-format": "{:%A, %Y-%m-%d}"
+  }
+}

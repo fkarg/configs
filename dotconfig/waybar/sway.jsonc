@@ -1,0 +1,115 @@
+{
+  "layer": "top",
+  "position": "top",
+  "height": 30,
+  "spacing": 8,
+
+  "modules-left": [
+    "sway/workspaces",
+    "sway/window"
+  ],
+  "modules-center": [
+    "clock"
+  ],
+  "modules-right": [
+    "tray",
+    "custom/status",
+    "custom/wireless-battery",
+    "network",
+    "pulseaudio",
+    "cpu",
+    "memory",
+    "temperature",
+    "custom/gpu",
+    "clock#date"
+  ],
+
+  "sway/workspaces": {
+    "format": "{name}",
+    "disable-scroll": false,
+    "persistent-workspaces": {
+      "1": [],
+      "2": [],
+      "3": [],
+      "4": [],
+      "5": [],
+      "6": [],
+      "7": [],
+      "8": [],
+      "9": [],
+      "10": []
+    }
+  },
+
+  "sway/window": {
+    "format": "{}",
+    "max-length": 80
+  },
+
+  "tray": {
+    "icon-size": 16,
+    "spacing": 8
+  },
+
+  "custom/status": {
+    "exec": "$HOME/configs/scripts/status.sh",
+    "interval": 1800,
+    "return-type": "text",
+    "tooltip": false
+  },
+
+  "custom/wireless-battery": {
+    "exec": "$HOME/configs/scripts/wireless_battery.sh",
+    "interval": 1800,
+    "return-type": "text",
+    "tooltip": false
+  },
+
+  "network": {
+    "format-wifi": "{essid} {signalStrength}%",
+    "format-ethernet": "{ifname} {bandwidthTotalBytes}",
+    "format-disconnected": "offline",
+    "tooltip-format": "{ifname}: {ipaddr}/{cidr}"
+  },
+
+  "pulseaudio": {
+    "format": "vol {volume}%",
+    "format-muted": "muted",
+    "on-click": "pavucontrol"
+  },
+
+  "cpu": {
+    "format": "cpu {usage}%",
+    "interval": 5
+  },
+
+  "memory": {
+    "format": "mem {percentage}%",
+    "interval": 5
+  },
+
+  "temperature": {
+    "critical-threshold": 85,
+    "format": "temp {temperatureC}C",
+    "interval": 10
+  },
+
+  "custom/gpu": {
+    "exec": "nvidia-smi --query-gpu=utilization.gpu,temperature.gpu --format=csv,noheader,nounits | awk -F ', ' '{ print \"gpu \" $1 \"% \" $2 \"C\" }'",
+    "interval": 10,
+    "return-type": "text",
+    "tooltip": false
+  },
+
+  "clock": {
+    "format": "{:%H:%M:%S}",
+    "interval": 1,
+    "tooltip-format": "{:%A, %Y-%m-%d}"
+  },
+
+  "clock#date": {
+    "format": "{:%Y-%m-%d}",
+    "interval": 60,
+    "tooltip-format": "{:%A, %Y-%m-%d}"
+  }
+}
