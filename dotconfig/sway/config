@@ -1,0 +1,137 @@
+set $mod Mod4
+set $terminal kitty
+set $menu fuzzel
+set $fileManager dolphin
+
+font pango:DejaVu Sans Mono 10
+floating_modifier $mod
+
+input type:keyboard {
+    xkb_layout de
+    xkb_variant neo
+}
+
+input type:touchpad {
+    natural_scroll disabled
+}
+
+exec mako
+exec waybar -c ~/.config/waybar/sway.jsonc -s ~/.config/waybar/style.css
+exec nm-applet --indicator
+exec blueman-applet
+exec wl-paste --type text --watch cliphist store
+exec wl-paste --type image --watch cliphist store
+
+bindsym $mod+Return exec $terminal
+bindsym $mod+q kill
+bindsym $mod+x kill
+bindsym $mod+a exec swaylock -f -c 1f2328
+bindsym $mod+e exec $fileManager
+bindsym $mod+r exec $menu
+bindsym $mod+f fullscreen
+bindsym $mod+v floating toggle
+bindsym $mod+Shift+u exec systemctl suspend
+bindsym $mod+Shift+r reload
+bindsym $mod+Shift+e exec swaymsg exit
+
+bindsym $mod+b input type:keyboard xkb_layout de, input type:keyboard xkb_variant neo
+bindsym $mod+Shift+b input type:keyboard xkb_layout de, input type:keyboard xkb_variant ""
+
+bindsym $mod+n focus left
+bindsym $mod+m focus down
+bindsym $mod+g focus up
+bindsym $mod+d focus right
+bindsym $mod+Left focus left
+bindsym $mod+Down focus down
+bindsym $mod+Up focus up
+bindsym $mod+Right focus right
+
+bindsym $mod+Shift+n move left
+bindsym $mod+Shift+m move down
+bindsym $mod+Shift+g move up
+bindsym $mod+Shift+d move right
+bindsym $mod+Shift+Left move left
+bindsym $mod+Shift+Down move down
+bindsym $mod+Shift+Up move up
+bindsym $mod+Shift+Right move right
+
+bindsym $mod+h split h
+bindsym $mod+t split v
+bindsym $mod+l layout stacking
+bindsym $mod+w layout tabbed
+bindsym $mod+Shift+e layout toggle split
+bindsym $mod+p focus parent
+bindsym $mod+comma focus child
+
+bindsym $mod+1 workspace number 1
+bindsym $mod+2 workspace number 2
+bindsym $mod+3 workspace number 3
+bindsym $mod+4 workspace number 4
+bindsym $mod+5 workspace number 5
+bindsym $mod+6 workspace number 6
+bindsym $mod+7 workspace number 7
+bindsym $mod+8 workspace number 8
+bindsym $mod+9 workspace number 9
+bindsym $mod+0 workspace number 10
+bindsym $mod+Ctrl+1 workspace number 11
+bindsym $mod+Ctrl+2 workspace number 12
+bindsym $mod+Ctrl+3 workspace number 13
+bindsym $mod+Ctrl+4 workspace number 14
+bindsym $mod+Ctrl+5 workspace number 15
+bindsym $mod+Ctrl+6 workspace number 16
+bindsym $mod+Ctrl+7 workspace number 17
+bindsym $mod+Ctrl+8 workspace number 18
+bindsym $mod+Ctrl+9 workspace number 19
+bindsym $mod+Ctrl+0 workspace number 20
+
+bindsym $mod+Shift+1 move container to workspace number 1
+bindsym $mod+Shift+2 move container to workspace number 2
+bindsym $mod+Shift+3 move container to workspace number 3
+bindsym $mod+Shift+4 move container to workspace number 4
+bindsym $mod+Shift+5 move container to workspace number 5
+bindsym $mod+Shift+6 move container to workspace number 6
+bindsym $mod+Shift+7 move container to workspace number 7
+bindsym $mod+Shift+8 move container to workspace number 8
+bindsym $mod+Shift+9 move container to workspace number 9
+bindsym $mod+Shift+0 move container to workspace number 10
+bindsym $mod+Ctrl+Shift+1 move container to workspace number 11
+bindsym $mod+Ctrl+Shift+2 move container to workspace number 12
+bindsym $mod+Ctrl+Shift+3 move container to workspace number 13
+bindsym $mod+Ctrl+Shift+4 move container to workspace number 14
+bindsym $mod+Ctrl+Shift+5 move container to workspace number 15
+bindsym $mod+Ctrl+Shift+6 move container to workspace number 16
+bindsym $mod+Ctrl+Shift+7 move container to workspace number 17
+bindsym $mod+Ctrl+Shift+8 move container to workspace number 18
+bindsym $mod+Ctrl+Shift+9 move container to workspace number 19
+bindsym $mod+Ctrl+Shift+0 move container to workspace number 20
+
+bindsym $mod+Tab workspace back_and_forth
+bindsym --whole-window $mod+button5 workspace next
+bindsym --whole-window $mod+button4 workspace prev
+
+mode "resize" {
+    bindsym n resize shrink width 10 px
+    bindsym g resize grow height 10 px
+    bindsym m resize shrink height 10 px
+    bindsym d resize grow width 10 px
+    bindsym Left resize shrink width 10 px
+    bindsym Down resize grow height 10 px
+    bindsym Up resize shrink height 10 px
+    bindsym Right resize grow width 10 px
+    bindsym Return mode "default"
+    bindsym Escape mode "default"
+}
+bindsym $mod+o mode "resize"
+
+bindsym XF86AudioRaiseVolume exec wpctl set-volume -l 1 @DEFAULT_AUDIO_SINK@ 5%+
+bindsym XF86AudioLowerVolume exec wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-
+bindsym XF86AudioMute exec wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle
+bindsym XF86AudioMicMute exec wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle
+bindsym XF86MonBrightnessUp exec brightnessctl -e4 -n2 set 5%+
+bindsym XF86MonBrightnessDown exec brightnessctl -e4 -n2 set 5%-
+bindsym XF86AudioNext exec playerctl next
+bindsym XF86AudioPause exec playerctl play-pause
+bindsym XF86AudioPlay exec playerctl play-pause
+bindsym XF86AudioPrev exec playerctl previous
+
+include /etc/sway/config.d/*
