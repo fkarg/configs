@@ -37,13 +37,13 @@ each has it's own modifications.
 
 **Fresh server, single-paste pull-mode** (installs ansible if missing, runs base + terminal_dotfiles):
 
-```
+```sh
 curl -fsSL https://raw.githubusercontent.com/fkarg/configs/master/bootstrap.sh | sh
 ```
 
 For a registered host, set `BOOTSTRAP_HOST_ID` so site.yml runs instead:
 
-```
+```sh
 BOOTSTRAP_HOST_ID=jolly curl -fsSL https://raw.githubusercontent.com/fkarg/configs/master/bootstrap.sh | sh
 ```
 
@@ -76,7 +76,7 @@ See `ansible/inventory/host_vars/terminal.yml` for the knobs it exposes.
 
 **Registered host, ongoing config (push from workstation):**
 
-```
+```sh
 ansible-playbook ansible/site.yml -l caeli
 ansible-playbook ansible/site.yml -l caeli --check --diff   # dry-run
 ansible-playbook ansible/site.yml -l caeli --tags fish      # just fish
@@ -85,13 +85,13 @@ ansible-playbook ansible/site.yml -l caeli --tags coding_agents
 
 **Registered host, on-host pull:**
 
-```
+```sh
 ansible-pull -U git@github.com:fkarg/configs.git ansible/site.yml -e host_id=$(hostname)
 ```
 
 **First-boot SSH hardening of a fresh Debian/Ubuntu server (run from your workstation as root@22):**
 
-```
+```sh
 ansible-playbook ansible/playbooks/bootstrap.yml -l new-host \
   -e ansible_user=root -e ansible_port=22 -e bootstrap_user=pars
 ```
@@ -100,16 +100,15 @@ After this completes, the host is reachable as `pars@<bootstrap_ssh_port>` (defa
 
 ### Overwriting Existing Config Directories
 
-Some applications (fish, kitty, nvim, broot) create their own config directories on first launch. If these exist as real directories (not symlinks), the playbook skips the symlink by default to avoid data loss. To force the symlink (deleting the existing directory first):
+Some applications (fish, kitty, nvim, broot, lf) create their own config directories on first launch. If these exist as real directories (not symlinks), the playbook skips the symlink by default to avoid data loss. To force the symlink (deleting the existing directory first):
 
-```
+```sh
 ansible-playbook ansible/site.yml -l caeli -e confirm_overwrite=true
 ```
 
 This flag is ignored under `--check` mode for safety.
 
 Make sure you have an ssh key which is registered on your github account for this computer already.
-
 
 ## TODO
 
