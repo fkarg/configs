@@ -1,6 +1,6 @@
-# CLAUDE.md
+# AGENTS.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to coding agents (Claude Code, Codex, Copilot CLI, OpenCode, …) when working with code in this repository.
 
 Read `README.md` first — it covers the user-facing flow: client roles, the role-layer table (`bootstrap` / `base` / `server_hardening` / `terminal_dotfiles` / `personal` / `graphical_dotfiles` / `os_macos` / `coding_agents`), and bootstrap/usage commands. This file only documents the *non-obvious* architecture and editing constraints that aren't in README.
 
