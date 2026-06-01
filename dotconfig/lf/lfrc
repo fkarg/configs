@@ -25,5 +25,23 @@ cmd open ${{
     (setsid xdg-open "$f" >/dev/null 2>&1 &)
 }}
 
-# Inspect/scroll preview in a pager (preview pane itself can't scroll).
+# Inspect/scroll preview in a pager (full keyboard scrolling, search, etc.).
 map i $LESSOPEN='| ~/.config/lf/pv.sh %s' less -R "$f"
+
+# Scroll the PREVIEW pane in place (arrows = line, PageUp/Down = chunk).
+# j/k still move the file selection; the previewer (pv.sh) reads this offset and
+# reload re-renders at the new position. Tweak the 20 below for the page step.
+cmd preview-down &{{ f="${TMPDIR:-/tmp}/lf_preview_offset"; o=$(cat "$f" 2>/dev/null || echo 0); printf '%s' "$((o + 1))" > "$f"; lf -remote "send $id reload"; }}
+cmd preview-up   &{{ f="${TMPDIR:-/tmp}/lf_preview_offset"; o=$(cat "$f" 2>/dev/null || echo 0); o=$((o - 1)); [ "$o" -lt 0 ] && o=0; printf '%s' "$o" > "$f"; lf -remote "send $id reload"; }}
+cmd preview-pgdn &{{ f="${TMPDIR:-/tmp}/lf_preview_offset"; o=$(cat "$f" 2>/dev/null || echo 0); printf '%s' "$((o + 20))" > "$f"; lf -remote "send $id reload"; }}
+cmd preview-pgup &{{ f="${TMPDIR:-/tmp}/lf_preview_offset"; o=$(cat "$f" 2>/dev/null || echo 0); o=$((o - 20)); [ "$o" -lt 0 ] && o=0; printf '%s' "$o" > "$f"; lf -remote "send $id reload"; }}
+cmd preview-half-down &{{ f="${TMPDIR:-/tmp}/lf_preview_offset"; o=$(cat "$f" 2>/dev/null || echo 0); printf '%s' "$((o + 10))" > "$f"; lf -remote "send $id reload"; }}
+cmd preview-half-up   &{{ f="${TMPDIR:-/tmp}/lf_preview_offset"; o=$(cat "$f" 2>/dev/null || echo 0); o=$((o - 10)); [ "$o" -lt 0 ] && o=0; printf '%s' "$o" > "$f"; lf -remote "send $id reload"; }}
+
+# Arrows = line, <c-d>/<c-u> = half page, PageUp/Down = page. (j/k still navigate.)
+map <down>  preview-down
+map <up>    preview-up
+map <c-d>   preview-half-down
+map <c-u>   preview-half-up
+map <pgdn>  preview-pgdn
+map <pgup>  preview-pgup
