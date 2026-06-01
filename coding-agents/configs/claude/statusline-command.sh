@@ -16,13 +16,6 @@ lines_del=$(j '.cost.total_lines_removed')
 rl_pct=$(j '.rate_limits.five_hour.used_percentage')
 rl_reset=$(j '.rate_limits.five_hour.resets_at')
 effort=$(j '.effort.level // .effortLevel')
-# Default permission mode (auto / plan / default) — Claude Code does not expose
-# the live runtime mode to the statusline, so this reflects settings.json's
-# defaultMode and won't update after shift+tab toggles mid-session.
-perm_mode=""
-if [ -f "$HOME/.claude/settings.json" ]; then
-  perm_mode=$(jq -r '.permissions.defaultMode // empty' "$HOME/.claude/settings.json" 2>/dev/null)
-fi
 
 cwd="${cwd/#$HOME/\~}"
 
@@ -59,7 +52,6 @@ C_TOK='\033[37m'      # white
 C_ADD='\033[32m'      # green (+lines)
 C_DEL='\033[31m'      # red (-lines)
 C_RL='\033[34m'       # blue
-C_MODE='\033[1;33m'   # bold yellow (auto/plan mode)
 
 segments=()
 
@@ -75,11 +67,6 @@ if [ -n "$model" ]; then
   model_seg=$(printf "${C_MODEL}%s${C_RESET}" "$model")
   if [ -n "$effort" ]; then
     model_seg+=$(printf " ${C_CTX}[%s]${C_RESET}" "$effort")
-  fi
-  # Show permission mode inside the model segment when it's elevated
-  # (anything other than "default" — the safest baseline).
-  if [ -n "$perm_mode" ] && [ "$perm_mode" != "default" ]; then
-    model_seg+=$(printf " ${C_MODE}[%s]${C_RESET}" "$perm_mode")
   fi
   segments+=("$model_seg")
 fi
