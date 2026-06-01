@@ -151,6 +151,15 @@
     - kvm_switch_enabled | default(false) | bool
   tags: [hyprland, kvm]
 
+- name: Link hyprland notification-focus-dismiss script
+  file:
+    src: "~/{{ configs_repo }}/{{ dotconfigdir }}/hypr/notification-focus-dismiss.sh"
+    dest: ~/.config/hypr/notification-focus-dismiss.sh
+    state: link
+    force: true
+  when: ansible_facts['system'] == 'Linux'
+  tags: [hyprland]
+
 # ============================================
 # FIREFOX LEGACY PATH (Linux only)
 # ============================================
