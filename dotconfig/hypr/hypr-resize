@@ -1,27 +1,30 @@
 #!/usr/bin/env bash
 # Resize the focused Hyprland window to a fraction of its monitor's logical
-# (post-scaling) size, or equalize all tiled windows on the active workspace.
+# (post-scaling) size.
 #
 # Usage:
 #   hypr-resize <width_fraction> [<height_fraction>]   # fractional resize
-#   hypr-resize equal                                  # equalize tiled windows
 #
 # Examples:
 #   hypr-resize 0.333          # focused window becomes 1/3 monitor-wide
 #   hypr-resize 0.667          # 2/3 wide
 #   hypr-resize 0.5 0.5        # half-and-half
 #   hypr-resize 1 1            # fullscreen-ish (tile-respecting)
-#   hypr-resize equal          # divide the workspace's tiled windows evenly
 #
 # Invoked from .desktop entries so it's discoverable in launchers
 # (hyprlauncher, fuzzel, walker, rofi …).
+#
+# NOTE: an N-way "equalize all tiled windows" mode was removed. dwindle resizes
+# act on its opaque binary split-tree, so for 3+ windows the outcome depends on
+# the (unknowable-to-a-script) tree shape and reproducibly collapses a column
+# instead of equalizing. Revisit equalization under the hy3 layout, where N-way
+# splits are first-class — see nixos/shared/desktops/hyprland-session.nix.
 
 set -u
 
 mode=${1:-}
 if [ -z "$mode" ]; then
   echo "usage: $0 <width_fraction> [<height_fraction>]" >&2
-  echo "       $0 equal" >&2
   exit 1
 fi
 
@@ -35,23 +38,6 @@ lw=$(awk -v w="$mw" -v s="$scale" 'BEGIN{ printf "%d", w / s }')
 lh=$(awk -v h="$mh" -v s="$scale" 'BEGIN{ printf "%d", h / s }')
 
 ws_id=$(hyprctl activeworkspace -j | jq -r '.id')
-
-if [ "$mode" = "equal" ]; then
-  # Best-effort equal-width split across all tiled windows on the active
-  # workspace. In dwindle the binary-tree of splits constrains achievable
-  # widths, so this may produce approximately-equal rather than exact widths
-  # for N > 2. It's still a single click to "rebalance" after spawning
-  # windows.
-  mapfile -t addrs < <(hyprctl clients -j \
-    | jq -r --argjson w "$ws_id" '.[] | select(.workspace.id == $w and .floating == false) | .address')
-  n=${#addrs[@]}
-  if [ "$n" -le 1 ]; then exit 0; fi
-  tw=$(awk -v w="$lw" -v n="$n" 'BEGIN{ printf "%d", w / n }')
-  for addr in "${addrs[@]}"; do
-    hyprctl dispatch resizewindowpixel "exact $tw $lh,address:$addr" >/dev/null
-  done
-  exit 0
-fi
 
 # Fractional resize of the active window.
 frac_w=$mode

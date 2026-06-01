@@ -111,12 +111,14 @@
     # (0.54.2.1) fails to compile against this hyprland (0.55.2). Re-enable
     # once nixpkgs catches up, then load it from hyprland.conf with
     #   plugin = /run/current-system/sw/lib/libhy3.so
-    # and switch the layout via `general { layout = hy3; }`.
+    # and switch the layout via `general { layout = hy3; }`. When that lands,
+    # reintroduce an N-way "equalize tiled windows" action (removed from
+    # dotconfig/hypr/hypr-resize): hy3's columns make it reliable, whereas
+    # dwindle's opaque split-tree collapses columns for 3+ windows.
 
     # screenshots and clipboard
     grim
     hyprshot
-    satty
     slurp
     swappy
     wl-clipboard
@@ -126,6 +128,5 @@
     lf
     brightnessctl
     playerctl
-    socat
   ];
 }
