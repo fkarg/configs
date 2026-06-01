@@ -1,0 +1,18 @@
+# Curated codex settings shared across machines.
+#
+# Codex (the CLI *and* the VS Code app-server) reads ~/.codex/config.toml and
+# rewrites it in place — trusted [projects.*], oss_provider, nux counters, auth.
+# We can't symlink that file (codex's atomic rename would clobber the link) and
+# we don't want its host-specific state in this public repo. So the coding_agents
+# ansible role runs merge_codex_config.py to overlay just these keys onto the
+# local file, preserving everything codex owns.
+#
+# Put ONLY machine-independent preferences here. Never trusted paths, providers,
+# or anything secret.
+model = "gpt-5.5"
+model_reasoning_effort = "medium"
+personality = "pragmatic"
+
+[tui]
+status_line = ["model-with-reasoning", "current-dir", "git-branch", "branch-changes", "run-state", "context-used", "five-hour-limit", "weekly-limit", "used-tokens", "total-input-tokens", "total-output-tokens", "task-progress"]
+status_line_use_colors = true

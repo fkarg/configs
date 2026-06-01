@@ -17,12 +17,11 @@
     - "~/.copilot"
     - "~/.copilot/agents"
 
-# Symlink per-tool global config files. Editing on any machine writes back
-# through the symlink into the repo, so changes propagate via git.
-#
-# Note: copilot and codex auto-write host-specific paths into their config
-# (trustedFolders / [projects."..."] blocks). These propagate to git on commit,
-# so review `git status` for project-path leaks before pushing.
+# Symlink per-tool global config files that hold only curated, machine-independent
+# settings (no secrets, no host paths) and that the tool reads or writes in place.
+# Editing on any machine writes back through the symlink, so changes propagate via
+# git. Each tool keeps its host-specific state (trusted paths, login, auth) in a
+# separate local file that is NOT tracked in this (public) repo.
 - name: Symlink per-tool global config files
   file:
     src: "{{ coding_agents_source_dir }}/configs/{{ item.src }}"
@@ -32,11 +31,21 @@
   loop:
     - { src: "claude/settings.json",         dest: "~/.claude/settings.json" }
     - { src: "claude/statusline-command.sh", dest: "~/.claude/statusline-command.sh" }
-    - { src: "codex/config.toml",            dest: "~/.codex/config.toml" }
-    - { src: "copilot/config.json",          dest: "~/.copilot/config.json" }
+    - { src: "copilot/settings.json",        dest: "~/.copilot/settings.json" }
     - { src: "opencode/opencode.json",       dest: "~/.config/opencode/opencode.json" }
   loop_control:
     label: "{{ item.dest }}"
+
+# Codex is the exception: it atomically rewrites ~/.codex/config.toml (which would
+# clobber a symlink) and commingles host state (trusted [projects.*], oss_provider,
+# nux counters, auth) with prefs. So rather than symlink it, overlay just the
+# curated subset (configs/codex/shared.toml) onto the codex-owned local file.
+- name: Merge curated codex settings into the local codex config
+  command:
+    cmd: python3 merge_codex_config.py
+    chdir: "{{ coding_agents_source_dir }}"
+  register: ca_codex_merge
+  changed_when: "'changed:' in ca_codex_merge.stdout"
 
 - name: Build per-tool agent variants from canonical source
   command:

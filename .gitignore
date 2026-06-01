@@ -18,3 +18,6 @@ dotconfig/fish/fishfile
 
 # per-tool agent files built from coding-agents/source/ on each ansible run
 coding-agents/generated/
+
+# python bytecode cache from build.py / merge_codex_config.py
+coding-agents/__pycache__/

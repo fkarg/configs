@@ -1,0 +1,6 @@
+// Curated GitHub Copilot CLI user settings, shared across machines and symlinked
+// to ~/.copilot/settings.json. Machine-specific state — trustedFolders, the
+// logged-in GitHub identity, and auth — lives in ~/.copilot/config.json, which
+// Copilot manages itself and which is deliberately NOT tracked in this repo.
+// Add shareable, machine-independent preferences below.
+{}

@@ -10,7 +10,34 @@ Ansible role (`ansible/roles/coding_agents/`).
 source/<name>.md        canonical, opencode-flavored frontmatter (hand-edit here)
 build.py                renders per-tool variants under generated/ (gitignored)
 generated/              built each ansible run — do not edit
+configs/<tool>/         curated global settings, synced to ~/.<tool> (see below)
+merge_codex_config.py   overlays curated codex prefs onto its local config.toml
 ```
+
+## Global tool settings (`configs/`)
+
+Each tool's global config splits into two layers:
+
+- **Curated, machine-independent prefs** — model, status line, permission
+  *allowlists*, plugins. Tracked in `configs/<tool>/`.
+- **Host-specific / secret state** — trusted project paths, providers, the
+  logged-in identity, auth tokens. These stay in each tool's own local file and
+  are **never** tracked (this repo is public). Auth is per-machine: log in once
+  per host (`codex login`, etc.).
+
+| Tool     | Tracked (curated)        | Synced to                          | Mechanism               | Local-only (untracked)                            |
+| -------- | ------------------------ | ---------------------------------- | ----------------------- | ------------------------------------------------- |
+| Claude   | `claude/settings.json`   | `~/.claude/settings.json`          | symlink                 | `~/.claude/settings.local.json`                   |
+| OpenCode | `opencode/opencode.json` | `~/.config/opencode/opencode.json` | symlink                 | env-var secrets                                   |
+| Copilot  | `copilot/settings.json`  | `~/.copilot/settings.json`         | symlink                 | `~/.copilot/config.json` (trustedFolders, login)  |
+| Codex    | `codex/shared.toml`      | `~/.codex/config.toml`             | `merge_codex_config.py` | the rest of `~/.codex/config.toml`                |
+
+Symlinks work for tools that only read the file or write it in place. **Codex is
+different**: it atomically rewrites `~/.codex/config.toml` (a `rename()` that
+clobbers a symlink) and mixes host state into it. So instead of a symlink,
+`merge_codex_config.py` overlays just the keys from `codex/shared.toml` onto the
+codex-owned local file, leaving trusted projects / `oss_provider` / nux intact.
+Edit shared codex prefs in `codex/shared.toml`, then re-run the role to apply.
 
 ## Editing an agent
 
