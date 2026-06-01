@@ -12,6 +12,10 @@
     autoStash = true
 [core]
     editor = {{ git_editor }}
+; global hooks (installed by the terminal_dotfiles role) — applied to every
+; repo on this machine, harness-independent. A repo that sets its own
+; core.hooksPath (husky, .githooks, ...) overrides this.
+    hooksPath = {{ home_dir }}/.config/git/hooks
 [merge]
     tool = vimdiff
 [mergetool]

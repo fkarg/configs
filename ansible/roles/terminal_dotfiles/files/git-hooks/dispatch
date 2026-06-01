@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+# Global git hook dispatcher. Installed by the terminal_dotfiles role and wired
+# up via a global core.hooksPath in ~/.gitconfig, so it runs on EVERY repo on
+# this machine, independent of which editor or AI coding agent made the change.
+#
+# Why a dispatcher: a global core.hooksPath makes git look ONLY in that one
+# directory for hooks, ignoring each repo's own .git/hooks for every hook type
+# (pre-commit, pre-push, ...). The standard hook names are symlinked to this
+# script; it does its own work (commit-msg attribution stripping) and then
+# delegates to the repo's own hook of the same name, so per-project hooks
+# (pre-commit framework, etc.) are NOT silently disabled.
+#
+# Repos that set their OWN core.hooksPath (husky -> .husky, or this repo's
+# .githooks) override the global path entirely and never reach this script.
+set -euo pipefail
+
+hook="$(basename -- "$0")"
+msg_file="${1:-}"
+
+# --- commit-msg: enforce "no AI attribution in git history" ---
+# Strip AI co-author trailers and "Generated with ..." footers. Legitimate
+# human Co-authored-by trailers are kept (only claude/anthropic ones go).
+if [ "$hook" = "commit-msg" ] && [ -n "$msg_file" ] && [ -f "$msg_file" ]; then
+  perl -0777 -i -pe '
+    s/^[ \t]*Co-authored-by:.*(?:claude|anthropic).*\n?//gim;
+    s/^.*Generated with \[?Claude Code.*\n?//gim;
+    s/^.*🤖 Generated with.*\n?//gim;
+    s/\n{3,}/\n\n/g;
+    s/\s+\z/\n/;
+  ' "$msg_file"
+fi
+
+# --- delegate to the repo's own hook of the same name, if any ---
+git_dir="$(git rev-parse --git-dir 2>/dev/null || true)"
+if [ -n "$git_dir" ]; then
+  local_hook="$git_dir/hooks/$hook"
+  # Guard against recursing into ourselves (e.g. a repo whose core.hooksPath
+  # points back here).
+  if [ -x "$local_hook" ] && ! [ "$local_hook" -ef "$0" ]; then
+    exec "$local_hook" "$@"
+  fi
+fi
+
+exit 0

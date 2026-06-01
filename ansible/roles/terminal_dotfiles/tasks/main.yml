@@ -52,6 +52,40 @@
     dest: ~/.gitconfig
   tags: [git]
 
+# Global git hooks: enforce "no AI attribution in git history" on every repo,
+# harness-independently. The dispatcher strips AI co-author/footer lines on
+# commit-msg and delegates to each repo's own hook (so per-project hooks are
+# not disabled by the global core.hooksPath set in gitconfig.j2).
+- name: Ensure global git hooks directory exists
+  file:
+    path: ~/.config/git/hooks
+    state: directory
+  tags: [git]
+
+- name: Install global git hook dispatcher
+  copy:
+    src: git-hooks/dispatch
+    dest: ~/.config/git/hooks/dispatch
+    mode: "0755"
+  tags: [git]
+
+- name: Link standard git hooks to the dispatcher
+  file:
+    src: dispatch
+    dest: "~/.config/git/hooks/{{ item }}"
+    state: link
+    force: true
+  loop:
+    - commit-msg
+    - prepare-commit-msg
+    - pre-commit
+    - pre-push
+    - pre-rebase
+    - post-commit
+    - post-merge
+    - post-checkout
+  tags: [git]
+
 # ============================================
 # FISH
 # ============================================
