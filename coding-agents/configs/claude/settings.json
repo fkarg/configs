@@ -32,5 +32,9 @@
   "editorMode": "normal",
   "verbose": true,
   "preferredNotifChannel": "kitty",
-  "skipAutoPermissionPrompt": true
+  "skipAutoPermissionPrompt": true,
+  "statusLine": {
+    "type": "command",
+    "command": "bash ~/.claude/statusline-command.sh"
+  }
 }

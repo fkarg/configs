@@ -30,10 +30,11 @@
     state: link
     force: true
   loop:
-    - { src: "claude/settings.json",   dest: "~/.claude/settings.json" }
-    - { src: "codex/config.toml",      dest: "~/.codex/config.toml" }
-    - { src: "copilot/config.json",    dest: "~/.copilot/config.json" }
-    - { src: "opencode/opencode.json", dest: "~/.config/opencode/opencode.json" }
+    - { src: "claude/settings.json",         dest: "~/.claude/settings.json" }
+    - { src: "claude/statusline-command.sh", dest: "~/.claude/statusline-command.sh" }
+    - { src: "codex/config.toml",            dest: "~/.codex/config.toml" }
+    - { src: "copilot/config.json",          dest: "~/.copilot/config.json" }
+    - { src: "opencode/opencode.json",       dest: "~/.config/opencode/opencode.json" }
   loop_control:
     label: "{{ item.dest }}"
 
