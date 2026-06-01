@@ -15,6 +15,7 @@
       "docker"
       "adbusers"
       "lp"
+      "i2c"  # ddcutil access for the Hyprland Ctrl+Shift+F12 KVM input switch
     ];
     home = "/home/pars";
   };

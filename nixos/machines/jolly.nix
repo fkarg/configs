@@ -223,17 +223,24 @@
     boot.loader.grub.configurationName = "Kernel test - Linux 6.18";
   };
 
+  # Opt-in specialisation that enables i2c so the Ctrl+Shift+F12 KVM
+  # bind (ddcutil setvcp 60 …) can drive the Philips monitor's input
+  # switch. Boot this entry to use the bind; default boot keeps i2c off
+  # so the historical i2c+OpenRGB blackscreen cannot recur unattended.
+  specialisation.i2c-kvm.configuration = {
+    boot.loader.grub.configurationName = "i2c (KVM bind)";
+    hardware.i2c.enable = lib.mkForce true;
+  };
+
   virtualisation.docker.enable = true;
 
-  # i2c is intentionally OFF: previously paired with OpenRGB it caused blackscreens
-  # on this RTX 3070 setup. ddcutil (used by the Ctrl+Shift+F12 KVM keybind in
-  # hyprland) requires i2c-dev access — without it, the bind installs but is a
-  # no-op until i2c is brought back. To re-enable, flip the three lines below
-  # together and add `"i2c"` to pars.extraGroups in
-  # nixos/shared/users/pars/account.nix:
-  #   hardware.i2c.enable = true;
-  #   # services.hardware.openrgb.enable stays off unless you also want RGB
-  #   # control back — that was the combo that blackscreened.
+  # i2c stays OFF by default. Historical incident: pairing i2c with OpenRGB
+  # produced full blackscreens on this RTX 3070. The KVM input-switch bind
+  # (Ctrl+Shift+F12 → ddcutil) needs i2c, so it's surfaced as an opt-in boot
+  # specialisation below (`i2c-kvm`) — pick that entry at the GRUB menu to
+  # try the bind, fall back to default if anything misbehaves. OpenRGB must
+  # stay off either way; that's the half of the combo that triggered the
+  # original blackscreen.
   hardware.i2c.enable = false;
   services.hardware.openrgb.enable = false;
 
@@ -313,8 +320,8 @@
     vulkan-tools
     wayland-utils
     wlr-randr
-    # Used by the Hyprland Ctrl+Shift+F12 KVM bind. Inert until hardware.i2c
-    # is re-enabled (see comment above).
+    # Drives the Hyprland Ctrl+Shift+F12 KVM bind. Functional only when
+    # booted into the `i2c-kvm` specialisation (i2c stays off otherwise).
     ddcutil
   ];
 }
