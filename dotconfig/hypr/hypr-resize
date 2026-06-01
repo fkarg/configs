@@ -1,0 +1,55 @@
+#!/usr/bin/env bash
+# Resize the focused Hyprland window to a fraction of its monitor's logical
+# (post-scaling) size. Height fraction is optional — if omitted, current
+# height is preserved.
+#
+# Usage:
+#   hypr-resize <width_fraction> [<height_fraction>]
+# Examples:
+#   hypr-resize 0.333          # focused window becomes 1/3 monitor-wide
+#   hypr-resize 0.667          # 2/3 wide
+#   hypr-resize 0.5 0.5        # half-and-half
+#   hypr-resize 1 1            # fullscreen-ish (tile-respecting)
+#
+# Invoked from .desktop entries so it's discoverable in launchers
+# (hyprlauncher, fuzzel, walker, rofi …).
+
+set -u
+
+frac_w=${1:-}
+frac_h=${2:-}
+
+if [ -z "$frac_w" ]; then
+  echo "usage: $0 <width_fraction> [<height_fraction>]" >&2
+  exit 1
+fi
+
+mon=$(hyprctl monitors -j | jq '.[] | select(.focused)')
+mw=$(jq -r '.width'  <<<"$mon")
+mh=$(jq -r '.height' <<<"$mon")
+scale=$(jq -r '.scale' <<<"$mon")
+
+# Logical pixels = physical / scale; resizeactive expects logical
+lw=$(awk -v w="$mw" -v s="$scale" 'BEGIN{ printf "%d", w / s }')
+lh=$(awk -v h="$mh" -v s="$scale" 'BEGIN{ printf "%d", h / s }')
+
+tw=$(awk -v w="$lw" -v f="$frac_w" 'BEGIN{ printf "%d", w * f }')
+if [ -n "$frac_h" ]; then
+  th=$(awk -v h="$lh" -v f="$frac_h" 'BEGIN{ printf "%d", h * f }')
+else
+  th=$(hyprctl activewindow -j | jq -r '.size[1]')
+fi
+
+# If the active window is the only tiled window on its workspace, resizing the
+# tile is a no-op (it just snaps back to fill). Float it first so the resize
+# is visible. Multi-window splits work directly via resizeactive.
+ws_id=$(hyprctl activewindow -j | jq -r '.workspace.id')
+tiled_count=$(hyprctl clients -j \
+  | jq --argjson w "$ws_id" '[.[] | select(.workspace.id == $w and .floating == false)] | length')
+active_floating=$(hyprctl activewindow -j | jq -r '.floating')
+
+if [ "$active_floating" = "false" ] && [ "$tiled_count" -le 1 ]; then
+  hyprctl dispatch togglefloating >/dev/null
+fi
+
+hyprctl dispatch resizeactive exact "$tw" "$th" >/dev/null

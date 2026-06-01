@@ -160,6 +160,43 @@
   when: ansible_facts['system'] == 'Linux'
   tags: [hyprland]
 
+- name: Link hyprland resize helper
+  file:
+    src: "~/{{ configs_repo }}/{{ dotconfigdir }}/hypr/hypr-resize"
+    dest: ~/.config/hypr/hypr-resize
+    state: link
+    force: true
+  when: ansible_facts['system'] == 'Linux'
+  tags: [hyprland]
+
+# Per-user .desktop entries (for launcher discovery of small helpers).
+- name: Ensure ~/.local/share/applications exists
+  file:
+    path: ~/.local/share/applications
+    state: directory
+  when: ansible_facts['system'] == 'Linux'
+  tags: [hyprland, applications]
+
+- name: Discover dotconfig applications/*.desktop
+  find:
+    paths: "~/{{ configs_repo }}/{{ dotconfigdir }}/applications"
+    patterns: "*.desktop"
+  register: _desktop_entries
+  when: ansible_facts['system'] == 'Linux'
+  tags: [hyprland, applications]
+
+- name: Link .desktop entries into ~/.local/share/applications
+  file:
+    src: "{{ item.path }}"
+    dest: "~/.local/share/applications/{{ item.path | basename }}"
+    state: link
+    force: true
+  loop: "{{ _desktop_entries.files | default([]) }}"
+  loop_control:
+    label: "{{ item.path | basename }}"
+  when: ansible_facts['system'] == 'Linux'
+  tags: [hyprland, applications]
+
 # ============================================
 # WAYBAR (Linux only)
 # ============================================

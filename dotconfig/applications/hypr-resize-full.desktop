@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Resize: full width
+Comment=Resize focused Hyprland window to full monitor width
+Exec=/home/pars/.config/hypr/hypr-resize 1
+Icon=view-fullscreen
+Categories=Utility;
+Keywords=hyprland;resize;full;wide;maximize;
+NoDisplay=false

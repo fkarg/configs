@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Resize: 2/3 width
+Comment=Resize focused Hyprland window to 2/3 of monitor width
+Exec=/home/pars/.config/hypr/hypr-resize 0.667
+Icon=view-restore
+Categories=Utility;
+Keywords=hyprland;resize;two thirds;layout;
+NoDisplay=false
