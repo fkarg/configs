@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Resize: 1/6 width
+Comment=Resize focused Hyprland window to 1/6 of monitor width
+Exec=/home/pars/.config/hypr/hypr-resize 0.1667
+Icon=view-restore
+Categories=Utility;
+Keywords=hyprland;resize;sixth;layout;
+NoDisplay=false

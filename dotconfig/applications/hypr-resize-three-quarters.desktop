@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Resize: 3/4 width
+Comment=Resize focused Hyprland window to 3/4 of monitor width
+Exec=/home/pars/.config/hypr/hypr-resize 0.75
+Icon=view-restore
+Categories=Utility;
+Keywords=hyprland;resize;three quarters;75;layout;
+NoDisplay=false

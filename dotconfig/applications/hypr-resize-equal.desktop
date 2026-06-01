@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Resize: fit equal
+Comment=Distribute tiled windows on the active workspace into equal widths
+Exec=/home/pars/.config/hypr/hypr-resize equal
+Icon=view-grid
+Categories=Utility;
+Keywords=hyprland;resize;equal;equalize;fit;rebalance;layout;
+NoDisplay=false
