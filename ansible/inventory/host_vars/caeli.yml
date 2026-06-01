@@ -161,6 +161,7 @@ brew_casks_common:
   - microsoft-word
   # productivity & documents
   - libreoffice
+  - marktext
   - obsidian
   # AI / coding agents
   - claude-code
