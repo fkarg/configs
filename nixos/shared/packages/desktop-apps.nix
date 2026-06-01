@@ -41,6 +41,7 @@
     # desktop applications
     kdePackages.dolphin
     kdePackages.kio-extras
+    marktext
     obsidian
     vscode.fhs
     zotero
