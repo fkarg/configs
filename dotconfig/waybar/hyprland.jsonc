@@ -40,9 +40,8 @@
 
   "hyprland/workspaces": {
     "format": "{name}",
-    "persistent-workspaces": {
-      "*": 10
-    }
+    // Only show occupied workspaces (plus the focused one); empty desktops are hidden.
+    "show-special": false
   },
 
   "hyprland/window": {
