@@ -106,6 +106,12 @@
     hyprpaper
     hyprpicker
     hyprpolkitagent
+    # hy3 plugin (column-based layout for clean N-way splits on ultrawide) is
+    # intentionally NOT added: in the current channel the packaged hy3
+    # (0.54.2.1) fails to compile against this hyprland (0.55.2). Re-enable
+    # once nixpkgs catches up, then load it from hyprland.conf with
+    #   plugin = /run/current-system/sw/lib/libhy3.so
+    # and switch the layout via `general { layout = hy3; }`.
 
     # screenshots and clipboard
     grim
