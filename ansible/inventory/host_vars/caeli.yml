@@ -44,6 +44,16 @@ kvm_switch_target_input: 15
 # Karabiner → Complex Modifications → Add rule. Tune via ctrl_as_cmd_keys /
 # ctrl_as_cmd_terminals if needed.
 ctrl_as_cmd_enabled: true
+# Neo2 override: the remap matches hardware key_codes (US-QWERTY positions), but
+# under the Neo2 input source the character 'a' lives on the physical D key
+# (key_code d). Without 'd', Ctrl+<our 'a'> leaks through as a raw Ctrl+a, which
+# macOS's Cocoa text system treats as ^A = "beginning of line" (the bug). Adding
+# 'd' makes it emit Cmd+key_code d → Cmd+a under Neo2 → select-all. Copy/paste/
+# close/new-tab already work because their Neo2 keys land on r/w/t/l, which the
+# default list happens to include. The rest of the default letters are harmless
+# no-ops on Neo2 (wrong physical key). Extend this list if cut/undo/find/... are
+# also wanted (they sit on q/b/o/... — verify each key_code in Karabiner-EventViewer).
+ctrl_as_cmd_keys: [c, v, x, z, a, w, t, f, n, s, r, l, d]
 
 # INVARIANT — Top-level only. (See spec for refresh procedure.)
 # Both `brew_packages_common` and `brew_casks_common` below must list ONLY
