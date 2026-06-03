@@ -1,0 +1,50 @@
+{# Maps Ctrl+<key> -> Cmd+<key> in GUI apps so Linux muscle memory (copy, #}
+{# paste, close-tab, ...) works on macOS, while Cmd keeps working too. The #}
+{# terminal bundle ids are excluded so Ctrl stays a real control code there #}
+{# (SIGINT on Ctrl+C, delete-word on Ctrl+W, kill-line on Ctrl+K, ...). #}
+{# 'q' deliberately omitted: Ctrl+Q quitting GUI apps is a surprising footgun. #}
+{% set ctrl_as_cmd_keys = ctrl_as_cmd_keys | default(['c', 'v', 'x', 'z', 'a', 'w', 't', 'f', 'n', 's', 'r', 'l']) %}
+{% set ctrl_as_cmd_terminals = ctrl_as_cmd_terminals | default([
+  '^net\\\\.kovidgoyal\\\\.kitty$',
+  '^com\\\\.apple\\\\.Terminal$',
+  '^com\\\\.googlecode\\\\.iterm2$',
+  '^com\\\\.mitchellh\\\\.ghostty$',
+]) %}
+{
+  "title": "Ctrl as Cmd in GUI apps (Linux muscle memory)",
+  "rules": [
+    {
+      "description": "Ctrl+[{{ ctrl_as_cmd_keys | join('/') }}] -> Cmd+key, except in terminals",
+      "manipulators": [
+{% for key in ctrl_as_cmd_keys %}
+        {
+          "type": "basic",
+          "from": {
+            "key_code": "{{ key }}",
+            "modifiers": {
+              "mandatory": ["control"],
+              "optional": ["any"]
+            }
+          },
+          "to": [
+            {
+              "key_code": "{{ key }}",
+              "modifiers": ["left_command"]
+            }
+          ],
+          "conditions": [
+            {
+              "type": "frontmost_application_unless",
+              "bundle_identifiers": [
+{% for bundle in ctrl_as_cmd_terminals %}
+                "{{ bundle }}"{{ "," if not loop.last else "" }}
+{% endfor %}
+              ]
+            }
+          ]
+        }{{ "," if not loop.last else "" }}
+{% endfor %}
+      ]
+    }
+  ]
+}

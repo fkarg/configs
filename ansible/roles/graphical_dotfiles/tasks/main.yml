@@ -71,8 +71,8 @@
     state: directory
   when:
     - ansible_facts['system'] == 'Darwin'
-    - kvm_switch_enabled | default(false) | bool
-  tags: [karabiner, kvm]
+    - (kvm_switch_enabled | default(false) | bool) or (ctrl_as_cmd_enabled | default(false) | bool)
+  tags: [karabiner, kvm, ctrl_as_cmd]
 
 - name: Ensure ~/.config/kvm directory exists
   file:
@@ -101,6 +101,19 @@
     - ansible_facts['system'] == 'Darwin'
     - kvm_switch_enabled | default(false) | bool
   tags: [karabiner, kvm]
+
+# Drops the "Ctrl as Cmd in GUI apps" complex-modification asset. Same one-time
+# enable applies: Karabiner-Elements → Complex Modifications → Add rule. Override
+# the key set or excluded terminals per-host via ctrl_as_cmd_keys /
+# ctrl_as_cmd_terminals (see the template for defaults).
+- name: Template Karabiner Ctrl-as-Cmd rule asset
+  template:
+    src: karabiner_ctrl_as_cmd.json.j2
+    dest: ~/.config/karabiner/assets/complex_modifications/ctrl_as_cmd.json
+  when:
+    - ansible_facts['system'] == 'Darwin'
+    - ctrl_as_cmd_enabled | default(false) | bool
+  tags: [karabiner, ctrl_as_cmd]
 
 # ============================================
 # HYPRLAND (Linux only)

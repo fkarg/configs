@@ -38,6 +38,13 @@ kvm_display_id: "0A6C28AE-EE62-41C3-8565-25FEE528B91B"
 kvm_self_input: null
 kvm_switch_target_input: 15
 
+# Ctrl-as-Cmd: map Ctrl+<key> -> Cmd+<key> in GUI apps so Linux muscle memory
+# (copy/paste/close-tab/...) works here, while Cmd keeps working. Terminals are
+# excluded (Ctrl stays SIGINT/readline). Still needs a one-time enable in
+# Karabiner → Complex Modifications → Add rule. Tune via ctrl_as_cmd_keys /
+# ctrl_as_cmd_terminals if needed.
+ctrl_as_cmd_enabled: true
+
 # INVARIANT — Top-level only. (See spec for refresh procedure.)
 # Both `brew_packages_common` and `brew_casks_common` below must list ONLY
 # top-level (manually installed) packages, never transitive dependencies.
