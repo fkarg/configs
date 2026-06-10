@@ -21,3 +21,7 @@ coding-agents/generated/
 
 # python bytecode cache from build.py / merge_codex_config.py
 coding-agents/__pycache__/
+
+# host-owned codex config (symlink target of ~/.codex/config.toml), commingles
+# curated settings with local trust state — see merge_codex_config.py
+coding-agents/configs/codex/config.toml
