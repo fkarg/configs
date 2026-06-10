@@ -7,6 +7,14 @@ Outputs (regenerated each run):
     generated/codex/agents/<name>.toml          (Codex CLI subagent)
     generated/copilot/agents/<name>.agent.md    (Copilot CLI custom agent)
 
+Agents with `mode: primary` additionally get a Skill variant, since
+Claude Code and Codex CLI only ever install agents as subagents (no "primary
+mode" concept), which breaks workflows that need interactive checkpoints with
+the user. The Skill runs in the main thread instead, so it can still pause for
+input while delegating to specialist subagents:
+    generated/claude/skills/<name>/SKILL.md     (Claude Code skill)
+    generated/codex/skills/<name>/SKILL.md      (Codex CLI skill)
+
 Opencode reads the canonical source directly — no translation needed for it.
 
 Permission translation is conservative: `edit: deny` and `webfetch: deny` in the
@@ -222,6 +230,11 @@ def copilot_agent(agent: Agent) -> str:
     return "\n".join(lines) + "\n\n" + agent.body.lstrip()
 
 
+def skill_variant(agent: Agent) -> str:
+    lines = ["---", f"name: {agent.name}", f"description: {agent.description}", "---"]
+    return "\n".join(lines) + "\n\n" + agent.body.lstrip()
+
+
 def reset_dir(path: Path) -> None:
     if path.exists():
         shutil.rmtree(path)
@@ -236,10 +249,13 @@ def main() -> int:
     claude_dir = OUT / "claude" / "agents"
     codex_dir = OUT / "codex" / "agents"
     copilot_dir = OUT / "copilot" / "agents"
-    for d in (claude_dir, codex_dir, copilot_dir):
+    claude_skills_dir = OUT / "claude" / "skills"
+    codex_skills_dir = OUT / "codex" / "skills"
+    for d in (claude_dir, codex_dir, copilot_dir, claude_skills_dir, codex_skills_dir):
         reset_dir(d)
 
     count = 0
+    skill_count = 0
     for src in sorted(SRC.glob("*.md")):
         agent = load_agent(src)
         for warning in agent.warnings:
@@ -250,7 +266,15 @@ def main() -> int:
         (copilot_dir / f"{agent.name}.agent.md").write_text(copilot_agent(agent))
         count += 1
 
-    print(f"generated {count} agents into {OUT.relative_to(REPO)}/")
+        if agent.mode == "primary":
+            skill = skill_variant(agent)
+            for skills_dir in (claude_skills_dir, codex_skills_dir):
+                skill_dir = skills_dir / agent.name
+                skill_dir.mkdir(parents=True, exist_ok=True)
+                (skill_dir / "SKILL.md").write_text(skill)
+            skill_count += 1
+
+    print(f"generated {count} agents ({skill_count} also as skills) into {OUT.relative_to(REPO)}/")
     return 0
 
 

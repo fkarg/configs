@@ -1,5 +1,5 @@
 ---
-description: Independent Contributor: researches, plans, implements, reviews, and ships frontend, backend, and devops work from GitHub issues
+description: Independent Contributor. Use when the user gives a GitHub issue (or similarly-scoped task) and wants it researched, planned, implemented, reviewed, and shipped as a PR end-to-end across frontend, backend, and devops.
 mode: primary
 permission:
   bash: allow

@@ -50,7 +50,8 @@ Edit shared codex prefs in `codex/shared.toml`, then re-run the role to apply.
 
 The Ansible task runs `build.py`, then symlinks every variant into the right
 global directory (`~/.config/opencode/agents/`, `~/.claude/agents/`,
-`~/.codex/agents/`, `~/.copilot/agents/`).
+`~/.codex/agents/`, `~/.copilot/agents/`, plus `~/.claude/skills/` and
+`~/.codex/skills/` for `mode: primary` agents).
 
 ## What gets translated
 
@@ -70,6 +71,16 @@ analog and is left untranslated.
 `mode: primary` / `mode: all` agents get installed everywhere as subagents
 even though they were authored as opencode primary modes. They're still
 invokable in the other tools; just don't expect them to behave as a "main mode".
+
+`mode: primary` agents additionally get rendered as a **Skill**
+(`generated/{claude,codex}/skills/<name>/SKILL.md`, same content for both —
+Claude Code and Codex CLI share the SKILL.md format) and symlinked to
+`~/.claude/skills/<name>/` and `~/.codex/skills/<name>/`. Unlike a subagent, a
+skill runs in the main thread, so it can pause for interactive checkpoints
+(plan sign-off, clarifying questions) while still delegating to specialist
+subagents via the Agent/Task tool — this is how `ic` becomes usable as a
+"baseline" workflow in tools that have no primary-mode concept. OpenCode needs
+no skill (native primary mode); Copilot has no skill output yet.
 
 ## Removing an agent
 

@@ -12,8 +12,10 @@
     - "~/.config/opencode/agents"
     - "~/.claude"
     - "~/.claude/agents"
+    - "~/.claude/skills"
     - "~/.codex"
     - "~/.codex/agents"
+    - "~/.codex/skills"
     - "~/.copilot"
     - "~/.copilot/agents"
 
@@ -86,6 +88,22 @@
   loop_control:
     label: "{{ item.path | basename }}"
 
+- name: Discover generated Claude Code skills
+  find:
+    paths: "{{ coding_agents_source_dir }}/generated/claude/skills"
+    file_type: directory
+  register: ca_claude_skills
+
+- name: Symlink Claude Code skills
+  file:
+    src: "{{ item.path }}"
+    dest: "~/.claude/skills/{{ item.path | basename }}"
+    state: link
+    force: true
+  loop: "{{ ca_claude_skills.files }}"
+  loop_control:
+    label: "{{ item.path | basename }}"
+
 - name: Discover generated Codex agents
   find:
     paths: "{{ coding_agents_source_dir }}/generated/codex/agents"
@@ -99,6 +117,22 @@
     state: link
     force: true
   loop: "{{ ca_codex.files }}"
+  loop_control:
+    label: "{{ item.path | basename }}"
+
+- name: Discover generated Codex skills
+  find:
+    paths: "{{ coding_agents_source_dir }}/generated/codex/skills"
+    file_type: directory
+  register: ca_codex_skills
+
+- name: Symlink Codex skills
+  file:
+    src: "{{ item.path }}"
+    dest: "~/.codex/skills/{{ item.path | basename }}"
+    state: link
+    force: true
+  loop: "{{ ca_codex_skills.files }}"
   loop_control:
     label: "{{ item.path | basename }}"
 
