@@ -19,20 +19,25 @@
       {{ '/opt/homebrew/bin/brew' if _brew_opt.stat.exists else (
            '/usr/local/bin/brew' if _brew_usr.stat.exists else '/opt/homebrew/bin/brew') }}
 
+- name: Update and upgrade Homebrew
+  community.general.homebrew:
+    update_homebrew: true
+    upgrade_all: true
+    path: "{{ brew_bin | dirname }}"
+  tags: [brew_upgrade]
+
 - name: Install brew formulae
   community.general.homebrew:
-    name: "{{ item }}"
+    name: "{{ (brew_packages_common | default([])) + (brew_packages_extra | default([])) }}"
     state: present
     path: "{{ brew_bin | dirname }}"
-  loop: "{{ (brew_packages_common | default([])) + (brew_packages_extra | default([])) }}"
   tags: [brew_formulae]
 
 - name: Install brew casks
   community.general.homebrew_cask:
-    name: "{{ item }}"
+    name: "{{ (brew_casks_common | default([])) + (brew_casks_extra | default([])) }}"
     state: present
     path: "{{ brew_bin | dirname }}"
     greedy: true
-  loop: "{{ (brew_casks_common | default([])) + (brew_casks_extra | default([])) }}"
   ignore_errors: true
   tags: [brew_casks]
