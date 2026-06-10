@@ -53,7 +53,7 @@ ctrl_as_cmd_enabled: true
 # default list happens to include. The rest of the default letters are harmless
 # no-ops on Neo2 (wrong physical key). Extend this list if cut/undo/find/... are
 # also wanted (they sit on q/b/o/... — verify each key_code in Karabiner-EventViewer).
-ctrl_as_cmd_keys: [c, v, x, z, a, w, t, f, n, s, r, l, d]
+ctrl_as_cmd_keys: [c, v, x, z, a, w, t, f, n, s, r, l, d, o, return_or_enter]
 
 # INVARIANT — Top-level only. (See spec for refresh procedure.)
 # Both `brew_packages_common` and `brew_casks_common` below must list ONLY

@@ -3,7 +3,7 @@
 {# terminal bundle ids are excluded so Ctrl stays a real control code there #}
 {# (SIGINT on Ctrl+C, delete-word on Ctrl+W, kill-line on Ctrl+K, ...). #}
 {# 'q' deliberately omitted: Ctrl+Q quitting GUI apps is a surprising footgun. #}
-{% set ctrl_as_cmd_keys = ctrl_as_cmd_keys | default(['c', 'v', 'x', 'z', 'a', 'w', 't', 'f', 'n', 's', 'r', 'l']) %}
+{% set ctrl_as_cmd_keys = ctrl_as_cmd_keys | default(['c', 'v', 'x', 'z', 'a', 'w', 't', 'f', 'n', 's', 'r', 'l', 'return_or_enter']) %}
 {% set ctrl_as_cmd_terminals = ctrl_as_cmd_terminals | default([
   '^net\\\\.kovidgoyal\\\\.kitty$',
   '^com\\\\.apple\\\\.Terminal$',
