@@ -12,7 +12,20 @@
     ],
     "defaultMode": "auto"
   },
-  "model": "opus",
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume|clear|compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ~/.claude/agents-md-hook.sh",
+            "statusMessage": "Loading AGENTS.md"
+          }
+        ]
+      }
+    ]
+  },
   "statusLine": {
     "type": "command",
     "command": "bash ~/.claude/statusline-command.sh"
@@ -33,22 +46,9 @@
   "spinnerTipsEnabled": false,
   "effortLevel": "high",
   "showThinkingSummaries": true,
+  "skipWorkflowUsageWarning": true,
   "editorMode": "normal",
   "verbose": true,
   "preferredNotifChannel": "kitty",
-  "skipAutoPermissionPrompt": true,
-  "skipWorkflowUsageWarning": true,
-  "hooks": {
-    "SessionStart": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "dir=\"${CLAUDE_PROJECT_DIR:-$PWD}\"; root=$(git -C \"$dir\" rev-parse --show-toplevel 2>/dev/null) || root=\"$dir\"; if [ -f \"$root/AGENTS.md\" ] && [ ! -f \"$root/CLAUDE.md\" ] && [ ! -f \"$root/.claude/CLAUDE.md\" ]; then jq -Rs '{hookSpecificOutput:{hookEventName:\"SessionStart\",additionalContext:(\"Project AGENTS.md (auto-loaded because no CLAUDE.md is present):\\n\\n\" + .)}}' \"$root/AGENTS.md\"; fi 2>/dev/null || true",
-            "statusMessage": "Loading AGENTS.md"
-          }
-        ]
-      }
-    ]
-  }
+  "skipAutoPermissionPrompt": true
 }
