@@ -71,7 +71,7 @@ brew_packages_common:
   - fortune
   - htop
   - ncdu
-  - neofetch
+  - fastfetch
   - ripgrep-all
   - watch
   - wget
