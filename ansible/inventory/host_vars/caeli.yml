@@ -100,7 +100,6 @@ brew_packages_common:
   # containers & kubernetes
   - docker
   - docker-buildx
-  - docker-compose
   - k3d
   - k9s
   - kubecfg
