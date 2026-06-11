@@ -14,6 +14,26 @@ configs/<tool>/         curated global settings, synced to ~/.<tool> (see below)
 merge_codex_config.py   overlays curated codex prefs onto its local config.toml
 ```
 
+## Codex account switching
+
+`scripts/codex-account` snapshots file-based Codex credentials into
+`~/.codex/account-auth/<profile>/auth.json` and swaps the active
+`~/.codex/auth.json` between profiles. The `coding_agents` role links it to
+`~/.local/bin/codex-account` and links `configs/codex/prompts/account.md` to
+`~/.codex/prompts/account.md`, giving a slash-menu entry as `/prompts:account`.
+
+Initial setup:
+
+```sh
+codex-account save personal
+codex-account login business
+codex-account use personal
+```
+
+Use `codex-account use personal` or `codex-account use business` to switch.
+Restart the Codex CLI / IDE session after switching so the process reloads the
+new credentials.
+
 ## Global tool settings (`configs/`)
 
 Each tool's global config splits into two layers:

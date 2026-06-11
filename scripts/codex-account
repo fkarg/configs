@@ -1,0 +1,171 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+usage() {
+  cat <<'EOF'
+Usage:
+  codex-account status
+  codex-account list
+  codex-account save <personal|business|name>
+  codex-account use <personal|business|name>
+  codex-account login <personal|business|name> [--device-auth]
+
+Profiles are stored in ~/.codex/account-auth/<name>/auth.json.
+
+Typical setup:
+  codex-account save personal
+  codex-account login business
+  codex-account use personal
+  codex-account use business
+
+After switching accounts, start a new Codex CLI / IDE session so the process
+loads the new credentials.
+EOF
+}
+
+die() {
+  printf 'codex-account: %s\n' "$*" >&2
+  exit 1
+}
+
+codex_home="${CODEX_HOME:-$HOME/.codex}"
+auth_file="$codex_home/auth.json"
+store_dir="$codex_home/account-auth"
+active_file="$store_dir/active"
+
+ensure_store() {
+  mkdir -p "$store_dir"
+  chmod 700 "$store_dir"
+}
+
+validate_profile() {
+  local profile="$1"
+  case "$profile" in
+    ''|.*|*/*|*' '*)
+      die "invalid profile name '$profile'"
+      ;;
+  esac
+}
+
+profile_auth_file() {
+  local profile="$1"
+  printf '%s/%s/auth.json' "$store_dir" "$profile"
+}
+
+save_current_as() {
+  local profile="$1"
+  validate_profile "$profile"
+  test -f "$auth_file" || die "no active auth file at $auth_file; run 'codex login' first"
+
+  local profile_dir="$store_dir/$profile"
+  mkdir -p "$profile_dir"
+  chmod 700 "$profile_dir"
+  cp "$auth_file" "$profile_dir/auth.json"
+  chmod 600 "$profile_dir/auth.json"
+}
+
+save_active_profile_if_known() {
+  test -f "$active_file" || return 0
+  test -f "$auth_file" || return 0
+
+  local active
+  active="$(cat "$active_file")"
+  test -n "$active" || return 0
+  save_current_as "$active"
+}
+
+require_known_active_or_no_auth() {
+  test ! -f "$auth_file" && return 0
+  test -f "$active_file" && return 0
+
+  die "active Codex credentials are not assigned to a profile; run 'codex-account save personal' first"
+}
+
+cmd="${1:-}"
+case "$cmd" in
+  status)
+    ensure_store
+    if test -f "$active_file"; then
+      printf 'active profile: %s\n' "$(cat "$active_file")"
+    else
+      printf 'active profile: unknown\n'
+    fi
+
+    if test -f "$auth_file"; then
+      printf 'auth file: %s\n' "$auth_file"
+    else
+      printf 'auth file: missing\n'
+    fi
+
+    if command -v codex >/dev/null 2>&1; then
+      codex login status || true
+    fi
+    ;;
+
+  list)
+    ensure_store
+    found=0
+    for dir in "$store_dir"/*; do
+      test -d "$dir" || continue
+      test -f "$dir/auth.json" || continue
+      found=1
+      printf '%s\n' "$(basename "$dir")"
+    done
+    test "$found" -eq 1 || printf 'no saved profiles\n'
+    ;;
+
+  save)
+    profile="${2:-}"
+    test -n "$profile" || die "missing profile name"
+    ensure_store
+    save_current_as "$profile"
+    printf '%s\n' "$profile" > "$active_file"
+    chmod 600 "$active_file"
+    printf 'saved active Codex credentials as profile: %s\n' "$profile"
+    ;;
+
+  use)
+    profile="${2:-}"
+    test -n "$profile" || die "missing profile name"
+    validate_profile "$profile"
+    ensure_store
+
+    target="$(profile_auth_file "$profile")"
+    test -f "$target" || die "unknown profile '$profile'; run 'codex-account login $profile' or 'codex-account save $profile'"
+
+    require_known_active_or_no_auth
+    save_active_profile_if_known
+    cp "$target" "$auth_file"
+    chmod 600 "$auth_file"
+    printf '%s\n' "$profile" > "$active_file"
+    chmod 600 "$active_file"
+    printf 'switched Codex credentials to profile: %s\n' "$profile"
+    printf 'start a new Codex CLI / IDE session before relying on the new account\n'
+    ;;
+
+  login)
+    profile="${2:-}"
+    shift 2 || true
+    test -n "$profile" || die "missing profile name"
+    validate_profile "$profile"
+    ensure_store
+
+    require_known_active_or_no_auth
+    save_active_profile_if_known
+    rm -f "$auth_file"
+    codex login "$@"
+    save_current_as "$profile"
+    printf '%s\n' "$profile" > "$active_file"
+    chmod 600 "$active_file"
+    printf 'logged in and saved Codex profile: %s\n' "$profile"
+    ;;
+
+  -h|--help|help|'')
+    usage
+    ;;
+
+  *)
+    usage >&2
+    exit 2
+    ;;
+esac

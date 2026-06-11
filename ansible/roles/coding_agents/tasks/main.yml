@@ -5,7 +5,7 @@
 
 - name: Ensure global agent directories exist
   file:
-    path: "{{ item }}"
+    path: "{{ ca_global_dir }}"
     state: directory
   loop:
     - "~/.config/opencode"
@@ -15,9 +15,40 @@
     - "~/.claude/skills"
     - "~/.codex"
     - "~/.codex/agents"
+    - "~/.codex/prompts"
     - "~/.codex/skills"
     - "~/.copilot"
     - "~/.copilot/agents"
+    - "~/.local/bin"
+  loop_control:
+    loop_var: ca_global_dir
+
+- name: Install Codex account switcher
+  file:
+    src: "{{ repo_root }}/scripts/codex-account"
+    dest: "~/.local/bin/codex-account"
+    state: link
+    force: true
+  tags: [codex]
+
+- name: Discover Codex custom prompts
+  find:
+    paths: "{{ coding_agents_source_dir }}/configs/codex/prompts"
+    patterns: "*.md"
+  register: ca_codex_prompts
+  tags: [codex]
+
+- name: Symlink Codex custom prompts
+  file:
+    src: "{{ ca_codex_prompt.path }}"
+    dest: "~/.codex/prompts/{{ ca_codex_prompt.path | basename }}"
+    state: link
+    force: true
+  loop: "{{ ca_codex_prompts.files }}"
+  loop_control:
+    loop_var: ca_codex_prompt
+    label: "{{ ca_codex_prompt.path | basename }}"
+  tags: [codex]
 
 # Symlink per-tool global config files that hold only curated, machine-independent
 # settings (no secrets, no host paths) and that the tool reads or writes in place.
