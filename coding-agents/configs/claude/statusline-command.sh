@@ -13,7 +13,7 @@ tok_in=$(j '.context_window.total_input_tokens')
 tok_out=$(j '.context_window.total_output_tokens')
 lines_add=$(j '.cost.total_lines_added')
 lines_del=$(j '.cost.total_lines_removed')
-rl_pct=$(j '.rate_limits.five_hour.used_percentage')
+rl_pct=$(j '.rate_limits.five_hour.used_percentage | if . == null then null else 100 - . end')
 rl_reset=$(j '.rate_limits.five_hour.resets_at')
 effort=$(j '.effort.level // .effortLevel')
 
@@ -80,7 +80,7 @@ if [ -n "$lines_add" ] || [ -n "$lines_del" ]; then
 fi
 
 if [ -n "$rl_pct" ]; then
-  rl_seg=$(printf "${C_RL}5h %.0f%%${C_RESET}" "$rl_pct")
+    rl_seg=$(printf "${C_RL}5h %.0f%% left${C_RESET}" "$rl_pct")
   if [ -n "$rl_reset" ]; then
     # resets_at is either a Unix epoch integer or an ISO 8601 string
     if [[ "$rl_reset" =~ ^[0-9]+$ ]]; then
