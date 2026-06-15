@@ -210,6 +210,20 @@
 
   virtualisation.docker.enable = true;
 
+  # BOINC distributed computing with NVIDIA GPU compute. Per the services.boinc
+  # docs, CUDA needs the NVIDIA driver package in-env and OpenCL needs both that
+  # driver and the ocl-icd loader; pinning to config.hardware.nvidia.package
+  # keeps the CUDA/OpenCL userspace matched to the loaded kernel module.
+  # libglvnd/brotli cover the client runtime. `pars` joins the boinc group so
+  # boincmgr can read the RPC auth cookie. Confirm GPU detection in boincmgr's
+  # event log after the next boot (jolly is boot-not-switch).
+  services.boinc = {
+    enable = true;
+    extraEnvPackages = (with pkgs; [ ocl-icd libglvnd brotli ])
+      ++ [ config.hardware.nvidia.package ];
+  };
+  users.users.pars.extraGroups = [ "boinc" ];
+
   # i2c stays OFF by default. Historical incident: pairing i2c with OpenRGB
   # produced full blackscreens on this RTX 3070. The KVM input-switch bind
   # (Ctrl+Shift+F12 → ddcutil) needs i2c, so it's surfaced as an opt-in boot
