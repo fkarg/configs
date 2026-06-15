@@ -65,6 +65,7 @@
     - { src: "claude/settings.json",         dest: "~/.claude/settings.json" }
     - { src: "claude/statusline-command.sh", dest: "~/.claude/statusline-command.sh" }
     - { src: "claude/agents-md-hook.sh",     dest: "~/.claude/agents-md-hook.sh" }
+    - { src: "claude/stop-queue-hook.sh",    dest: "~/.claude/stop-queue-hook.sh" }
     - { src: "copilot/settings.json",        dest: "~/.copilot/settings.json" }
     - { src: "opencode/opencode.json",       dest: "~/.config/opencode/opencode.json" }
   loop_control:

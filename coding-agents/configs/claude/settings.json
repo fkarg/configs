@@ -24,6 +24,17 @@
           }
         ]
       }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ~/.claude/stop-queue-hook.sh",
+            "statusMessage": "Checking message queue"
+          }
+        ]
+      }
     ]
   },
   "statusLine": {
