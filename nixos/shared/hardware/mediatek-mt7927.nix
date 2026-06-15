@@ -15,6 +15,18 @@ let
     nixpkgs = { legacyPackages.x86_64-linux = pkgs; };
     mediatek-mt7927-dkms = mt7927DkmsSrc;
   };
+
+  # Upstream firmware package installs the BT RAM code under
+  # mediatek/mt6639/, but the patched btusb driver requests it from
+  # mediatek/mt7927/ (kernel log: "Direct firmware load for
+  # mediatek/mt7927/BT_RAM_CODE_MT6639_2_1_hdr.bin failed with error -2").
+  # Without it the controller enumerates but stays DOWN at address
+  # 00:00:00:00:00:00 and BlueZ reports "No default controller available".
+  # Re-home the blob into the path the driver actually probes.
+  mt7927BtFirmwarePathFix = pkgs.runCommand "mt7927-bt-firmware-mt7927-path" { } ''
+    src=${mt7927.packages.x86_64-linux.firmware}/lib/firmware/mediatek/mt6639/BT_RAM_CODE_MT6639_2_1_hdr.bin
+    install -Dm644 "$src" "$out/lib/firmware/mediatek/mt7927/BT_RAM_CODE_MT6639_2_1_hdr.bin"
+  '';
 in
 {
   imports = [ mt7927.nixosModules.default ];
@@ -25,4 +37,6 @@ in
     enableBluetooth = true;
     disableAspm = true;
   };
+
+  hardware.firmware = [ mt7927BtFirmwarePathFix ];
 }

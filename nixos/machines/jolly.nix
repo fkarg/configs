@@ -47,12 +47,9 @@
     "usbcore.autosuspend=-1"
     "systemd.log_level=info"
     "loglevel=4"
-    # MT7927 bluetooth USB enumeration workaround (see reset-mt7927-bluetooth-usb
-    # service below). Together these make the on-board BT controller come up
-    # reliably on cold boot instead of needing the specialisation.
-    "usbcore.old_scheme_first=1"
-    "usbcore.initial_descriptor_timeout=10000"
-    "usbcore.quirks=13d3:3588:k"
+    # MT7927 BT controller enumerates fine; its only failure was the missing
+    # firmware blob, fixed by the mediatek/mt7927 path re-home in
+    # shared/hardware/mediatek-mt7927.nix. Keep autosuspend off for BT stability.
     "btusb.enable_autosuspend=0"
   ];
 
@@ -175,27 +172,6 @@
   hardware.bluetooth.enable = true;
   hardware.bluetooth.powerOnBoot = true;
   services.blueman.enable = true;
-
-  # MT7927 USB BT controller occasionally fails to enumerate cleanly. Toggling
-  # the upstream USB port's disable knob before BlueZ starts forces a re-enum
-  # and matches the kernel quirks above. Keep `requiredBy = bluetooth.service`
-  # so it only runs when BT is actually wanted.
-  systemd.services.reset-mt7927-bluetooth-usb = {
-    description = "Reset MT7927 Bluetooth USB port before BlueZ";
-    requiredBy = [ "bluetooth.service" ];
-    before = [ "bluetooth.service" ];
-    path = [ pkgs.coreutils pkgs.systemd ];
-    serviceConfig.Type = "oneshot";
-    script = ''
-      port=/sys/bus/usb/devices/usb1/1-0:1.0/usb1-port9
-      if [ -e "$port/disable" ]; then
-        echo 1 > "$port/disable" || true
-        sleep 2
-        echo 0 > "$port/disable" || true
-        udevadm settle --timeout=10 || true
-      fi
-    '';
-  };
 
   specialisation.manual-unlock.configuration = {
     boot.loader.grub.configurationName = "Manual unlock";
