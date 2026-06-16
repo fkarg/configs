@@ -168,6 +168,20 @@
   loop_control:
     label: "{{ item.path | basename }}"
 
+- name: Expose Claude Code plugin skills to Codex (e.g. superpowers)
+  shell: |
+    src=$(ls -dt "$HOME"/{{ item }}/ 2>/dev/null | head -1)
+    [ -z "$src" ] && exit 0
+    for d in "$src"*/; do
+      [ -e "${d}SKILL.md" ] || continue
+      ln -sfn "$d" "$HOME/.codex/skills/$(basename "$d")"
+    done
+  args:
+    executable: /bin/bash
+  loop: "{{ ca_codex_plugin_skill_globs }}"
+  changed_when: false
+  tags: [codex]
+
 - name: Discover generated Copilot CLI agents
   find:
     paths: "{{ coding_agents_source_dir }}/generated/copilot/agents"

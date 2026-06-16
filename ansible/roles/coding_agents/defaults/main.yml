@@ -1,2 +1,8 @@
 ---
 coding_agents_source_dir: "{{ repo_root }}/coding-agents"
+
+# Claude Code plugin skills to also expose to Codex (which uses the same
+# SKILL.md format). Each entry is a glob under $HOME pointing at a plugin's
+# skills directory; the version path is wildcarded and the newest match wins.
+ca_codex_plugin_skill_globs:
+  - ".claude/plugins/cache/claude-plugins-official/superpowers/*/skills"
