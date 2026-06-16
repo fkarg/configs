@@ -59,6 +59,15 @@ clobbers a symlink) and mixes host state into it. So instead of a symlink,
 codex-owned local file, leaving trusted projects / `oss_provider` / nux intact.
 Edit shared codex prefs in `codex/shared.toml`, then re-run the role to apply.
 
+### Shared cross-tool prefs (`configs/shared/AGENTS.md`)
+
+One source of global working-style preferences, symlinked into every tool's
+global instructions file: `~/.claude/CLAUDE.md`, `~/.codex/AGENTS.md`, and
+`~/.config/opencode/AGENTS.md` (Codex and OpenCode auto-load a global
+`AGENTS.md`; Claude uses `CLAUDE.md`). Edit it in one place and all three pick
+it up on the next role run. This repo is public — keep it free of host-specific
+or secret content.
+
 ## Creating a new agent or skill
 
 Add ONE file — `source/<name>.md` — and apply it the same way as an edit (below).

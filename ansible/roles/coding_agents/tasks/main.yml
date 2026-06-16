@@ -68,6 +68,10 @@
     - { src: "claude/stop-queue-hook.sh",    dest: "~/.claude/stop-queue-hook.sh" }
     - { src: "copilot/settings.json",        dest: "~/.copilot/settings.json" }
     - { src: "opencode/opencode.json",       dest: "~/.config/opencode/opencode.json" }
+    # Shared global working-style prefs, one source -> every tool's global instructions file.
+    - { src: "shared/AGENTS.md",             dest: "~/.claude/CLAUDE.md" }
+    - { src: "shared/AGENTS.md",             dest: "~/.codex/AGENTS.md" }
+    - { src: "shared/AGENTS.md",             dest: "~/.config/opencode/AGENTS.md" }
   loop_control:
     label: "{{ item.dest }}"
 
