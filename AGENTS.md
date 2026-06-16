@@ -34,12 +34,14 @@ README covers the high-level rules (live entrypoint is `/etc/nixos/configuration
 
 ## coding-agents
 
-Single-source agent definitions in `coding-agents/source/*.md` (opencode-flavored frontmatter). `build.py` renders per-tool variants into `coding-agents/generated/` (gitignored). The `coding_agents` Ansible role runs `build.py` then symlinks variants into `~/.claude/agents/`, `~/.config/opencode/agents/`, `~/.codex/agents/`, `~/.copilot/agents/`.
+A generator: **one source file per agent** fans out to four CLIs (Claude Code, Codex, Copilot CLI, OpenCode). **The full guide is `coding-agents/README.md` — read it before creating or editing any agent or skill.** The essentials:
 
-- Edit only `source/<name>.md` — never the generated files.
-- Permission translation rules live in `coding-agents/README.md` (e.g. `edit: deny` strips Edit/Write/NotebookEdit from the Claude variant).
-- Deleting `source/<name>.md` does **not** auto-remove existing symlinks — clean those up by hand.
-- Resync after edits: `ansible-playbook ansible/site.yml -l <host> --tags coding_agents`.
+- **Edit only `coding-agents/source/<name>.md`.** It's opencode-flavored: YAML frontmatter + a markdown body that *is* the agent's prompt. `build.py` renders per-tool variants into `coding-agents/generated/` (gitignored); the `coding_agents` Ansible role runs `build.py` then symlinks them into `~/.claude/agents/`, `~/.config/opencode/agents/`, `~/.codex/agents/`, `~/.copilot/agents/`. **Never hand-edit `generated/`** — it's rebuilt every run.
+- **`mode:` decides what you get.** `mode: subagent` (default) → invoked by another agent via the Task/Agent tool, runs in its own context, can't pause for the user — use for delegated, self-contained jobs (a reviewer, a specialist). `mode: primary` → ALSO rendered as a **Skill** (`/<name>`) for Claude Code + Codex, runs in the main thread, can pause for sign-off / clarifying questions while still delegating to subagents — use for an interactive workflow (e.g. `ic`).
+- **Permissions translate to real restrictions per tool.** `permission: { edit|bash|webfetch: allow|ask|deny }`. A `deny` is enforced — e.g. `edit: deny` strips Edit/Write/NotebookEdit from the Claude variant, `webfetch: deny` strips WebFetch/WebSearch. Full translation table in `coding-agents/README.md`.
+- **`description` should start with "Use when …"** — it's what each tool reads to decide when to pick the agent.
+- Deleting `source/<name>.md` does **not** auto-remove the existing symlinks — clean those up by hand.
+- After editing, rebuild + resync: `ansible-playbook ansible/site.yml -l <host> --tags coding_agents` (or just `python3 coding-agents/build.py` to verify rendering without installing).
 
 ## Conventions
 
