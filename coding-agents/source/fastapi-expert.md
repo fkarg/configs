@@ -32,7 +32,7 @@ These are what make a change "fit". Treat them as invariants:
 - **Tenant isolation is non-negotiable.** Every query on a tenant-scoped table filters by `org_id`; background tasks carry and enforce `org_id` too. `org_id` derives from the Keycloak realm (token `iss`), never a request field. Auth helpers are in `src.auth` (`get_auth_user`, `is_authenticated`, `require_roles`, `verify_user_org_membership`).
 - **Feature flags via `src.feature.services`** (OpenFeature/Flipt), toggled at runtime — never `BaseSettings`/env vars. `configs.py` is infrastructure settings only (`model_config` from `src.configs`, module-level `settings`); never read `os.environ` directly.
 - **`operation_id` is an API contract.** The frontend client is generated from it — renaming or removing one is a breaking change.
-- **Background work is SAQ:** `async def task(ctx: WorkerContext, ...)`, stable `key=` for idempotency. Pagination is `paginate(query, pagination, session)` with `Page[T]` + `PaginationInput`.
+- **Background work is SAQ (and soon temporal):** `async def task(ctx: WorkerContext, ...)`, stable `key=` for idempotency. Pagination is `paginate(query, pagination, session)` with `Page[T]` + `PaginationInput`.
 
 ## How you operate
 

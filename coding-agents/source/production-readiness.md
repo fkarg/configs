@@ -109,7 +109,7 @@ For every change set, answer: **If this deploy breaks production, what are the s
 
 ### 9. Feature Flags
 
-Note: We are transitioning to formal feature flag management via OpenFeature. Until that's in place, flag any risky behavior changes that ship without a kill switch. Once OpenFeature is integrated, this check should verify that significant new features or risky changes are gated behind feature flags and can be toggled off without a redeploy.
+We are doing feature flag management via OpenFeature. Flag any risky behavior changes that ship without a kill switch.
 
 ### 10. Robustness & Scalability (Ops Impact)
 
