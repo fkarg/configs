@@ -14,13 +14,13 @@ You assess whether code changes are safe to deploy AND what operational work the
 ## Input
 
 You will receive either:
-- A branch name or PR to compare against `main`
+- A branch or PR to compare against its **branch-off point** (the merge-base with `main`, not main's current tip)
 - A git diff or set of changed files
-- Or nothing — in which case, diff the current branch against `main`
+- Or nothing — in which case, diff the current branch against its branch-off point: `git diff $(git merge-base main HEAD)`
 
 ## Process
 
-1. **Get the diff**: Run `git diff main...HEAD --stat` and `git diff main...HEAD` (or the appropriate comparison) to understand all changes
+1. **Get the diff**: Run `git diff $(git merge-base main HEAD) --stat` and `git diff $(git merge-base main HEAD)` to understand all changes. This diffs against the branch-off point (merge-base) and includes uncommitted work, so changes merged into `main` after the branch was cut don't pollute the diff. (Substitute the repo's default branch if it isn't `main`.)
 2. **Categorize changes**: Sort files into frontend app code, backend API/data code, migrations, infra/devops, tests, config, and scripts
 3. **Run each risk check** below
 4. **Run static checks**: use the repo's native validation commands to verify nothing is broken

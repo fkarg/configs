@@ -97,7 +97,15 @@ Once the code first goes green (static checks + tests pass), and **before** the 
 
 ### 5. Review — fleet, then synthesize
 
-Run a **fleet of fresh-context reviewers in parallel**. They have NOT seen the implementation conversation — that's intentional, it removes author bias. Dispatch the relevant ones in a single batch, each with: the original issue (from `gh issue view`), the approved plan, the full diff (`git diff main` from the worktree), and the worktree path.
+Run a **fleet of fresh-context reviewers in parallel**. They have NOT seen the implementation conversation — that's intentional, it removes author bias. Dispatch the relevant ones in a single batch, each with: the original issue (from `gh issue view`), the approved plan, the **change diff** (see below), and the worktree path.
+
+**Diff against the branch-off point, not the moving tip of `main`.** Stage first so newly created files are included, then diff against the merge-base:
+```
+git add -A
+git diff $(git merge-base main HEAD)          # full diff for reviewers
+git diff $(git merge-base main HEAD) --stat   # overview
+```
+Using the merge-base (where this branch diverged) keeps commits that landed on `main` *after* you branched out of the diff — otherwise reviewers see unrelated changes inverted, as if your branch removed them. (Substitute the repo's default branch if it isn't `main`.)
 
 **Scale the fleet to the change.** A typo or config tweak gets `reviewer` alone (or nothing). A real change gets the angles that apply:
 
@@ -126,7 +134,7 @@ This map is shown at the checkpoint below and goes into the PR body verbatim.
 
 ### 5b. Production readiness & ops impact
 
-After review passes, delegate to the **production-readiness** subagent with the full diff (`git diff main`) and the worktree path. It checks deployment risk (irreversible migrations, breaking API changes, frontend build/runtime risk, untested paths, env changes) **and** ops impact (robustness/scalability of the change, plus the forward infrastructure work it creates). If 🛑 **not ready**, address blockers before shipping.
+After review passes, delegate to the **production-readiness** subagent with the same branch-off-point diff (`git diff $(git merge-base main HEAD)`) and the worktree path. It checks deployment risk (irreversible migrations, breaking API changes, frontend build/runtime risk, untested paths, env changes) **and** ops impact (robustness/scalability of the change, plus the forward infrastructure work it creates). If 🛑 **not ready**, address blockers before shipping.
 
 **Infrastructure issue.** If the report's *Infrastructure Issue* block is non-empty, the work needs a hand-off outside this repo:
 - Detect the current repo: `gh repo view --json nameWithOwner -q .nameWithOwner`.
