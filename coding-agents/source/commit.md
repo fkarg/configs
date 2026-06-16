@@ -12,9 +12,9 @@ permission:
     "git push *": ask
 ---
 
-Your task is to look at the currently staged files, their (full!) diff as well as the current work context - i.e. issue description or branch/PR that is being worked on - and create a high-quality git commit message following the Conventional Commits guidelines. Then, create a git commit with that message.
+Your task is to look at the currently staged files, their (full!) diff as well as the current work context - i.e. issue description or branch/PR that is being worked on - and create a high-quality git commit message following the commit conventions below. Then, create a git commit with that message.
 
-If there are no staged changes, look at the unstaged changes and cluster them into logical groups. Suggest the grouping to the user and after receiving confirmation, stage that group's changes and create a git commit with an appropriate commit message (following the Conventional Commits guidelines).
+If there are no staged changes, look at the unstaged changes and cluster them into logical groups. Suggest the grouping to the user and after receiving confirmation, stage that group's changes and create a git commit with an appropriate commit message (following the commit conventions below).
 
 If there are no changes at all, respond with "No changes to commit."
 
@@ -29,30 +29,23 @@ If we are on a branch that is not `main` or `master`, check the corresponding gi
 For this, you have the `gh` CLI tool available: Check the issue with `gh issue view <number>`. The branch should begin with the issue number, e.g. `123-feature-name` for issue #123.
 IF the current changes seem to be a fix/implementation for the issue, reference it in the commit message with "Closes #123". If the changes are not a full fix/implementation but are related to the issue, reference it with "Related to #123". If there is no issue or the issue is not relevant/related, do NOT reference any issue in the commit message.
 
-## Conventional Commits Guidelines
+## Commit Message Guidelines
 
-We use the following types for conventional commits:
-- feat: A new feature
-- fix: A bug fix
-- ci: Changes to our CI configuration files and scripts
-- docs: Documentation only changes
-- style: Changes that do not affect the meaning of the code (white-space, formatting, missing semi-colons, etc)
-- refactor: A code change that neither fixes a bug nor adds a feature
-- perf: A code change that improves performance
-- test: Adding missing tests or correcting existing tests
-- chore: Changes to the build process or auxiliary tools and libraries such as documentation generation
-(and some more on occasion)
+We use a `<module>: <short summary>` style — a module/scope prefix, then a short imperative summary. **No conventional-commit type prefix** (no `feat:`/`fix:`/`chore:` etc.).
 
-When creating the commit message, follow this format:
-<type>(<scope>): <short summary>
+Format:
+```
+<module>: <short summary>
 <BLANK LINE>
-<detailed description>
+<optional body>
 <BLANK LINE>
-<footer / fixes / closes>
+<optional footer / fixes / closes>
+```
 
 Where:
-- `<type>` is one of the types listed above.
-- `<scope>` is optional, but if applicable, should be a noun describing a section of the codebase (e.g., component or file name).
-- `<short summary>` is a brief summary of the changes made.
-- `<detailed description>` is a more detailed explanation of the changes, wrapped at 72 characters.
-- `<footer / fixes / closes>` is optional, but if applicable, should reference any issues closed or affected by the commit (e.g., "Closes #123", "Fixes #456").
+- `<module>` names the part of the codebase the change touches. **Match the prefixes already used in this repo's `git log`** — run `git log --oneline -20` and reuse the existing style (e.g. `ansible`, `nixos`, `fish`, `claude`, `coding-agents`). Only introduce a new prefix when none of the existing ones fit.
+- `<short summary>` is a brief imperative description ("add X", "fix Y"), lowercase, no trailing period.
+- `<optional body>` explains the non-obvious *why* / what isn't apparent from the diff, wrapped at 72 characters. Omit it for self-explanatory changes — most commits are a single summary line.
+- `<optional footer>` references issues when applicable (e.g., "Closes #123", "Related to #456").
+
+Always check recent `git log` first and match the existing prefix conventions of the repo you're committing to.

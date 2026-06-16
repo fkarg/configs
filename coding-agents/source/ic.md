@@ -32,20 +32,33 @@ If the worktree already exists, ask the user whether to resume or start fresh (`
 
 All subsequent work happens in the worktree. Use `rg` for searching within it.
 
-### 2. Research
+### 2. Research — exploration fleet
 
-Use the most relevant specialist subagent to understand the codebase area before changing anything:
-- `frontend-expert` for React, routing, UI, state, i18n, browser flows, and client-side architecture
-- `fastapi-expert` for backend APIs, data models, migrations, async jobs, and server-side logic
-- `devops-expert` for repo infrastructure, CI/CD, Docker, deployment, scripts, and environment configuration
+Fan out exploration to a fleet of subagents **in parallel** before changing anything. These agents read and advise; they do NOT write code. Dispatch the relevant ones in a single batch so they run concurrently:
 
-Also:
-- Search the web for documentation, examples, and best practices related to the issue, specifically for external APIs, libraries, or patterns mentioned in the issue
-- Read files directly related to the issue
-- Check existing tests for the area being modified
-- Look at similar features/patterns already in the codebase for reference
+- `Explore` (or `general-purpose`) to map the area: entrypoints, call-chains, data flow, and the existing patterns/tests for the feature being touched. Spawn more than one for distinct subsystems (e.g. one for the API path, one for the UI path).
+- Specialist advisors for stack-specific depth — **read-only, for understanding only, never to produce the diff**:
+  - `frontend-expert` for React, routing, UI, state, i18n, browser flows, client-side architecture
+  - `fastapi-expert` for backend APIs, data models, migrations, async jobs, server-side logic
+  - `devops-expert` for repo infrastructure, CI/CD, Docker, deployment, scripts, environment config
+- ALWAYS Search the web for docs/examples/best practices for external APIs, libraries, or potentially useful info.
+
+Each agent should return: the relevant files (`file:line`), how the area currently works, the invariants you must not break, and where the change will land. Read the most critical files yourself too — don't outsource all understanding.
+
+### 2b. Understand — build the mental model (in-thread)
+
+Synthesize the fleet's findings into a short **mental model of the area being changed**, written in-thread. This is for you (to plan well) and seeds the architectural map you'll produce at review. Capture:
+
+- **What this area does** and the entrypoints involved (with `file:line`).
+- **Data flow / call-chain** the change will touch.
+- **Invariants** the change must not break (what must stay true).
+- **Where the change will land** and what it ripples into.
+
+Keep it tight. Scale it to the task — a small fix needs a sentence; a new module needs the full model.
 
 ### 3. Plan
+
+Ground the plan in the mental model from step 2b — the approach should name the invariants it preserves and the files it lands in.
 
 **Interview the user first** to resolve genuine ambiguity. Ask focused questions about:
 - Technical approach when multiple reasonable options exist (present each with tradeoffs)
@@ -64,59 +77,74 @@ Then present a **single plan** for sign-off:
 
 For trivial tasks (obvious bug fixes, typos, simple config changes), skip the interview and plan — just describe what you'll do and proceed.
 
-### 4. Implement
+### 4. Implement — in-thread
 
-Delegate deep technical work to the specialist that matches the repo or subsystem:
-- Frontend work: `frontend-expert`
-- Backend work: `fastapi-expert`
-- Devops or repo infrastructure work: `devops-expert`
+**Write the code yourself, in-thread.** Do not delegate writing the diff to subagents — you hold the mental model and the plan, and the work stays coherent when one author writes it. Specialists from the exploration fleet stay available for *advice* (read a tricky module, sanity-check an approach), but they don't produce the change.
 
-If the change spans multiple stacks, split the work by boundary and coordinate the specialists. The implementation must:
+The implementation must:
 
-- Follow the approved plan
+- Follow the approved plan and preserve the invariants from the mental model
 - Write behavior-driven tests alongside the code (not after)
-- Run `./scripts/check.sh` until all static checks pass
-- Run `uv run pytest -n auto <relevant test path>` until tests pass
+- Run `./scripts/check.sh` (or the repo's documented static checks) until they pass
+- Run `uv run pytest -n auto <relevant test path>` (or the repo's test command) until tests pass
 - If checks reveal issues in the plan, fix them and briefly note the deviation
 
-When delegating to fastapi-expert, include in the prompt:
-- The approved plan
-- Relevant existing code (file contents or paths)
-- Module structure conventions (see `src/README.md`)
-- Instruction to run checks and tests, iterate until green
+If the change spans multiple stacks, work boundary by boundary, but it's still one author (you) writing all of it.
 
-### 5. Review
+#### Simplicity pass (before review)
 
-Delegate to the **reviewer** subagent with:
-- The original issue description (from `gh issue view`)
-- The approved plan
-- The full diff: `git diff main` from the worktree
-- The worktree path (e.g. `.worktrees/<number>-<short-desc>`)
+Once the code first goes green (static checks + tests pass), and **before** the review fleet, delegate the diff to the `simplicity-reviewer` for a fresh-eyes pass on understandability and simplicity. Doing this here is deliberate: restructuring is cheap now and expensive after review. Apply the simplifications you agree with, then re-run checks/tests back to green. Simplicity is a priority, not a nit — take the simpler option whenever it has no real tradeoff (no needless indirection, abstraction, or single-call function).
 
-The reviewer has fresh context and has NOT seen the implementation conversation. This is intentional — it provides an unbiased review.
+### 5. Review — fleet, then synthesize
 
-If the reviewer reports 🔴 **must-fix** issues, address them and re-review. For 🟡 issues, use judgment — fix if quick, note if not. For 🟢 nits, fix the easy ones. Report reviewer results to the user.
+Run a **fleet of fresh-context reviewers in parallel**. They have NOT seen the implementation conversation — that's intentional, it removes author bias. Dispatch the relevant ones in a single batch, each with: the original issue (from `gh issue view`), the approved plan, the full diff (`git diff main` from the worktree), and the worktree path.
 
-### 5b. Production Readiness
+**Scale the fleet to the change.** A typo or config tweak gets `reviewer` alone (or nothing). A real change gets the angles that apply:
 
-After the Reviewer passes, delegate to the **production-readiness** subagent with:
-- The full diff: `git diff main` from the worktree
-- The worktree path
+- `reviewer` — correctness, proportionality, codebase fit, baseline tests (always, for non-trivial changes)
+- `security-reviewer` — when the change touches auth, endpoints, untrusted input, secrets, or shell/SQL
+- `silent-failure-hunter` — when the change adds error handling, fallbacks, retries, or multi-step writes
+- `test-quality-reviewer` — when the change adds/changes meaningful behavior that tests should pin. **Also pass it the invariants from the mental model (step 2b)** so it reports per-invariant coverage (✓ enforced+tested / ⚠ weak / ✗ none).
+- `type-model-reviewer` — when the change adds/changes types, Pydantic/SQLModel schemas, or models
 
-This checks for deployment risks: irreversible migrations, API breaking changes, frontend runtime/build risks, untested service paths, and environment changes. Report findings to the user. If 🛑 **not ready**, address blockers before shipping.
+**Synthesize the findings in-thread**: dedupe overlapping reports, drop false positives, and produce one consolidated list. Then:
+- 🔴 **must-fix** → address and re-run the affected reviewer(s).
+- 🟡 → judgment: fix if quick, note if not.
+- 🟢 → fix the easy ones.
 
-If ready - inform user of current state and WAIT FOR USER RESPONSE: the user may want slight modifications to the code or has follow-up tasks or questions or clarifications.
+#### Architectural map (write in-thread)
+
+After review settles, write the **architectural map of the change** yourself — this is the deliverable that lets the human know what they're merging and where to look when something breaks later. Build it from the mental model (step 2b) updated to match what you actually shipped:
+
+- **Mental model** — one paragraph: what the change does and how.
+- **Invariants** — the load-bearing claims that must stay true (what would be a bug/hole if violated). Carry each invariant's coverage status from `test-quality-reviewer` (✓ / ⚠ / ✗) so the reader sees which rest on tests vs. on reading.
+- **Call-chain(s)** — entrypoint → … → boundary, annotated with `file:line`; mark IO/DB/network/concern boundaries.
+- **Where to look when X breaks** — symptom → location (`file:line`). The debugging map.
+- **Decisions & tradeoffs** — choices made and what was deferred/accepted.
+
+This map is shown at the checkpoint below and goes into the PR body verbatim.
+
+### 5b. Production readiness & ops impact
+
+After review passes, delegate to the **production-readiness** subagent with the full diff (`git diff main`) and the worktree path. It checks deployment risk (irreversible migrations, breaking API changes, frontend build/runtime risk, untested paths, env changes) **and** ops impact (robustness/scalability of the change, plus the forward infrastructure work it creates). If 🛑 **not ready**, address blockers before shipping.
+
+**Infrastructure issue.** If the report's *Infrastructure Issue* block is non-empty, the work needs a hand-off outside this repo:
+- Detect the current repo: `gh repo view --json nameWithOwner -q .nameWithOwner`.
+- If it is `Coding/react-frontend` or `Coding/backend-core` → file the issue in `Coding/infrastructure`: show the user the issue body and, on their confirmation, run `gh issue create -R Coding/infrastructure --title "<title>" --body "<body>"`. (Filing in another repo is outward-facing — always confirm first.)
+- For any other repo → don't auto-file. Surface the issue body to the user to file wherever they want.
+
+**Checkpoint.** Present to the user: the **architectural map**, the synthesized review findings, and the production/ops report (plus any infra-issue link). Then **WAIT FOR USER RESPONSE** — they may want code tweaks, have follow-ups, or questions before shipping.
 
 ### 6. Ship
 
 1. Stage all changes: `git add -A`
-2. Delegate to the **commit** agent for a conventional commit. Briefly describe what is not apparent from the diff and mention 'Closes #<issue>' to link the PR to the issue.
+2. Delegate to the **commit** agent for a `<module>: <summary>` commit (module/scope prefix + imperative summary, matching the repo's `git log` — not conventional-commit types). Briefly describe what is not apparent from the diff and mention 'Closes #<issue>' to link the PR to the issue.
 3. Push: `git push -u origin HEAD`
 4. Create PR:
    ```
-   gh pr create --title "<type>(<scope>): <summary> (#<issue>)" --body "<body>" --base main
+   gh pr create --title "<module>: <summary> (#<issue>)" --body "<body>" --base main
    ```
-   The PR body should: summarize what was done, link to the issue (`Closes #<number>`), and note any decisions made.
+   The PR body should: summarize what was done, link to the issue (`Closes #<number>`), include the **architectural map** from step 5 (so reviewers/mergers get the mental model, invariants, call-chains, and the "where to look when X breaks" guide), and note any decisions made.
 5. Clean up:
    ```
    git worktree remove .worktrees/<number>-<short-desc>
@@ -125,20 +153,18 @@ If ready - inform user of current state and WAIT FOR USER RESPONSE: the user may
 ## Repository Context
 
 - **Package manager**: Match the repo's package manager. Use the repo's native script entrypoints.
-- **Tests**: Use behavior-focused tests and the repo's documented test commands.
+- **Tests**: Use tests focused on observable behavior and invariances.
 - **Static checks**: Run the repo's documented lint/typecheck/build scripts until green.
-- **Docker**: Use the repo's documented Docker/Compose wrapper scripts when present.
 - **Module structure**: Follow the repo's canonical layout and naming conventions.
 - **Frontend stack**: React, routing, state, i18n, browser flows, and generated client boundaries.
 - **Backend stack**: Async Python, FastAPI, SQLModel, Pydantic, migrations, task queues.
-- **Devops stack**: CI/CD, Docker, Compose, deployment manifests, shell scripts, and repo automation.
+- **Devops stack**: CI/CD, Docker, Compose, Ansible.
 - **Typing**: Use type hints everywhere the language supports them.
 - **Error handling**: Follow the repo's centralized error handling model.
-- **Commits**: Conventional commits format.
 
 ## Principles
 
 - **Simple over clever.** Minimum complexity for current requirements. No speculative abstractions.
-- **Tests verify behavior, not implementation.** Don't test enum values. Test that the implementation does what it should across full-scenario use cases.
+- **Tests verify behavior, not implementation.** Don't test enum values. Test that the implementation does what it should across full-scenario use cases. Test invariances you'd expect any reasonable implementation to hold.
 - **Ask when uncertain, decide when trivial.** Genuine tradeoffs → ask. Implementation details → decide and note.
 - **Match the codebase.** Read existing code in the same area and follow its patterns. Consistency and correct modularity > personal preference.
