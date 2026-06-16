@@ -59,6 +59,51 @@ clobbers a symlink) and mixes host state into it. So instead of a symlink,
 codex-owned local file, leaving trusted projects / `oss_provider` / nux intact.
 Edit shared codex prefs in `codex/shared.toml`, then re-run the role to apply.
 
+## Creating a new agent or skill
+
+Add ONE file — `source/<name>.md` — and apply it the same way as an edit (below).
+Never hand-edit anything under `generated/`; it is rebuilt from source every run.
+
+`<name>` (letters, numbers, hyphens) becomes the agent/skill name. The file is
+opencode-flavored: YAML frontmatter + a markdown body that IS the agent's prompt.
+
+| Frontmatter   | Values                                       | Notes                                                              |
+| ------------- | -------------------------------------------- | ------------------------------------------------------------------ |
+| `description` | string                                       | Start with "Use when…" — it's what each tool reads to decide when to pick this. |
+| `mode`        | `subagent` (default) \| `primary` \| `all`   | **`primary` is the one that also produces a Skill** (see below).   |
+| `permission`  | `edit`/`bash`/`webfetch`: `allow`\|`ask`\|`deny` | `bash` may instead be a map with a `"*"` default + per-command overrides; `task` gates subagent spawning (opencode-only). A `deny` becomes a real restriction in every tool — see *What gets translated*. |
+
+**Skill vs. subagent — the choice that trips people up:**
+
+- `mode: subagent` → installed only as a **subagent**: invoked by another agent via
+  the Task/Agent tool, runs in its own context, can't pause to ask the user. Use for
+  delegated, self-contained jobs (a reviewer, an implementer).
+- `mode: primary` → ALSO rendered as a **Skill** for Claude Code + Codex. A skill
+  runs in the **main thread**, so you invoke it directly (`/<name>`) and it can pause
+  for clarifying questions / sign-off while still delegating to subagents. **Want a
+  `/slash` skill you drive in a workflow? set `mode: primary`.** (Mechanics: *What gets translated*.)
+
+Minimal skill template:
+
+~~~md
+---
+description: Use when <triggering situation> — <symptoms / context>.
+mode: primary
+permission:
+  bash: allow
+  edit: deny       # read-only analyst; set allow for an agent that writes code
+  webfetch: deny
+---
+
+# <Title>
+
+<The prompt: the method to follow and the output to produce, written as
+instructions to the agent.>
+~~~
+
+Then apply as below and confirm the variants landed under `generated/` and the
+symlink appeared in `~/.claude/skills/<name>/` (and `~/.codex/skills/<name>/`).
+
 ## Editing an agent
 
 1. Edit `source/<name>.md`.
