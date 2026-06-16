@@ -36,7 +36,7 @@ All subsequent work happens in the worktree. Use `rg` for searching within it.
 
 Fan out exploration to a fleet of subagents **in parallel** before changing anything. These agents read and advise; they do NOT write code. Dispatch the relevant ones in a single batch so they run concurrently:
 
-- `Explore` (or `general-purpose`) to map the area: entrypoints, call-chains, data flow, and the existing patterns/tests for the feature being touched. Spawn more than one for distinct subsystems (e.g. one for the API path, one for the UI path).
+- `explore` to map the area: entrypoints, call-chains, data flow, and the existing patterns/tests for the feature being touched. Spawn more than one for distinct subsystems (e.g. one for the API path, one for the UI path).
 - Specialist advisors for stack-specific depth — **read-only, for understanding only, never to produce the diff**:
   - `frontend-expert` for React, routing, UI, state, i18n, browser flows, client-side architecture
   - `fastapi-expert` for backend APIs, data models, migrations, async jobs, server-side logic
