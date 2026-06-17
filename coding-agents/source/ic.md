@@ -138,7 +138,7 @@ After review passes, delegate to the **production-readiness** subagent with the 
 
 **Infrastructure issue.** If the report's *Infrastructure Issue* block is non-empty, the work needs a hand-off outside this repo:
 - Detect the current repo: `gh repo view --json nameWithOwner -q .nameWithOwner`.
-- If it is `Coding/react-frontend` or `Coding/backend-core` → file the issue in `Coding/infrastructure`: show the user the issue body and, on their confirmation, run `gh issue create -R Coding/infrastructure --title "<title>" --body "<body>"`. (Filing in another repo is outward-facing — always confirm first.)
+- If it is `Epistree/react-frontend` or `Epistree/backend-core` → file the issue in `Epistree/infrastructure`: show the user the issue body and, on their confirmation, run `gh issue create -R Epistree/infrastructure --title "<title>" --body "<body>"`. (Filing in another repo is outward-facing — always confirm first.)
 - For any other repo → don't auto-file. Surface the issue body to the user to file wherever they want.
 
 **Checkpoint.** Present to the user: the **architectural map**, the synthesized review findings, and the production/ops report (plus any infra-issue link). Then **WAIT FOR USER RESPONSE** — they may want code tweaks, have follow-ups, or questions before shipping.
