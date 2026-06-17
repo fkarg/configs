@@ -8,10 +8,15 @@
 # (pre-commit, pre-push, ...). The standard hook names are symlinked to this
 # script; it does its own work (commit-msg attribution stripping) and then
 # delegates to the repo's own hook of the same name, so per-project hooks
-# (pre-commit framework, etc.) are NOT silently disabled.
+# (pre-commit framework, etc.) are NOT silently disabled. We probe two
+# locations, in order: the repo's default .git/hooks dir, and a conventional
+# in-tree .githooks/ dir (which git never auto-discovers on its own). First
+# executable match wins.
 #
-# Repos that set their OWN core.hooksPath (husky -> .husky, or this repo's
-# .githooks) override the global path entirely and never reach this script.
+# A repo that sets its OWN core.hooksPath (husky -> .husky, or core.hooksPath
+# = .githooks) overrides the global path entirely and never reaches this
+# script — but a repo that merely commits a .githooks/ dir without changing
+# config IS picked up here.
 set -euo pipefail
 
 hook="$(basename -- "$0")"
@@ -31,14 +36,19 @@ if [ "$hook" = "commit-msg" ] && [ -n "$msg_file" ] && [ -f "$msg_file" ]; then
 fi
 
 # --- delegate to the repo's own hook of the same name, if any ---
+# Candidate dirs in priority order: the default per-repo hooks dir (.git/hooks,
+# normally shadowed by our global core.hooksPath) and the conventional in-tree
+# .githooks/ dir. First executable match wins.
 git_dir="$(git rev-parse --git-dir 2>/dev/null || true)"
-if [ -n "$git_dir" ]; then
-  local_hook="$git_dir/hooks/$hook"
+toplevel="$(git rev-parse --show-toplevel 2>/dev/null || true)"
+for dir in "${git_dir:+$git_dir/hooks}" "${toplevel:+$toplevel/.githooks}"; do
+  [ -n "$dir" ] || continue
+  local_hook="$dir/$hook"
   # Guard against recursing into ourselves (e.g. a repo whose core.hooksPath
   # points back here).
   if [ -x "$local_hook" ] && ! [ "$local_hook" -ef "$0" ]; then
     exec "$local_hook" "$@"
   fi
-fi
+done
 
 exit 0
