@@ -153,7 +153,7 @@ After review passes, delegate to the **production-readiness** subagent with the 
    gh pr create --title "<module>: <summary> (#<issue>)" --body "<body>" --base main
    ```
    The PR body should: summarize what was done, link to the issue (`Closes #<number>`), include the **architectural map** from step 5 (so reviewers/mergers get the mental model, invariants, call-chains, and the "where to look when X breaks" guide), and note any decisions made.
-5. Clean up:
+5. Clean up - ONLY if it's clear it won't be needed anymore - otherwise keep worktree to continue for improvements from external review feedback.
    ```
    git worktree remove .worktrees/<number>-<short-desc>
    ```
