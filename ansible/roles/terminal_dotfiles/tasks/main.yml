@@ -116,3 +116,32 @@
 - include_tasks: link_dotdir.yml
   vars: { link_src: nvim, link_dest: ~/.config/vim }
   tags: [nvim]
+
+# ============================================
+# TMUX + ZELLIJ (terminal multiplexers)
+# Single-file configs we fully own, so we force-link the file directly rather
+# than going through link_dotdir's directory-preservation dance. tmux targets
+# ~/.tmux.conf (not the XDG path) so it's still read by the older tmux builds on
+# unfamiliar servers. Colors: see the COLORTERM export in fishconfig.j2.
+# ============================================
+- name: Symlink .tmux.conf
+  file:
+    src: "~/{{ configs_repo }}/{{ dotconfigdir }}/tmux/tmux.conf"
+    dest: ~/.tmux.conf
+    state: link
+    force: true
+  tags: [tmux]
+
+- name: Ensure zellij config directory exists
+  file:
+    path: ~/.config/zellij
+    state: directory
+  tags: [zellij]
+
+- name: Symlink zellij config.kdl
+  file:
+    src: "~/{{ configs_repo }}/{{ dotconfigdir }}/zellij/config.kdl"
+    dest: ~/.config/zellij/config.kdl
+    state: link
+    force: true
+  tags: [zellij]
