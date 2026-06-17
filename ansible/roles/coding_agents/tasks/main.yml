@@ -66,6 +66,7 @@
     - { src: "claude/statusline-command.sh", dest: "~/.claude/statusline-command.sh" }
     - { src: "claude/agents-md-hook.sh",     dest: "~/.claude/agents-md-hook.sh" }
     - { src: "claude/stop-queue-hook.sh",    dest: "~/.claude/stop-queue-hook.sh" }
+    - { src: "claude/statusline-loc-reset.sh", dest: "~/.claude/statusline-loc-reset.sh" }
     - { src: "copilot/settings.json",        dest: "~/.copilot/settings.json" }
     - { src: "opencode/opencode.json",       dest: "~/.config/opencode/opencode.json" }
     # Shared global working-style prefs, one source -> every tool's global instructions file.

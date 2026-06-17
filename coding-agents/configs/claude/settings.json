@@ -23,6 +23,16 @@
             "statusMessage": "Loading AGENTS.md"
           }
         ]
+      },
+      {
+        "matcher": "clear",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ~/.claude/statusline-loc-reset.sh",
+            "statusMessage": "Resetting LOC counter"
+          }
+        ]
       }
     ],
     "Stop": [
