@@ -148,11 +148,11 @@ pace_seg() {
   read -r col glyph < <(awk -v u="$used" -v rem="$rem" -v wl="$wl" 'BEGIN{
     el=(wl-rem)/wl; if(el<0)el=0; if(el>1)el=1;
     dev=u-el*100;
-    if      (dev<=-10) {c="0;200;80"     ; g="▼"}   # deep green — lots of headroom
-    else if (dev<=-2)  {c="120;190;120"  ; g="▼"}   # green      — headroom
+    if      (dev<=-10) {c="0;200;80"     ; g="▲"}   # deep green — lots of headroom
+    else if (dev<=-2)  {c="120;190;120"  ; g="▲"}   # green      — headroom
     else if (dev<2)    {c="90;150;245"   ; g="▬"}   # blue       — on pace
-    else if (dev<5)    {c="220;190;60"   ; g="▲"}   # yellow     — slightly too fast
-    else               {c="240;90;90"    ; g="▲"}   # red        — too fast
+    else if (dev<5)    {c="220;190;60"   ; g="▼"}   # yellow     — slightly too fast
+    else               {c="240;90;90"    ; g="▼"}   # red        — too fast
     printf "%s %s", c, g
   }')
   left=$(awk -v u="$used" 'BEGIN{ printf "%.0f", 100 - u }')
