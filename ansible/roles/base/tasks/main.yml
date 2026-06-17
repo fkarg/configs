@@ -72,3 +72,29 @@
     reload: true
   become: true
   tags: [sysctl]
+
+# ============================================
+# JOURNAL SIZE CAP
+# ============================================
+- name: Ensure journald drop-in directory exists
+  file:
+    path: /etc/systemd/journald.conf.d
+    state: directory
+    mode: '0755'
+  become: true
+  when: base_journal_max_use | length > 0
+  tags: [journal]
+
+- name: Cap persistent journal size
+  copy:
+    dest: /etc/systemd/journald.conf.d/90-size-cap.conf
+    content: |
+      # Managed by Ansible — base role. Caps the persistent journal so it
+      # never fills the disk; journald vacuums oldest entries past the limit.
+      [Journal]
+      SystemMaxUse={{ base_journal_max_use }}
+    mode: '0644'
+  become: true
+  when: base_journal_max_use | length > 0
+  notify: Restart systemd-journald
+  tags: [journal]

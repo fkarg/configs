@@ -1,0 +1,7 @@
+---
+- name: Restart systemd-journald
+  systemd:
+    name: systemd-journald
+    state: restarted
+  become: true
+  when: not ansible_check_mode

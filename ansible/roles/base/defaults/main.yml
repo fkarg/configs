@@ -37,5 +37,11 @@ base_upgrade_packages: true
 # Kernel swappiness (0-200). Lower = prefer evicting file cache over anonymous pages.
 base_vm_swappiness: 60
 
+# Hard cap on the persistent systemd journal. journald enforces this
+# continuously — it vacuums the oldest entries once the on-disk journal would
+# exceed the limit, so the journal simply never grows past it (no cron/timer
+# needed). Set to "" to leave journald's default (10% of the filesystem).
+base_journal_max_use: "100M"
+
 # server_hostname intentionally has no default — the opt-in server_hardening
 # role only sets the hostname when a host_vars file explicitly defines it.
