@@ -1,5 +1,5 @@
 ---
-description: "Production readiness + ops-impact checker: reviews changes for deployment risks, contract breaks, rollback safety, and the robustness/scalability/operational work the change creates. Produces a ready-to-file infrastructure issue body. Use when: pre-deploy review, merge readiness, release check, production safety, ops impact."
+description: "Production readiness + ops-impact checker: reviews changes for deployment risks, contract breaks, rollback safety, merge conflicts with the default branch, and the robustness/scalability/operational work the change creates. Produces a ready-to-file infrastructure issue body. Use when: pre-deploy review, merge readiness, release check, production safety, ops impact."
 mode: subagent
 permission:
   bash: allow
@@ -123,6 +123,17 @@ Where the rest of this review asks *"is shipping this safe?"*, this section asks
 
 **Output**: For each item, state the concern and the concrete operational follow-up. Collect every item that requires action *outside this repo* (provisioning, scaling, config, new infra) into the **Infrastructure Issue** block below — that is the actionable hand-off to the infra team.
 
+### 11. Mergeability (Conflicts with the Default Branch)
+
+Can this branch actually merge into the default branch? A branch that conflicts can't land, no matter how clean the code is — treat this as a hard gate, not a quality note.
+
+- **Detect the default branch**: `git symbolic-ref refs/remotes/origin/HEAD` → usually `main` or `master`. Substitute it for `<default>` below.
+- **Fetch the live tip first**: `git fetch -q origin <default>`. Run the check against `origin/<default>`, not a stale local copy — conflicts are usually introduced by commits that landed on the default branch *after* this branch was cut, so a stale local ref hides exactly the conflicts you're looking for.
+- **Test the merge without touching the working tree**: `git merge-tree --write-tree origin/<default> HEAD`. A clean merge prints a tree OID and exits 0; conflicts exit non-zero and list the conflicting paths. (Older git without `--write-tree`: fall back to a throwaway `git merge --no-commit --no-ff` in a scratch worktree, then abort.)
+- **No repo access**: if you were handed only a diff or a file list with no branch/worktree to run git against, you cannot verify mergeability — say so explicitly rather than reporting "clean".
+
+**Report**: State whether the branch merges cleanly into `<default>`. If it conflicts, list the conflicting files and set the overall verdict to 🛑 — a conflicting branch is not deployable until it's rebased or merged.
+
 ## Risk Report Format
 
 ```
@@ -130,6 +141,9 @@ Where the rest of this review asks *"is shipping this safe?"*, this section asks
 
 **Branch**: <branch> → main
 **Verdict**: ✅ Ready to deploy / ⚠️ Deploy with caution / 🛑 Not ready
+
+### Mergeability
+<✅ Merges cleanly into <default> / 🛑 Conflicts with <default> in: <files> — rebase or merge needed. Or "Not verified — only a diff was provided, no repo access.">
 
 ### Migration Risk
 <for each migration, or "No migrations in this change">
@@ -180,3 +194,4 @@ Where the rest of this review asks *"is shipping this safe?"*, this section asks
 - When in doubt about whether something is breaking, assume it IS and flag it. False positives are better than missed production incidents.
 - Always check the actual `downgrade()` function, not just whether it exists.
 - Flag risky behavior changes that have no kill switch (feature flag, config toggle, etc.).
+- A branch that conflicts with the default branch is 🛑 Not ready — it cannot merge until rebased or merged, regardless of how good the code is. Always check against the freshly-fetched remote tip, never a stale local ref.
