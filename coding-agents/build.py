@@ -195,7 +195,7 @@ def codex_sandbox_for(perms: Permissions) -> str | None:
 
 
 def claude_agent(agent: Agent) -> str:
-    lines = ["---", f"name: {agent.name}", f"description: {agent.description}"]
+    lines = ["---", f"name: {agent.name}", f"description: {yaml_quote(agent.description)}"]
     tools = claude_tools_for(agent.permissions)
     if tools is not None:
         lines.append(f"tools: {', '.join(tools)}")
@@ -220,8 +220,20 @@ def toml_escape(s: str) -> str:
     return s.replace("\\", "\\\\").replace('"', '\\"')
 
 
+def yaml_quote(s: str) -> str:
+    """Emit a YAML double-quoted scalar so descriptions stay valid YAML.
+
+    Free-prose descriptions routinely contain a colon-space (`foo: bar`), which
+    is illegal in a YAML *plain* (unquoted) scalar — a strict parser like Codex's
+    skill loader rejects the whole frontmatter and the skill silently vanishes.
+    Double-quoting sidesteps every plain-scalar metacharacter; only `"` and `\\`
+    need escaping inside it.
+    """
+    return '"' + s.replace("\\", "\\\\").replace('"', '\\"') + '"'
+
+
 def copilot_agent(agent: Agent) -> str:
-    lines = ["---", f"name: {agent.name}", f"description: {agent.description}"]
+    lines = ["---", f"name: {agent.name}", f"description: {yaml_quote(agent.description)}"]
     tools = copilot_tools_for(agent.permissions)
     if tools is not None:
         rendered = ", ".join(f'"{t}"' for t in tools)
@@ -231,7 +243,7 @@ def copilot_agent(agent: Agent) -> str:
 
 
 def skill_variant(agent: Agent) -> str:
-    lines = ["---", f"name: {agent.name}", f"description: {agent.description}", "---"]
+    lines = ["---", f"name: {agent.name}", f"description: {yaml_quote(agent.description)}", "---"]
     return "\n".join(lines) + "\n\n" + agent.body.lstrip()
 
 
