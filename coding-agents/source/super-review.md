@@ -76,10 +76,9 @@ Run a **fleet of fresh-context reviewers in parallel**. They have NOT seen this 
 
 For a non-trivial change, delegate to the **production-readiness** subagent with the same diff and repo/worktree path. It checks deployment risk (irreversible migrations, breaking API changes, frontend build/runtime risk, untested paths, env changes) **and** ops impact (robustness/scalability, plus the forward infrastructure work it creates).
 
-**Infrastructure issue.** If the report's *Infrastructure Issue* block is non-empty, it needs a hand-off outside this repo:
-- Detect the repo: `gh repo view --json nameWithOwner -q .nameWithOwner`.
-- If `Epistree/react-frontend` or `Epistree/backend-core` → offer to file in `Epistree/infrastructure`: show the user the body and, on confirmation, `gh issue create -R Epistree/infrastructure --title "<title>" --body "<body>"`. (Outward-facing — always confirm first.)
-- Any other repo → don't auto-file. Surface the body for the user to file where they want.
+**Follow-up work.** Route by kind. Read the current repo's `AGENTS.md` for its routing policy (Claude auto-loads it; otherwise `cat AGENTS.md` first).
+- **Infrastructure hand-off** — the *Infrastructure Issue* block, if non-empty: deployment/infra-layer work for another repo. If `AGENTS.md` names where such hand-offs go, offer to file there — show the user the body and, on confirmation, `gh issue create -R <target> --title "<title>" --body "<body>"`. If silent, surface the body for the user to file. (Outward-facing — always confirm first.)
+- **In-repo follow-up** — frontend/backend feature, refactor, or test work: a normal issue in *this* repo, or just surface it. Never file application follow-ups in the infrastructure tracker.
 
 ### 5. Architectural map — write in-thread
 

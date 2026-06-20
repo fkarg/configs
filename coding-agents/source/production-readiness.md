@@ -121,7 +121,7 @@ Where the rest of this review asks *"is shipping this safe?"*, this section asks
 - **New infrastructure the change requires**: new managed services, queues, workers, cron/scheduled jobs, buckets, caches, secrets/credentials to provision, or scaling/quota/limit changes the deploy depends on.
 - **Observability gaps**: new critical paths with no logging/metrics/tracing — operators would be blind if it misbehaves.
 
-**Output**: For each item, state the concern and the concrete operational follow-up. Collect every item that requires action *outside this repo* (provisioning, scaling, config, new infra) into the **Infrastructure Issue** block below — that is the actionable hand-off to the infra team.
+**Output**: For each item, state the concern and the concrete operational follow-up. Only work in the **deployment/infrastructure layer** — provisioning, scaling, new managed services, secrets/credentials, quota or limit changes, rollout ordering — belongs in the **Infrastructure Issue** block below; that is the actionable hand-off to the infra team. Follow-up work that lives in *this* application repo (new frontend/backend features, refactors, client regeneration, added tests) is **not** an infrastructure issue — surface it as a plain follow-up and let the orchestrator route it. When unsure what this repo treats as an infra hand-off versus in-repo follow-up, check the repo's `AGENTS.md`.
 
 ### 11. Mergeability (Conflicts with the Default Branch)
 
@@ -176,7 +176,7 @@ Can this branch actually merge into the default branch? A branch that conflicts 
 <scalability/resilience concerns in the changed code paths, or "No concerns — change does not add load-bearing or external-call paths">
 
 ### Infrastructure Issue
-<If the change requires work outside this repo (provisioning, scaling, config, new infra), provide a ready-to-file issue body. Otherwise: "No infrastructure work required.">
+<Only if the change requires deployment/infrastructure-layer work (provisioning, scaling, new managed services, secrets, quotas, rollout ordering), provide a ready-to-file issue body. In-repo frontend/backend follow-up work does NOT go here. Otherwise: "No infrastructure work required.">
 
 **Title**: <area>: infra work for <change>
 **Body**:

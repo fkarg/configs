@@ -136,10 +136,9 @@ This map is shown at the checkpoint below and goes into the PR body verbatim.
 
 After review passes, delegate to the **production-readiness** subagent with the same branch-off-point diff (`git diff $(git merge-base main HEAD)`) and the worktree path. It checks deployment risk (irreversible migrations, breaking API changes, frontend build/runtime risk, untested paths, env changes) **and** ops impact (robustness/scalability of the change, plus the forward infrastructure work it creates). If 🛑 **not ready**, address blockers before shipping.
 
-**Infrastructure issue.** If the report's *Infrastructure Issue* block is non-empty, the work needs a hand-off outside this repo:
-- Detect the current repo: `gh repo view --json nameWithOwner -q .nameWithOwner`.
-- If it is `Epistree/react-frontend` or `Epistree/backend-core` → file the issue in `Epistree/infrastructure`: show the user the issue body and, on their confirmation, run `gh issue create -R Epistree/infrastructure --title "<title>" --body "<body>"`. (Filing in another repo is outward-facing — always confirm first.)
-- For any other repo → don't auto-file. Surface the issue body to the user to file wherever they want.
+**Follow-up work.** The report can produce two kinds of follow-up; route them separately. Read the current repo's `AGENTS.md` for its routing policy (Claude auto-loads it; if you don't have it, `cat AGENTS.md` first).
+- **Infrastructure hand-off** — the report's *Infrastructure Issue* block, if non-empty: deployment/infra-layer work that lives in another repo. If `AGENTS.md` names where such hand-offs go (e.g. an infrastructure repo), show the user the issue body and, on their confirmation, run `gh issue create -R <target> --title "<title>" --body "<body>"`. If `AGENTS.md` is silent, surface the body and let the user decide. (Filing in another repo is outward-facing — always confirm first.)
+- **In-repo follow-up** — frontend/backend feature, refactor, or test work the change implies: file it as a normal issue in *this* repo, or just surface it. Never push application follow-ups into the infrastructure tracker.
 
 **Checkpoint.** Present to the user: the **architectural map**, the synthesized review findings, and the production/ops report (plus any infra-issue link). Then **WAIT FOR USER RESPONSE** — they may want code tweaks, have follow-ups, or questions before shipping.
 
