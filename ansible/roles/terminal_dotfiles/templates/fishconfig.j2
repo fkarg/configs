@@ -8,6 +8,10 @@ if test -d /opt/homebrew/bin
 else if test -d /usr/local/bin
     fish_add_path /usr/local/bin
 end
+
+# Homebrew 6.0 made "ask mode" (a confirm prompt before install/upgrade) the
+# default; HOMEBREW_NO_ASK opts back out so brew stays non-interactive.
+set -x HOMEBREW_NO_ASK 1
 {% endif %}
 
 
