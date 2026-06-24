@@ -210,15 +210,6 @@
     boot.loader.grub.configurationName = "Kernel test - Linux 6.18";
   };
 
-  # Opt-in specialisation that enables i2c so the Ctrl+Shift+F12 KVM
-  # bind (ddcutil setvcp 60 …) can drive the Philips monitor's input
-  # switch. Boot this entry to use the bind; default boot keeps i2c off
-  # so the historical i2c+OpenRGB blackscreen cannot recur unattended.
-  specialisation.i2c-kvm.configuration = {
-    boot.loader.grub.configurationName = "i2c (KVM bind)";
-    hardware.i2c.enable = lib.mkForce true;
-  };
-
   virtualisation.docker.enable = true;
 
   # BOINC distributed computing with NVIDIA GPU compute. Per the services.boinc
@@ -235,14 +226,12 @@
   };
   users.users.pars.extraGroups = [ "boinc" ];
 
-  # i2c stays OFF by default. Historical incident: pairing i2c with OpenRGB
-  # produced full blackscreens on this RTX 3070. The KVM input-switch bind
-  # (Ctrl+Shift+F12 → ddcutil) needs i2c, so it's surfaced as an opt-in boot
-  # specialisation below (`i2c-kvm`) — pick that entry at the GRUB menu to
-  # try the bind, fall back to default if anything misbehaves. OpenRGB must
-  # stay off either way; that's the half of the combo that triggered the
-  # original blackscreen.
-  hardware.i2c.enable = false;
+  # i2c on by default: it has proven stable on its own, and the KVM input-switch
+  # bind (Ctrl+Shift+F12 → ddcutil) needs it. The historical full-blackscreen
+  # incident on this RTX 3070 required i2c *paired with OpenRGB* — so OpenRGB
+  # stays off (that's the half of the combo that actually triggered it), while
+  # i2c alone is fine.
+  hardware.i2c.enable = true;
   services.hardware.openrgb.enable = false;
 
   services.pipewire.wireplumber.extraConfig."51-swap-analog-stereo" = {

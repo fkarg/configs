@@ -1,5 +1,8 @@
 #!/usr/bin/env sh
 # Managed by ansible: ansible/roles/graphical_dotfiles/templates/kvm_switch.sh.j2
 # Bound to Ctrl+Shift+F12 in dotconfig/hypr/hyprland.conf.
-# Requires ddcutil + i2c-dev access (hardware.i2c.enable in jolly.nix).
+# Flips the shared monitor to the *other* host's input via DDC/CI. The target
+# input code is per-host: kvm_switch_target_input in inventory/host_vars
+# (e.g. jolly = 21/0x15 USB-C → caeli). Requires ddcutil + i2c-dev access
+# (hardware.i2c.enable on NixOS hosts).
 exec ddcutil setvcp 60 {{ kvm_switch_target_input | int }}

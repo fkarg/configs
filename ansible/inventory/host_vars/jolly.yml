@@ -27,11 +27,10 @@ background_image: "{{ home_dir }}/{{ configs_repo }}/pictures/IMAG7297.JPG"
 
 # Monitor KVM (Philips 49B2U5900CH): Ctrl+Shift+F12 in Hyprland calls
 # ~/.config/hypr/kvm-switch.sh, which runs `ddcutil setvcp 60 <code>` to flip
-# the shared monitor to caeli's input. jolly is on DisplayPort, so this
-# value should point at the Mac's USB-C input. Discover via `ddcutil
-# capabilities` (feature 0x60) and `ddcutil getvcp 60`. 16 == 0x10.
-# Inert on default boot — only functional when booted into the i2c-kvm
-# specialisation (see nixos/machines/jolly.nix). The script is still
-# installed unconditionally so the bind exists in either boot.
+# the shared monitor to caeli's input. jolly is on DisplayPort, caeli is on
+# USB-C, so the target is the monitor's USB-C code: 21 == 0x15 (read from caeli
+# via `m1ddc display <id> get input`). The panel's other inputs: 0x11 HDMI-1,
+# 0x12 HDMI-2, 0x0f DisplayPort-1. Works on every boot now that
+# hardware.i2c.enable is default-on (see nixos/machines/jolly.nix).
 kvm_switch_enabled: true
-kvm_switch_target_input: 16
+kvm_switch_target_input: 21
