@@ -109,7 +109,47 @@ case "$cmd" in
       test -d "$dir" || continue
       test -f "$dir/auth.json" || continue
       found=1
-      printf '%s\n' "$(basename "$dir")"
+      profile="$(basename "$dir")"
+
+      if test -f "$active_file" && test "$(cat "$active_file" 2>/dev/null)" = "$profile"; then
+        active_marker="*"
+      else
+        active_marker=" "
+      fi
+
+      access_token="$(jq -r '.tokens.access_token // empty' "$dir/auth.json" 2>/dev/null)"
+      if test -n "$access_token" && test "$access_token" != "null"; then
+        usage_json="$(curl -sf -H "Authorization: Bearer $access_token" -H "User-Agent: codex-cli" https://chatgpt.com/backend-api/wham/usage 2>/dev/null || true)"
+        if test -n "$usage_json"; then
+          plan_type="$(printf '%s' "$usage_json" | jq -r '.plan_type // "unknown"')"
+
+          primary_used="$(printf '%s' "$usage_json" | jq -r '.rate_limit.primary_window.used_percent // 0')"
+          primary_window_sec="$(printf '%s' "$usage_json" | jq -r '.rate_limit.primary_window.limit_window_seconds // 0')"
+          primary_reset_sec="$(printf '%s' "$usage_json" | jq -r '.rate_limit.primary_window.reset_after_seconds // 0')"
+          primary_reset_at="$(printf '%s' "$usage_json" | jq -r '.rate_limit.primary_window.reset_at // 0')"
+
+          secondary_used="$(printf '%s' "$usage_json" | jq -r '.rate_limit.secondary_window.used_percent // 0')"
+          secondary_window_sec="$(printf '%s' "$usage_json" | jq -r '.rate_limit.secondary_window.limit_window_seconds // 0')"
+          secondary_reset_sec="$(printf '%s' "$usage_json" | jq -r '.rate_limit.secondary_window.reset_after_seconds // 0')"
+          secondary_reset_at="$(printf '%s' "$usage_json" | jq -r '.rate_limit.secondary_window.reset_at // 0')"
+
+          primary_window_h=$((primary_window_sec / 3600))
+          primary_reset_h=$((primary_reset_sec / 3600))
+          primary_reset_m=$(((primary_reset_sec % 3600) / 60))
+
+          secondary_window_d=$((secondary_window_sec / 86400))
+          secondary_reset_d=$((secondary_reset_sec / 86400))
+          secondary_reset_h=$(((secondary_reset_sec % 86400) / 3600))
+
+          printf '%s%-15s %s\n' "$active_marker" "$profile" "$plan_type"
+          printf '  session:  %3d%% used (%dh window)  reset in %dh%dm\n' "$primary_used" "$primary_window_h" "$primary_reset_h" "$primary_reset_m"
+          printf '  weekly:   %3d%% used (%dd window)  reset in %dd%dh\n' "$secondary_used" "$secondary_window_d" "$secondary_reset_d" "$secondary_reset_h"
+        else
+          printf '%s%-15s (rate limit fetch failed)\n' "$active_marker" "$profile"
+        fi
+      else
+        printf '%s%-15s (no access token)\n' "$active_marker" "$profile"
+      fi
     done
     test "$found" -eq 1 || printf 'no saved profiles\n'
     ;;
