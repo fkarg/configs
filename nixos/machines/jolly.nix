@@ -27,20 +27,31 @@
   services.cron.systemCronJobs = lib.mkForce [ ];
 
   nixpkgs.overlays = [
-    (final: prev: {
-      linuxPackages_latest = prev.linuxPackages_latest.extend (_: kprev: {
-        nvidiaPackages = kprev.nvidiaPackages.extend (_: nprev: {
-          latest = nprev.latest.overrideAttrs (old: {
-            nativeBuildInputs = (old.nativeBuildInputs or [ ]) ++ [ final.jq ];
+    # The nvidia driver build shells out to jq; add it to nativeBuildInputs for
+    # the kernel sets jolly may boot — 7.0 (default) and latest (kept in sync
+    # for when the MT7927 driver supports a newer kernel again).
+    (final: prev:
+      let
+        withJqNvidia = kpkgs: kpkgs.extend (_: kprev: {
+          nvidiaPackages = kprev.nvidiaPackages.extend (_: nprev: {
+            latest = nprev.latest.overrideAttrs (old: {
+              nativeBuildInputs = (old.nativeBuildInputs or [ ]) ++ [ final.jq ];
+            });
           });
         });
-      });
-    })
+      in
+      {
+        linuxPackages_latest = withJqNvidia prev.linuxPackages_latest;
+        linuxPackages_7_0 = withJqNvidia prev.linuxPackages_7_0;
+      })
   ];
 
-  # Keep the default generation on the kernel line that is known to reach GNOME
-  # on this host. Newer kernels are available as explicit test specialisations.
-  boot.kernelPackages = pkgs.linuxPackages_latest;
+  # Pin the default generation to 7.0.x: the out-of-tree MT7927 wifi driver
+  # (shared/hardware/mediatek-mt7927.nix) only compiles against this kernel
+  # line. Linux 7.1 (current linuxPackages_latest) breaks the bundled mt76 and
+  # upstream HEAD is not yet ported, so we hold at 7.0 until the in-tree mt7925
+  # MT7927 support merges, then drop the out-of-tree module entirely.
+  boot.kernelPackages = pkgs.linuxPackages_7_0;
   boot.kernelParams = [
     "fsck.mode=force"
     "fsck.repair=yes"

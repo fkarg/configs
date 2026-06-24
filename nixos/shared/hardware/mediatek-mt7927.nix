@@ -1,6 +1,11 @@
 { pkgs, ... }:
 
 let
+  # Out-of-tree MT7927 driver. The bundled mt76 snapshot only compiles against
+  # Linux <= 7.0.x; 7.1 changed the mac80211 ieee80211_mgmt action union
+  # (mgmt->u.action.u) and upstream HEAD has not been ported (the project is in
+  # maintenance mode, waiting on in-tree mt7925 MT7927 support). jolly therefore
+  # pins its default kernel to 7.0 — see boot.kernelPackages in machines/jolly.nix.
   mt7927NixosSrc = builtins.fetchTarball {
     url = "https://github.com/cmspam/mt7927-nixos/archive/af666e087bb31b1c59906a9a0ec9208703933b06.tar.gz";
     sha256 = "1bw33nhrm0ky2z9f0s376g642yl7zxsbcpqpc89w9505hrm0nrgq";
