@@ -106,6 +106,7 @@
     # lxd
     docker
     vscode.fhs
+    zotero
   ];
 
   programs.steam.package = pkgs.steam.override {

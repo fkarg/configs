@@ -179,6 +179,7 @@ brew_casks_common:
   - libreoffice
   - marktext
   - obsidian
+  - zotero
   # AI / coding agents
   - claude-code
   - codex

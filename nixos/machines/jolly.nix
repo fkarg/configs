@@ -313,5 +313,6 @@
     # Drives the Hyprland Ctrl+Shift+F12 KVM bind. Functional only when
     # booted into the `i2c-kvm` specialisation (i2c stays off otherwise).
     ddcutil
+    zotero
   ];
 }
