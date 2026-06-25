@@ -46,3 +46,5 @@ A generator: **one source file per agent** fans out to four CLIs (Claude Code, C
 ## Conventions
 
 Commit messages: scope prefix first, then short imperative summary — e.g. `ansible:`, `nixos:`, `fish:`, `claude:`, `kvm:`. Match the existing style in `git log`.
+
+For simple, self-contained config changes (e.g. adding a package to a host, flipping a flag, bumping a value), commit the change yourself without being asked — stage only the files you touched, leave unrelated working-tree changes alone, and use the convention above. Surface anything non-trivial (architectural choices, destructive ops) before committing.
