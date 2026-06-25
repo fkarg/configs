@@ -105,6 +105,7 @@ case "$cmd" in
   list)
     ensure_store
     found=0
+    seen_accounts=''
     for dir in "$store_dir"/*; do
       test -d "$dir" || continue
       test -f "$dir/auth.json" || continue
@@ -115,6 +116,15 @@ case "$cmd" in
         active_marker="*"
       else
         active_marker=" "
+      fi
+
+      account_id="$(jq -r '.tokens.account_id // empty' "$dir/auth.json" 2>/dev/null || true)"
+      duplicate_profile=""
+      if test -n "$account_id" && test "$account_id" != "null"; then
+        duplicate_profile="$(printf '%s' "$seen_accounts" | awk -F '\t' -v id="$account_id" '$1 == id { print $2; exit }')"
+        if test -z "$duplicate_profile"; then
+          printf -v seen_accounts '%s%s\t%s\n' "$seen_accounts" "$account_id" "$profile"
+        fi
       fi
 
       access_token="$(jq -r '.tokens.access_token // empty' "$dir/auth.json" 2>/dev/null)"
@@ -149,6 +159,9 @@ case "$cmd" in
         fi
       else
         printf '%s%-15s (no access token)\n' "$active_marker" "$profile"
+      fi
+      if test -n "$duplicate_profile"; then
+        printf "  warning: same Codex account as profile '%s'\n" "$duplicate_profile"
       fi
     done
     test "$found" -eq 1 || printf 'no saved profiles\n'
