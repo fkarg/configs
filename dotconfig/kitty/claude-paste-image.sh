@@ -18,6 +18,11 @@ set -euo pipefail
 REMOTE="${CLAUDE_CLIP_REMOTE:-pars@fkarg.de}"
 # ----------------------------------------------------------------------------
 
+# kitty launched from the macOS GUI inherits a minimal PATH without Homebrew, so
+# pngpaste (and a brew-installed kitty) aren't found. Prepend the usual brew bins
+# for both Apple Silicon and Intel.
+export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
+
 notify() {
   osascript -e "display notification \"$1\" with title \"claude-paste-image\"" 2>/dev/null || true
 }
@@ -42,5 +47,7 @@ scp -q "$img" "$REMOTE:$remote_path" || fail "scp to $REMOTE failed"
 
 # Type the path (plus a trailing space) into the active window. Sent over
 # mosh/zellij into Claude Code's input; no newline, so you review and submit.
-kitty @ send-text --match recent:0 "$remote_path " \
+kitty_bin="$(command -v kitty || true)"
+[ -n "$kitty_bin" ] || kitty_bin="/Applications/kitty.app/Contents/MacOS/kitty"
+"$kitty_bin" @ send-text --match recent:0 "$remote_path " \
   || fail "kitty remote control failed (allow_remote_control / listen_on set?)"
