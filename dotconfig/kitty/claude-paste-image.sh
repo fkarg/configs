@@ -49,5 +49,14 @@ scp -q "$img" "$REMOTE:$remote_path" || fail "scp to $REMOTE failed"
 # mosh/zellij into Claude Code's input; no newline, so you review and submit.
 kitty_bin="$(command -v kitty || true)"
 [ -n "$kitty_bin" ] || kitty_bin="/Applications/kitty.app/Contents/MacOS/kitty"
-"$kitty_bin" @ send-text --match recent:0 "$remote_path " \
-  || fail "kitty remote control failed (allow_remote_control / listen_on set?)"
+
+# A --type=background launch doesn't inherit KITTY_LISTEN_ON, so find the control
+# socket: prefer the env if present, else the newest /tmp/kitty-* socket.
+sock="${KITTY_LISTEN_ON:-}"
+if [ -z "$sock" ]; then
+  newest="$(ls -t /tmp/kitty-* 2>/dev/null | head -n1 || true)"
+  [ -n "$newest" ] && sock="unix:$newest"
+fi
+
+err="$("$kitty_bin" @ ${sock:+--to "$sock"} send-text --match recent:0 "$remote_path " 2>&1)" \
+  || fail "kitty send-text failed: ${err:-unknown error}"
