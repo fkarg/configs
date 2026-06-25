@@ -2,17 +2,20 @@
 # Claude Code status line — fish-style colors, segments separated by ` | `.
 #
 # Layout (left→right):
-#   cwd | branch | model[effort] | tokens↑/↓ | +N/-N | 5h NN% left<pace> reset | 7d NN% left<pace>
+#   cwd | branch | model[effort] | tokens↑/↓ | +N/-N | 5h NN% left<pace> reset | 7d NN% left<pace> <ahead/behind Nh>
 #
 # Width-adaptive: COLUMNS is re-read every render (tracks live terminal resizes).
 # `model`, the 5h limit, and the git-root cwd are NEVER dropped. As width
 # shrinks, segments are sacrificed in this order:
-#   LOC → tokens → "left" text → branch → trim cwd (toward git root) → 7d → effort
+#   7d-diff → LOC → tokens → "left" text → branch → trim cwd (toward git root) → 7d → effort
 #
 # Pacing glyph shows burn vs. equidistant pacing of the 5h / 7d limits: how far
 # the % used is ahead of (▲, too fast) or behind (▼, headroom) the steady line
 # you'd be on if you spent the window evenly. The "5h/7d NN% left" text stays
-# blue; only the glyph is colored. LOC resets on /clear (statusline-loc-reset.sh).
+# blue; only the glyph is colored. The 7d segment also carries a time
+# differential ("ahead Nh" = burning that many hours faster than the steady
+# line, "behind Nh" = that much headroom) — same deviation expressed as
+# wall-clock hours over the week. LOC resets on /clear (statusline-loc-reset.sh).
 input=$(cat)
 
 # UTF-8 locale so ${#str} counts characters (glyphs, arrows, …), not bytes —
@@ -171,8 +174,32 @@ pace_seg() {
     "${tS}${glyph}${cd_plain}"  "$(printf "${C_RL}%s${C_RESET}" "$tS")${g_col}${cd_col}"
 }
 
+# Time differential vs the steady-burn line for a limit window. Translates the
+# pacing deviation (used% − elapsed%) into wall-clock hours: "ahead Nh" = burning
+# that many hours faster than steady (too fast), "behind Nh" = that much headroom.
+# Rounded to whole hours; within ~1h of pace emits nothing (dropped first when
+# width is tight). Emits plain<TAB>colored.
+pace_diff() {  # $1 used% $2 resets_at $3 window-length(s)
+  local used=$1 reset=$2 wl=$3
+  [ -n "$used" ] || { printf '\t'; return; }
+  local now rem txt
+  now=$(date +%s)
+  if [[ "$reset" =~ ^[0-9]+$ ]]; then rem=$((reset - now)); else rem=$wl; fi
+  txt=$(awk -v u="$used" -v rem="$rem" -v wl="$wl" 'BEGIN{
+    el=(wl-rem)/wl; if(el<0)el=0; if(el>1)el=1;
+    dev=u-el*100;                 # percentage points ahead(+)/behind(-) of pace
+    h=dev/100*wl/3600;            # same deviation as signed hours over the window
+    rh=int(h<0?-h+0.5:h+0.5);     # rounded magnitude
+    if(rh<1) exit;                # within ~1h of pace → no segment
+    printf "%s %dh", (h>=0?"ahead":"behind"), rh
+  }')
+  [ -n "$txt" ] || { printf '\t'; return; }
+  printf '%s\t%s' "$txt" "$(printf "${C_DIM}%s${C_RESET}" "$txt")"
+}
+
 IFS=$'\t' read -r p5_pL p5_cL p5_pS p5_cS < <(pace_seg "5h" "$rl5_pct" "$rl5_reset" 18000 1)
 IFS=$'\t' read -r p7_pL p7_cL p7_pS p7_cS < <(pace_seg "7d" "$rl7_pct" "$rl7_reset" 604800 0)
+IFS=$'\t' read -r d7_plain d7_col < <(pace_diff "$rl7_pct" "$rl7_reset" 604800)
 
 # --- render at current degradation state ------------------------------------
 SEP=' | '
@@ -215,11 +242,12 @@ render() {  # $1 = plain|color
   fi
 
   if [ "$show_7d" = 1 ] && [ -n "$p7_pL" ]; then
-    if [ "$mode" = plain ]; then
-      if [ "$show_left" = 1 ]; then parts+=("$p7_pL"); else parts+=("$p7_pS"); fi
-    else
-      if [ "$show_left" = 1 ]; then parts+=("$p7_cL"); else parts+=("$p7_cS"); fi
+    local seg7p seg7c
+    if [ "$show_left" = 1 ]; then seg7p="$p7_pL"; seg7c="$p7_cL"; else seg7p="$p7_pS"; seg7c="$p7_cS"; fi
+    if [ "$show_7ddiff" = 1 ] && [ -n "$d7_plain" ]; then
+      seg7p="$seg7p $d7_plain"; seg7c="$seg7c $d7_col"
     fi
+    if [ "$mode" = plain ]; then parts+=("$seg7p"); else parts+=("$seg7c"); fi
   fi
 
   local out="" i
@@ -232,14 +260,15 @@ plain_len() { local s; s=$(render plain); echo "${#s}"; }
 
 # Sacrifice ladder: drop one item at a time until the line fits COLUMNS.
 COLS=${COLUMNS:-80}
-actions=(loc tokens left branch)
+actions=(7ddiff loc tokens left branch)
 for ((i=1; i<${#cwd_forms[@]}; i++)); do actions+=(cwd); done   # trim cwd, step by step
 actions+=(7d effort)
 
-show_loc=1 show_tokens=1 show_left=1 show_branch=1 show_7d=1 show_effort=1 cwd_idx=0
+show_7ddiff=1 show_loc=1 show_tokens=1 show_left=1 show_branch=1 show_7d=1 show_effort=1 cwd_idx=0
 ai=0
 while [ "$(plain_len)" -gt "$COLS" ] && [ "$ai" -lt "${#actions[@]}" ]; do
   case "${actions[$ai]}" in
+    7ddiff) show_7ddiff=0 ;;
     loc)    show_loc=0 ;;
     tokens) show_tokens=0 ;;
     left)   show_left=0 ;;
