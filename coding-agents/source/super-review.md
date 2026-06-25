@@ -68,6 +68,7 @@ Run a **fleet of fresh-context reviewers in parallel**. They have NOT seen this 
 - `simplicity-reviewer` — needless indirection, abstraction, over-engineering; the simpler form
 - `performance-reviewer` — when a change carries any reasonable performance consideration: a hot/per-request/per-row path, a loop over request- or DB-sized data, queries/I/O, or non-trivial computation. Estimates both complexity (cost vs. input) and where a profiler's time would go, plus the simple win.
 - `murphyjitsu-reviewer` — for any non-trivial change about to ship: a pre-mortem that assumes it's already deployed and broke, then ranks the most likely break points — fragile assumptions, integration seams, environment/data/ordering gaps, the thing not in the diff — by how unsurprising each failure would be. The holistic "where would this actually page us" pass that catches the cross-cutting failure modes the category reviewers miss.
+- `consistency-reviewer` — when a change touches shared, concurrent, or cached state: a row/counter/balance other requests also touch, a cache or memo, a queue consumer or retry, or a read that expects its own recent write. Hunts where two views of the same state can disagree — races and lost updates, stale/wrongly-invalidated caches, read-after-write against replicas, non-idempotent retries.
 
 **Synthesize the findings in-thread**: dedupe overlapping reports, drop false positives, and produce one consolidated list:
 - 🔴 **must-fix** — correctness/security/data-loss holes.
