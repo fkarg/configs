@@ -118,6 +118,22 @@ Using the merge-base (where this branch diverged) keeps commits that landed on `
 - `murphyjitsu-reviewer` — for any non-trivial change about to ship: a pre-mortem that assumes it's already deployed and broke, then ranks the most likely break points — fragile assumptions, integration seams, environment/data/ordering gaps, the thing not in the diff — by how unsurprising each failure would be. The holistic "where would this actually page us" pass that catches the cross-cutting failure modes the category reviewers miss.
 - `consistency-reviewer` — when a change touches shared, concurrent, or cached state: a row/counter/balance other requests also touch, a cache or memo, a queue consumer or retry, or a read that expects its own recent write. Hunts where two views of the same state can disagree — races and lost updates, stale/wrongly-invalidated caches, read-after-write against replicas, non-idempotent retries.
 
+**Always add one cross-model pass.** Every Task-tool reviewer above runs on *your* model, so they share its blind spots — a different model on the same diff routinely catches obvious things a same-model fleet walks straight past. So alongside the fleet, hand the same diff to a *different* harness by shelling out to it in headless mode yourself (you're in the main thread with Bash — don't add a subagent layer just to run a shell command). Detect your harness from the environment and pick the counterpart:
+
+- `$CLAUDECODE` set → you're Claude; counterpart is `codex exec`.
+- else (`$CODEX_*` set) → you're Codex; counterpart is `claude -p`.
+- No other harness CLI on `PATH` (`command -v codex` / `command -v claude`) → skip it with a one-line note in the synthesis. Never fail the review over a missing counterpart.
+
+Write the diff to a temp file and point the counterpart at it — don't inline a large diff into argv. Give it the issue intent and the same 🔴/🟡/🟢 contract; it's a single-shot leaf that reviews and returns, it does **not** spawn its own fleet:
+
+```
+git diff $(git merge-base main HEAD) > /tmp/cross-review.diff
+codex exec "Fresh-eyes code review. Read the diff at /tmp/cross-review.diff. Intent: <one line from the issue>. Report findings as 🔴 must-fix / 🟡 should / 🟢 nit — concise, no praise, no diff echo."
+# Codex's default read-only sandbox is exactly right for a reviewer; add --skip-git-repo-check if invoked outside a repo.
+```
+
+Fold its findings into the synthesis below like any other reviewer, tagged with the model that produced them (`[codex]` / `[claude]`).
+
 **Synthesize the findings in-thread**: dedupe overlapping reports, drop false positives, and produce one consolidated list. Then:
 - 🔴 **must-fix** → address and re-run the affected reviewer(s).
 - 🟡 → judgment: fix if quick, note if not.
