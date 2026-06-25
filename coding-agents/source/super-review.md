@@ -66,6 +66,7 @@ Run a **fleet of fresh-context reviewers in parallel**. They have NOT seen this 
 - `test-quality-reviewer` — when the change adds/changes meaningful behavior that tests should pin. **Also pass it the invariants from step 2** so it reports per-invariant coverage (✓ enforced+tested / ⚠ weak / ✗ none).
 - `type-model-reviewer` — when the change adds/changes types, Pydantic/SQLModel schemas, or models
 - `simplicity-reviewer` — needless indirection, abstraction, over-engineering; the simpler form
+- `performance-reviewer` — when a change carries any reasonable performance consideration: a hot/per-request/per-row path, a loop over request- or DB-sized data, queries/I/O, or non-trivial computation. Estimates both complexity (cost vs. input) and where a profiler's time would go, plus the simple win.
 
 **Synthesize the findings in-thread**: dedupe overlapping reports, drop false positives, and produce one consolidated list:
 - 🔴 **must-fix** — correctness/security/data-loss holes.

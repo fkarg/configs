@@ -114,6 +114,7 @@ Using the merge-base (where this branch diverged) keeps commits that landed on `
 - `silent-failure-hunter` — when the change adds error handling, fallbacks, retries, or multi-step writes
 - `test-quality-reviewer` — when the change adds/changes meaningful behavior that tests should pin. **Also pass it the invariants from the mental model (step 2b)** so it reports per-invariant coverage (✓ enforced+tested / ⚠ weak / ✗ none).
 - `type-model-reviewer` — when the change adds/changes types, Pydantic/SQLModel schemas, or models
+- `performance-reviewer` — when a change carries any reasonable performance consideration: a hot/per-request/per-row path, a loop over request- or DB-sized data, queries/I/O, or non-trivial computation. Estimates both complexity (cost vs. input) and where a profiler's time would go, plus the simple win.
 
 **Synthesize the findings in-thread**: dedupe overlapping reports, drop false positives, and produce one consolidated list. Then:
 - 🔴 **must-fix** → address and re-run the affected reviewer(s).
