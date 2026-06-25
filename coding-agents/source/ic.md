@@ -115,6 +115,7 @@ Using the merge-base (where this branch diverged) keeps commits that landed on `
 - `test-quality-reviewer` — when the change adds/changes meaningful behavior that tests should pin. **Also pass it the invariants from the mental model (step 2b)** so it reports per-invariant coverage (✓ enforced+tested / ⚠ weak / ✗ none).
 - `type-model-reviewer` — when the change adds/changes types, Pydantic/SQLModel schemas, or models
 - `performance-reviewer` — when a change carries any reasonable performance consideration: a hot/per-request/per-row path, a loop over request- or DB-sized data, queries/I/O, or non-trivial computation. Estimates both complexity (cost vs. input) and where a profiler's time would go, plus the simple win.
+- `murphyjitsu-reviewer` — for any non-trivial change about to ship: a pre-mortem that assumes it's already deployed and broke, then ranks the most likely break points — fragile assumptions, integration seams, environment/data/ordering gaps, the thing not in the diff — by how unsurprising each failure would be. The holistic "where would this actually page us" pass that catches the cross-cutting failure modes the category reviewers miss.
 
 **Synthesize the findings in-thread**: dedupe overlapping reports, drop false positives, and produce one consolidated list. Then:
 - 🔴 **must-fix** → address and re-run the affected reviewer(s).

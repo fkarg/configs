@@ -67,6 +67,7 @@ Run a **fleet of fresh-context reviewers in parallel**. They have NOT seen this 
 - `type-model-reviewer` — when the change adds/changes types, Pydantic/SQLModel schemas, or models
 - `simplicity-reviewer` — needless indirection, abstraction, over-engineering; the simpler form
 - `performance-reviewer` — when a change carries any reasonable performance consideration: a hot/per-request/per-row path, a loop over request- or DB-sized data, queries/I/O, or non-trivial computation. Estimates both complexity (cost vs. input) and where a profiler's time would go, plus the simple win.
+- `murphyjitsu-reviewer` — for any non-trivial change about to ship: a pre-mortem that assumes it's already deployed and broke, then ranks the most likely break points — fragile assumptions, integration seams, environment/data/ordering gaps, the thing not in the diff — by how unsurprising each failure would be. The holistic "where would this actually page us" pass that catches the cross-cutting failure modes the category reviewers miss.
 
 **Synthesize the findings in-thread**: dedupe overlapping reports, drop false positives, and produce one consolidated list:
 - 🔴 **must-fix** — correctness/security/data-loss holes.
