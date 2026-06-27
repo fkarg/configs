@@ -3,12 +3,19 @@
 {# terminal bundle ids are excluded so Ctrl stays a real control code there #}
 {# (SIGINT on Ctrl+C, delete-word on Ctrl+W, kill-line on Ctrl+K, ...). #}
 {# 'q' deliberately omitted: Ctrl+Q quitting GUI apps is a surprising footgun. #}
+{# GUI editors with an integrated terminal (VSCode, ...) are excluded too: #}
+{# Karabiner only sees the frontmost *app*, so it can't tell the editor pane #}
+{# from the terminal pane. Without the exclusion, Ctrl+C in VSCode's terminal #}
+{# becomes Cmd+C (copy) instead of SIGINT. Exempting the whole app keeps the #}
+{# terminal correct (Ctrl+C = SIGINT, Cmd+C = copy); in the editor you use #}
+{# Cmd+C/V and Vim's native ctrl-keys (see vim.handleKeys). #}
 {% set ctrl_as_cmd_keys = ctrl_as_cmd_keys | default(['c', 'v', 'x', 'z', 'a', 'w', 't', 'f', 'n', 's', 'r', 'l', 'return_or_enter']) %}
 {% set ctrl_as_cmd_terminals = ctrl_as_cmd_terminals | default([
   '^net\\\\.kovidgoyal\\\\.kitty$',
   '^com\\\\.apple\\\\.Terminal$',
   '^com\\\\.googlecode\\\\.iterm2$',
   '^com\\\\.mitchellh\\\\.ghostty$',
+  '^com\\\\.microsoft\\\\.VSCode$',
 ]) %}
 {
   "title": "Ctrl as Cmd in GUI apps (Linux muscle memory)",
