@@ -98,6 +98,7 @@ For a non-trivial change, delegate to the **production-readiness** subagent with
 **Follow-up work.** Route by kind. Read the current repo's `AGENTS.md` for its routing policy (Claude auto-loads it; otherwise `cat AGENTS.md` first).
 - **Infrastructure hand-off** — the *Infrastructure Issue* block, if non-empty: deployment/infra-layer work for another repo. If `AGENTS.md` names where such hand-offs go, offer to file there — show the user the body and, on confirmation, `gh issue create -R <target> --title "<title>" --body "<body>"`. If silent, surface the body for the user to file. (Outward-facing — always confirm first.)
 - **In-repo follow-up** — frontend/backend feature, refactor, or test work: a normal issue in *this* repo, or just surface it. Never file application follow-ups in the infrastructure tracker.
+- **Board tracking** — any issue filed on an Epistree repo (`backend-core`, `frontend-react`, `infrastructure`) auto-adds to the Development project board at status **Backlog**; no manual board step is needed after `gh issue create`. Status flow is Backlog → Plan → Ready → In Progress → Reviewing → Done (plus **Stuck** when blocked / waiting on external progress).
 
 ### 5. Architectural map — write in-thread
 
