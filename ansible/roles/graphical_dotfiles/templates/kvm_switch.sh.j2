@@ -5,4 +5,19 @@
 # input code is per-host: kvm_switch_target_input in inventory/host_vars
 # (e.g. jolly = 21/0x15 USB-C → caeli). Requires ddcutil + i2c-dev access
 # (hardware.i2c.enable on NixOS hosts).
-exec ddcutil setvcp 60 {{ kvm_switch_target_input | int }}
+TARGET={{ kvm_switch_target_input | int }}
+HOLD_SECONDS={{ kvm_switch_hold_seconds | default(0) | int }}
+
+set_input() {
+  ddcutil setvcp 60 "$1"
+}
+
+set_input "$TARGET"
+
+if [ "$HOLD_SECONDS" -gt 0 ]; then
+  end=$(( $(date +%s) + HOLD_SECONDS ))
+  while [ "$(date +%s)" -lt "$end" ]; do
+    sleep 1
+    set_input "$TARGET"
+  done
+fi

@@ -2,6 +2,8 @@
 # Managed by ansible: ansible/roles/graphical_dotfiles/templates/kvm_switch_macos.sh.j2
 # Invoked by the Ctrl+Shift+F12 Karabiner rule. If kvm_self_input is configured,
 # toggles between self and target on the Philips KVM; otherwise just sets target.
+# If kvm_switch_hold_seconds is set, re-selects the chosen input during that
+# window so the monitor's input auto-switching cannot immediately undo it.
 set -eu
 
 M1DDC=/opt/homebrew/bin/m1ddc
@@ -11,14 +13,36 @@ DISPLAY_ARG="display {{ kvm_display_id }}"
 DISPLAY_ARG=""
 {% endif %}
 TARGET={{ kvm_switch_target_input | int }}
+HOLD_SECONDS={{ kvm_switch_hold_seconds | default(0) | int }}
+
+set_input() {
+  $M1DDC $DISPLAY_ARG set input "$1"
+}
+
+hold_input() {
+  selected=$1
+  set_input "$selected"
+
+  if [ "$HOLD_SECONDS" -le 0 ]; then
+    return
+  fi
+
+  end=$(( $(date +%s) + HOLD_SECONDS ))
+  while [ "$(date +%s)" -lt "$end" ]; do
+    sleep 1
+    set_input "$selected"
+  done
+}
+
 {% if kvm_self_input not in [None, ''] %}
 SELF={{ kvm_self_input | int }}
 current=$($M1DDC $DISPLAY_ARG get input 2>/dev/null | tr -d '[:space:]')
 if [ "$current" = "$SELF" ]; then
-  exec $M1DDC $DISPLAY_ARG set input "$TARGET"
+  SELECTED=$TARGET
 else
-  exec $M1DDC $DISPLAY_ARG set input "$SELF"
+  SELECTED=$SELF
 fi
 {% else %}
-exec $M1DDC $DISPLAY_ARG set input "$TARGET"
+SELECTED=$TARGET
 {% endif %}
+hold_input "$SELECTED"

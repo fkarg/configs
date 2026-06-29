@@ -37,6 +37,10 @@ kvm_display_id: "0A6C28AE-EE62-41C3-8565-25FEE528B91B"
 # `m1ddc display <id> get input` while connected normally.
 kvm_self_input: null
 kvm_switch_target_input: 15
+# Keep re-selecting the requested input for a minute so the monitor does not
+# auto-hop back to an already-running machine while the selected host is still
+# in firmware/early boot and has no signal yet.
+kvm_switch_hold_seconds: 60
 
 # Ctrl-as-Cmd: map Ctrl+<key> -> Cmd+<key> in GUI apps so Linux muscle memory
 # (copy/paste/close-tab/...) works here, while Cmd keeps working. Terminals are
