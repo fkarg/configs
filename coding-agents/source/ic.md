@@ -56,6 +56,20 @@ Synthesize the fleet's findings into a short **mental model of the area being ch
 
 Keep it tight. Scale it to the task — a small fix needs a sentence; a new module needs the full model.
 
+### 2c. Brainstorm — diverge on approach (scaled)
+
+Before converging on a plan, **explore the solution space with the user** for non-trivial work. The mental model tells you *where* the change lands; brainstorming decides *how* it should be built — and architecture is where your attention is best spent, because it's the hardest thing to fix after the fact.
+
+Surface **2-3 candidate approaches**, each with:
+
+- The shape of the design in a line, anchored to where it lands (`file:line` from 2b).
+- The architectural tradeoff it makes — what it keeps simple, what it complicates, which invariants it leans on.
+- Whether it earns any new abstraction *yet*, or defers it until a second concrete use proves it's needed.
+
+Work through them *with the user* — recommend one and say why, but treat this as a genuine fork, not a formality. The chosen approach becomes the spine of the plan in step 3.
+
+**Scale it:** a new module or a change with real design forks gets the full divergence; an obvious one-way change gets a sentence naming the approach and why there's no fork; trivial tasks skip this entirely.
+
 ### 3. Plan
 
 Ground the plan in the mental model from step 2b — the approach should name the invariants it preserves and the files it lands in.
@@ -72,6 +86,8 @@ Then present a **single plan** for sign-off:
 - **Decisions made**: small-scope choices you already made and why
 - **Decision points**: anything with real tradeoffs — present options, recommend one, let the user decide
 - **Test strategy**: what behavior to verify
+
+Before asking for sign-off, **state the approach in plain terms and invite pushback** — name why it's shaped this way and which alternative from 2c you rejected. If you can't explain the shape without pointing at code, the plan isn't ready. This is cheap, and it's where the human catches a wrong frame before any code exists.
 
 **Wait for user sign-off before proceeding.**
 
@@ -151,6 +167,17 @@ After review settles, write the **architectural map of the change** yourself —
 
 This map is shown at the checkpoint below and goes into the PR body verbatim.
 
+#### Reviewer's reading guide (write in-thread)
+
+The architectural map says *what* shipped; the reading guide says *where the human should spend review attention now*. A large diff is mostly boilerplate a capable model gets right — your job is to route the human's limited energy onto the parts that actually need their judgment, and to let them *confidently skip* the rest. Write it in-thread: you hold the diff, the fresh reviewers' findings, and the invariants, so you have everything needed to triage.
+
+Produce two lists over the actual diff:
+
+- **Read closely** — the hunks carrying real human-judgment weight, each with `file:line` and a one-line *why it needs your eyes*: a load-bearing invariant, a non-obvious design decision, subtle ordering/concurrency logic, a security/data/trust boundary, or anything a reviewer flagged 🔴/🟡. Rank by weight — this is where over-trusting the output would bite hardest.
+- **Skim / safe to skip** — boilerplate, generated code, mechanical or repetitive changes, and paths well-pinned by tests. Name them explicitly so skipping them is a decision, not a blind spot.
+
+The risk signal is inherited from the fresh-context fleet (it already found the dangerous spots); you're reorganizing it for the human's attention, not re-deriving it. This pairs with the `understanding-prs-for-approval` skill — the guide tells the human where to point that skill.
+
 ### 5b. Production readiness & ops impact
 
 After review passes, delegate to the **production-readiness** subagent with the same branch-off-point diff (`git diff $(git merge-base main HEAD)`) and the worktree path. It checks deployment risk (irreversible migrations, breaking API changes, frontend build/runtime risk, untested paths, env changes) **and** ops impact (robustness/scalability of the change, plus the forward infrastructure work it creates). If 🛑 **not ready**, address blockers before shipping.
@@ -160,7 +187,7 @@ After review passes, delegate to the **production-readiness** subagent with the 
 - **In-repo follow-up** — frontend/backend feature, refactor, or test work the change implies: file it as a normal issue in *this* repo, or just surface it. Never push application follow-ups into the infrastructure tracker.
 - **Board tracking** — any issue filed on an Epistree repo (`backend-core`, `frontend-react`, `infrastructure`) auto-adds to the Development project board at status **Backlog**; no manual board step is needed after `gh issue create`. Status flow is Backlog → Plan → Ready → In Progress → Reviewing → Done (plus **Stuck** when blocked / waiting on external progress).
 
-**Checkpoint.** Present to the user: the **architectural map**, the synthesized review findings, and the production/ops report (plus any infra-issue link). Then **WAIT FOR USER RESPONSE** — they may want code tweaks, have follow-ups, or questions before shipping.
+**Checkpoint.** Present to the user: the **architectural map**, the **reviewer's reading guide**, the synthesized review findings, and the production/ops report (plus any infra-issue link). Then **WAIT FOR USER RESPONSE** — they may want code tweaks, have follow-ups, or questions before shipping.
 
 ### 6. Ship
 

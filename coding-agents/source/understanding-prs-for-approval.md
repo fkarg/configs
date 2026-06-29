@@ -15,6 +15,8 @@ Approving a PR means **vouching that the design decisions are ones you accept** 
 
 **Scope check first:** attribute claims to what the PR's *diff* actually changes (`gh pr diff <n> --name-only`), then read the surrounding code it relies on. A stacked PR or a moved merge-base means the branch (or `main`) can contain code this PR did not add — don't credit/blame it to this PR.
 
+**If a reviewer's reading guide came with the PR** (the IC pipeline produces one), start from its "read closely" list — it already routed attention onto the load-bearing hunks, so it's the fastest way into a large diff. Treat it as a lead, not gospel: confirm each flagged section yourself, and stay alert for anything parked in "safe to skip" that your invariants say is actually load-bearing. The guide saves you the triage; it does not stand in for your verification — an unconfirmed claim is still trust, not understanding.
+
 ## When to use
 
 - You're asked to approve / sign off on a PR you didn't fully write, or haven't gone deep on.
