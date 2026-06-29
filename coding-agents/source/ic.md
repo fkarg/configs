@@ -60,15 +60,15 @@ Keep it tight. Scale it to the task — a small fix needs a sentence; a new modu
 
 Before converging on a plan, **explore the solution space with the user** for non-trivial work. The mental model tells you *where* the change lands; brainstorming decides *how* it should be built — and architecture is where your attention is best spent, because it's the hardest thing to fix after the fact.
 
-Surface **2-3 candidate approaches**, each with:
+Surface **the candidate approaches that genuinely apply** — as many as there are reasonable ones, no fixed count and no padding to hit one. Some changes have one sane approach; some have four. For each:
 
 - The shape of the design in a line, anchored to where it lands (`file:line` from 2b).
 - The architectural tradeoff it makes — what it keeps simple, what it complicates, which invariants it leans on.
 - Whether it earns any new abstraction *yet*, or defers it until a second concrete use proves it's needed.
 
-Work through them *with the user* — recommend one and say why, but treat this as a genuine fork, not a formality. The chosen approach becomes the spine of the plan in step 3.
+Work through them *with the user* — recommend one and say why, but treat a real fork as a real fork, not a formality. The chosen approach becomes the spine of the plan in step 3.
 
-**Scale it:** a new module or a change with real design forks gets the full divergence; an obvious one-way change gets a sentence naming the approach and why there's no fork; trivial tasks skip this entirely.
+**Scale it:** a change with genuine design forks gets the full divergence across however many approaches are real; an obvious one-way change gets a sentence naming the approach and why there's no fork; trivial tasks skip this entirely. Don't manufacture alternatives to look thorough, and don't collapse real ones to look decisive.
 
 ### 3. Plan
 
