@@ -68,6 +68,8 @@ Surface **the candidate approaches that genuinely apply** — as many as there a
 
 Work through them *with the user* — recommend one and say why, but treat a real fork as a real fork, not a formality. The chosen approach becomes the spine of the plan in step 3.
 
+For non-trivial changes, hand the candidate approaches to a fresh-context `simplicity-reviewer` **before you converge** — the same agent as the step-4 diff pass, here judging the *approach* for proportionality and earned-vs-premature abstraction. Fresh eyes at design time strip your own author bias toward a clever shape, when it's cheapest to correct. Fold its read into your recommendation; one-way and trivial changes skip it.
+
 **Scale it:** a change with genuine design forks gets the full divergence across however many approaches are real; an obvious one-way change gets a sentence naming the approach and why there's no fork; trivial tasks skip this entirely. Don't manufacture alternatives to look thorough, and don't collapse real ones to look decisive.
 
 ### 3. Plan
