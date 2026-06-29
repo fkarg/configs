@@ -34,3 +34,6 @@ background_image: "{{ home_dir }}/{{ configs_repo }}/pictures/IMAG7297.JPG"
 # hardware.i2c.enable is default-on (see nixos/machines/jolly.nix).
 kvm_switch_enabled: true
 kvm_switch_target_input: 21
+# Keep re-selecting caeli's input for a minute so the monitor does not auto-hop
+# back while caeli is still waking/booting and has no signal yet.
+kvm_switch_hold_seconds: 60
