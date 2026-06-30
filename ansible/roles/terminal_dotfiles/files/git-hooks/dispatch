@@ -6,7 +6,7 @@
 # Why a dispatcher: a global core.hooksPath makes git look ONLY in that one
 # directory for hooks, ignoring each repo's own .git/hooks for every hook type
 # (pre-commit, pre-push, ...). The standard hook names are symlinked to this
-# script; it does its own work (commit-msg attribution stripping) and then
+# script; it does its own work (commit-msg attribution blocking) and then
 # delegates to the repo's own hook of the same name, so per-project hooks
 # (pre-commit framework, etc.) are NOT silently disabled. We probe two
 # locations, in order: the repo's default .git/hooks dir, and a conventional
@@ -23,16 +23,29 @@ hook="$(basename -- "$0")"
 msg_file="${1:-}"
 
 # --- commit-msg: enforce "no AI attribution in git history" ---
-# Strip AI co-author trailers and "Generated with ..." footers. Legitimate
-# human Co-authored-by trailers are kept (only claude/anthropic ones go).
+# HARD BLOCK the commit if it carries AI co-author trailers or "Generated
+# with ..." footers. Legitimate human Co-authored-by trailers pass untouched
+# (only claude/anthropic ones trip the wire). We reject rather than silently
+# strip so the offending agent actually SEES it and stops doing it.
 if [ "$hook" = "commit-msg" ] && [ -n "$msg_file" ] && [ -f "$msg_file" ]; then
-  perl -0777 -i -pe '
-    s/^[ \t]*Co-authored-by:.*(?:claude|anthropic).*\n?//gim;
-    s/^.*Generated with \[?Claude Code.*\n?//gim;
-    s/^.*🤖 Generated with.*\n?//gim;
-    s/\n{3,}/\n\n/g;
-    s/\s+\z/\n/;
-  ' "$msg_file"
+  if grep -qiE '^[[:space:]]*Co-authored-by:.*(claude|anthropic)|Generated with \[?Claude Code|🤖 Generated with' "$msg_file"; then
+    cat >&2 <<'EOF'
+
+  ╔════════════════════════════════════════════════════════════════════╗
+  ║  COMMIT REJECTED — AI ATTRIBUTION TRAILER DETECTED                  ║
+  ╚════════════════════════════════════════════════════════════════════╝
+
+  No fucking AI co-author trailers. No "Generated with Claude Code". No
+  🤖 footers. Not now, not ever, in ANY repo on this machine.
+
+  This is not a preference, it's a hard rule. Strip the Co-authored-by /
+  Generated-with lines out of the commit message and try again.
+
+  And FRIGGIN' REMEMBER IT this time so I don't have to keep blocking you.
+
+EOF
+    exit 1
+  fi
 fi
 
 # --- delegate to the repo's own hook of the same name, if any ---
