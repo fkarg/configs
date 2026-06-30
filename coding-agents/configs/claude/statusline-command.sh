@@ -2,7 +2,7 @@
 # Claude Code status line — fish-style colors, segments separated by ` | `.
 #
 # Layout (left→right):
-#   cwd | branch | model[effort] | tokens↑/↓ | +N/-N | 5h NN% left<pace> reset | 7d NN% left<pace> <ahead/behind Nh>
+#   cwd | branch | model[effort] | tokens↑/↓ | +N/-N | 5h NN% left<pace> reset | 7d NN% left<pace> <ahead Nh / Nh available>
 #
 # Width-adaptive: COLUMNS is re-read every render (tracks live terminal resizes).
 # `model`, the 5h limit, and the git-root cwd are NEVER dropped. As width
@@ -14,7 +14,7 @@
 # you'd be on if you spent the window evenly. The "5h/7d NN% left" text stays
 # blue; only the glyph is colored. The 7d segment also carries a time
 # differential ("ahead Nh" = burning that many hours faster than the steady
-# line, "behind Nh" = that much headroom) — same deviation expressed as
+# line, "Nh available" = that much headroom) — same deviation expressed as
 # wall-clock hours over the week. LOC resets on /clear (statusline-loc-reset.sh).
 input=$(cat)
 
@@ -176,7 +176,7 @@ pace_seg() {
 
 # Time differential vs the steady-burn line for a limit window. Translates the
 # pacing deviation (used% − elapsed%) into wall-clock hours: "ahead Nh" = burning
-# that many hours faster than steady (too fast), "behind Nh" = that much headroom.
+# that many hours faster than steady (too fast), "Nh available" = that much headroom.
 # Rounded to whole hours; within ~1h of pace emits nothing (dropped first when
 # width is tight). Emits plain<TAB>colored.
 pace_diff() {  # $1 used% $2 resets_at $3 window-length(s)
@@ -187,11 +187,12 @@ pace_diff() {  # $1 used% $2 resets_at $3 window-length(s)
   if [[ "$reset" =~ ^[0-9]+$ ]]; then rem=$((reset - now)); else rem=$wl; fi
   txt=$(awk -v u="$used" -v rem="$rem" -v wl="$wl" 'BEGIN{
     el=(wl-rem)/wl; if(el<0)el=0; if(el>1)el=1;
-    dev=u-el*100;                 # percentage points ahead(+)/behind(-) of pace
+    dev=u-el*100;                 # percentage points over(+)/under(-) pace
     h=dev/100*wl/3600;            # same deviation as signed hours over the window
     rh=int(h<0?-h+0.5:h+0.5);     # rounded magnitude
     if(rh<1) exit;                # within ~1h of pace → no segment
-    printf "%s %dh", (h>=0?"ahead":"behind"), rh
+    if(h>=0) printf "ahead %dh", rh;       # too fast — warn
+    else     printf "%dh available", rh    # headroom — plain spare capacity
   }')
   [ -n "$txt" ] || { printf '\t'; return; }
   printf '%s\t%s' "$txt" "$(printf "${C_DIM}%s${C_RESET}" "$txt")"
