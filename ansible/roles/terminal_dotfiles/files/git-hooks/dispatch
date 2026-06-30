@@ -32,7 +32,7 @@ if [ "$hook" = "commit-msg" ] && [ -n "$msg_file" ] && [ -f "$msg_file" ]; then
     cat >&2 <<'EOF'
 
   ╔════════════════════════════════════════════════════════════════════╗
-  ║  COMMIT REJECTED — AI ATTRIBUTION TRAILER DETECTED                  ║
+  ║  COMMIT REJECTED — AI ATTRIBUTION TRAILER DETECTED                 ║
   ╚════════════════════════════════════════════════════════════════════╝
 
   No fucking AI co-author trailers. No "Generated with Claude Code". No
@@ -40,6 +40,10 @@ if [ "$hook" = "commit-msg" ] && [ -n "$msg_file" ] && [ -f "$msg_file" ]; then
 
   This is not a preference, it's a hard rule. Strip the Co-authored-by /
   Generated-with lines out of the commit message and try again.
+
+  Keep commit messages TECHNICAL. A trailer with a product name and a URL
+  baked in is an ad, not attribution — it's pure noise in the log. Say what
+  changed and why, nothing else.
 
   And FRIGGIN' REMEMBER IT this time so I don't have to keep blocking you.
 
