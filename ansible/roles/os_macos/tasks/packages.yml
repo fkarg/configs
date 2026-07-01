@@ -39,5 +39,6 @@
     state: present
     path: "{{ brew_bin | dirname }}"
     greedy: true
+    install_options: adopt
   ignore_errors: true
   tags: [brew_casks]
