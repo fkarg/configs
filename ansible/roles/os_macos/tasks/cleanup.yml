@@ -1,0 +1,16 @@
+---
+# Run `brew cleanup` once at each login via a per-user LaunchAgent.
+# launchd auto-loads ~/Library/LaunchAgents plists at login; RunAtLoad then
+# fires the job exactly once per session.
+
+- name: Ensure user LaunchAgents directory exists
+  file:
+    path: ~/Library/LaunchAgents
+    state: directory
+    mode: '0755'
+
+- name: Install brew cleanup LaunchAgent
+  template:
+    src: brew-cleanup.plist.j2
+    dest: ~/Library/LaunchAgents/eu.kolai.brew-cleanup.plist
+    mode: '0644'
