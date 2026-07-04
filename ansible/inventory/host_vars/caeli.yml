@@ -19,8 +19,11 @@ direnv: true
 zoxide: true
 
 # Monitor KVM (Philips 49B2U5900CH): Ctrl+Shift+F12 sends a DDC input-switch
-# from this host to the *other* machine on the shared monitor. caeli is on
-# USB-C, so kvm_switch_target_input is jolly's input code on the Philips.
+# from this host to the *other* machine on the shared monitor. Ctrl+Shift+F11
+# does the same, then sleeps caeli after the hold window so its USB-C signal
+# drops and the monitor can't auto-hop back while jolly is still booting.
+# caeli is on USB-C, so kvm_switch_target_input is jolly's input code on the
+# Philips.
 # Discover with:
 #   m1ddc display list                              # copy the Philips UUID
 #   m1ddc display <UUID> get input                  # while sitting on USB-C

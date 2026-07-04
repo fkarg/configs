@@ -1,9 +1,12 @@
 #!/usr/bin/env sh
 # Managed by ansible: ansible/roles/graphical_dotfiles/templates/kvm_switch_macos.sh.j2
-# Invoked by the Ctrl+Shift+F12 Karabiner rule. If kvm_self_input is configured,
-# toggles between self and target on the Philips KVM; otherwise just sets target.
+# Invoked by the Karabiner KVM rules. If kvm_self_input is configured, toggles
+# between self and target on the Philips KVM; otherwise just sets target.
 # If kvm_switch_hold_seconds is set, re-selects the chosen input during that
 # window so the monitor's input auto-switching cannot immediately undo it.
+# Called with the argument "sleep" (the Ctrl+Shift+F11 rule) it also puts this
+# host to sleep after the hold window, so its own input signal drops and the
+# monitor can no longer auto-hop back to it while the other host boots.
 set -eu
 
 M1DDC=/opt/homebrew/bin/m1ddc
@@ -46,3 +49,7 @@ fi
 SELECTED=$TARGET
 {% endif %}
 hold_input "$SELECTED"
+
+if [ "${1:-}" = "sleep" ]; then
+  /usr/bin/pmset sleepnow
+fi

@@ -59,11 +59,12 @@
   tags: [kitty]
 
 # ============================================
-# KARABINER (Darwin only) — drops a complex-modification asset for the
-# Ctrl+Shift+F12 KVM switch. After the file lands you still have to open
-# Karabiner-Elements → Complex Modifications → Add rule, and enable
-# "Ctrl+Shift+F12 → flip monitor to other input via m1ddc" once. m1ddc itself
-# ships via brew_packages_common.
+# KARABINER (Darwin only) — drops a complex-modification asset for the KVM
+# switch (Ctrl+Shift+F12 = switch input; Ctrl+Shift+F11 = switch then sleep this
+# host). After the file lands you still have to open Karabiner-Elements →
+# Complex Modifications → Add rule, and enable the KVM input switch rule once
+# (re-add it if you enabled the F12-only version before, to pick up F11). m1ddc
+# itself ships via brew_packages_common.
 # ============================================
 - name: Ensure Karabiner complex_modifications assets directory exists
   file:

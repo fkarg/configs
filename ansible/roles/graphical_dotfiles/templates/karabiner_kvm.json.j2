@@ -2,7 +2,7 @@
   "title": "KVM input switch",
   "rules": [
     {
-      "description": "Ctrl+Shift+F12 → toggle/flip monitor input via m1ddc",
+      "description": "Ctrl+Shift+F12 → switch monitor input; Ctrl+Shift+F11 → switch input then sleep this host",
       "manipulators": [
         {
           "type": "basic",
@@ -15,6 +15,20 @@
           "to": [
             {
               "shell_command": "$HOME/.config/kvm/switch.sh"
+            }
+          ]
+        },
+        {
+          "type": "basic",
+          "from": {
+            "key_code": "f11",
+            "modifiers": {
+              "mandatory": ["control", "shift"]
+            }
+          },
+          "to": [
+            {
+              "shell_command": "$HOME/.config/kvm/switch.sh sleep"
             }
           ]
         }
