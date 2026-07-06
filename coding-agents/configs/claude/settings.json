@@ -68,10 +68,13 @@
   "feedbackSurveyRate": 0,
   "spinnerTipsEnabled": false,
   "effortLevel": "high",
+  "askUserQuestionTimeout": "never",
   "showThinkingSummaries": true,
   "skipWorkflowUsageWarning": true,
   "editorMode": "normal",
   "verbose": true,
   "preferredNotifChannel": "kitty",
+  "switchModelsOnFlag": false,
+  "fileCheckpointingEnabled": true,
   "skipAutoPermissionPrompt": true
 }
