@@ -73,6 +73,7 @@
   "skipWorkflowUsageWarning": true,
   "editorMode": "normal",
   "verbose": true,
+  "tui": "fullscreen",
   "preferredNotifChannel": "kitty",
   "switchModelsOnFlag": false,
   "fileCheckpointingEnabled": true,
