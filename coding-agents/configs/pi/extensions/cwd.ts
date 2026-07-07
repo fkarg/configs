@@ -1,7 +1,8 @@
-import { relative, resolve } from "node:path";
+import { resolve } from "node:path";
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { createBashToolDefinition } from "@earendil-works/pi-coding-agent";
 import { Text } from "@earendil-works/pi-tui";
+import { Type } from "typebox";
 
 function shorten(home: string, cwd: string) {
   if (cwd === home) return "~";
@@ -35,44 +36,62 @@ export default function (pi: ExtensionAPI) {
     },
   });
 
-  pi.registerCommand("cwd", {
-    description: "Show or set the effective working directory for bash tool calls. Use /cwd <path>, /cwd -, or /cwd --reset.",
-    handler: async (args, ctx) => {
+  pi.registerTool({
+    name: "cwd",
+    label: "Cwd",
+    description: "Show or set the effective working directory for future bash tool calls. Use before working in a git worktree so bash runs in .worktrees/<name> instead of the parent checkout.",
+    parameters: Type.Object({
+      path: Type.Optional(Type.String({ description: "Directory to switch bash execution to, relative to the current effective cwd. Omit to only report current cwd. Use '-' to switch to the previous cwd." })),
+      reset: Type.Optional(Type.Boolean({ description: "Reset bash execution cwd to the original Pi session root.", default: false })),
+    }),
+    async execute(_toolCallId, params, _signal, _onUpdate, ctx) {
       lastContext = ctx;
-      const arg = args.trim();
-      if (!arg) {
-        const s = refreshStatus(ctx)!;
-        ctx.ui.notify(`bash cwd: ${s.display}\nsession root: ${s.root}`, "info");
-        return;
-      }
-      if (arg === "--reset" || arg === "reset") {
+      let changed = false;
+      if (params.reset) {
         previousCwd = effectiveCwd;
         effectiveCwd = sessionRoot;
-        refreshStatus(ctx);
-        ctx.ui.notify(`bash cwd reset: ${shorten(process.env.HOME || "", effectiveCwd)}`, "info");
-        return;
+        changed = true;
+      } else if (params.path?.trim()) {
+        const next = params.path.trim() === "-" ? previousCwd : resolveCwd(effectiveCwd, params.path);
+        if (!next) {
+          return {
+            content: [{ type: "text", text: "No previous cwd is available." }],
+            details: { sessionRoot, effectiveCwd, previousCwd },
+            isError: true,
+          };
+        }
+        const stat = await pi.exec("test", ["-d", next], { cwd: sessionRoot });
+        if (stat.code !== 0) {
+          return {
+            content: [{ type: "text", text: `Not a directory: ${next}` }],
+            details: { sessionRoot, effectiveCwd, requested: next },
+            isError: true,
+          };
+        }
+        previousCwd = effectiveCwd;
+        effectiveCwd = next;
+        changed = true;
       }
-      const next = arg === "-" ? previousCwd : resolveCwd(effectiveCwd, arg);
-      if (!next) {
-        ctx.ui.notify("No previous cwd", "warning");
-        return;
-      }
-      const stat = await pi.exec("test", ["-d", next], { cwd: sessionRoot });
-      if (stat.code !== 0) {
-        ctx.ui.notify(`Not a directory: ${next}`, "error");
-        return;
-      }
-      previousCwd = effectiveCwd;
-      effectiveCwd = next;
-      refreshStatus(ctx);
-      ctx.ui.notify(`bash cwd: ${shorten(process.env.HOME || "", effectiveCwd)}`, "info");
+
+      const status = refreshStatus(ctx)!;
+      const text = [
+        `${changed ? "Changed" : "Current"} bash working directory: ${effectiveCwd}`,
+        `Session root: ${sessionRoot}`,
+        previousCwd ? `Previous cwd: ${previousCwd}` : undefined,
+        `Display: ${status.display}`,
+      ].filter(Boolean).join("\n");
+      return { content: [{ type: "text", text }], details: { sessionRoot, effectiveCwd, previousCwd, changed } };
+    },
+    renderCall(args, theme) {
+      const target = args.reset ? "reset" : args.path || "show";
+      return new Text(`${theme.fg("toolTitle", theme.bold("cwd "))}${theme.fg("accent", target)}`, 0, 0);
     },
   });
 
   pi.registerTool({
     name: "bash",
     label: bash.label,
-    description: `${bash.description} The result begins with the working directory where the command executed. The user can change that directory with /cwd.`,
+    description: `${bash.description} The result begins with the working directory where the command executed. Use the cwd tool to change the effective bash working directory, especially before working in .worktrees/<name>.`,
     parameters: bash.parameters,
     async execute(toolCallId, params, signal, onUpdate, ctx) {
       lastContext = ctx;
@@ -106,7 +125,7 @@ export default function (pi: ExtensionAPI) {
   });
 
   pi.on("before_agent_start", async (event) => ({
-    systemPrompt: `${event.systemPrompt}\n\nBash cwd note: bash tool results include the exact working directory used. The user may set an effective bash cwd with /cwd; if set, bash runs there even when the session root is elsewhere.`,
+    systemPrompt: `${event.systemPrompt}\n\nBash cwd note: bash tool results include the exact working directory used. Use the cwd tool to inspect or set the effective bash cwd; if set, bash runs there even when the session root is elsewhere. For .worktrees/<name> workflows, call cwd with that path before running repo-local bash commands.`,
   }));
 
   pi.on("session_shutdown", async () => {

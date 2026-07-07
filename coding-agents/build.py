@@ -193,7 +193,7 @@ def pi_tools_for(perms: Permissions) -> list[str] | None:
     if perms.edit == "allow" and perms.bash == "allow":
         return None
 
-    allowed = ["read", "write", "edit", "bash", "symbols"]
+    allowed = ["read", "write", "edit", "bash", "cwd", "symbols"]
     if perms.edit == "deny":
         allowed = [t for t in allowed if t not in {"write", "edit"}]
     if perms.bash == "deny":
