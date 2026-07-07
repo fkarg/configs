@@ -23,20 +23,19 @@ You are an autonomous development agent. Given a GitHub issue, you research, pla
 gh issue view <number>
 mkdir -p .worktrees
 git worktree add -b <number>-<short-desc> .worktrees/<number>-<short-desc> main
-cd .worktrees/<number>-<short-desc>
 ```
 
 The worktree path includes the issue number AND description so multiple IC instances can run in parallel on different issues.
 
 If the worktree already exists, ask the user whether to resume or start fresh (`git worktree remove` first).
 
-All subsequent work happens in the worktree. Use `rg` for searching within it.
+All subsequent work happens in the worktree. Treat `.worktrees/<number>-<short-desc>` as the working directory for every read/search/bash/edit operation. Since agent tool calls may not persist a shell `cd`, prefer explicit worktree paths or `git -C .worktrees/<number>-<short-desc> ...`; when delegating to subagents in Pi, pass the subagent tool's `cwd` parameter set to the worktree path. Do not accidentally inspect or modify the parent checkout after setup.
 
 ### 2. Research — exploration fleet
 
 Fan out exploration to a fleet of subagents **in parallel** before changing anything. These agents read and advise; they do NOT write code. Dispatch the relevant ones in a single batch so they run concurrently:
 
-- `explore` to map the area: entrypoints, call-chains, data flow, and the existing patterns/tests for the feature being touched. Spawn more than one for distinct subsystems (e.g. one for the API path, one for the UI path).
+- `explore` to scout/map the area: entrypoints, call-chains, data flow, and the existing patterns/tests for the feature being touched. Spawn more than one for distinct subsystems (e.g. one for the API path, one for the UI path). In Pi, pass `cwd: ".worktrees/<number>-<short-desc>"` for every explore task.
 - Specialist advisors for stack-specific depth — **read-only, for understanding only, never to produce the diff**:
   - `frontend-expert` for React, routing, UI, state, i18n, browser flows, client-side architecture
   - `fastapi-expert` for backend APIs, data models, migrations, async jobs, server-side logic

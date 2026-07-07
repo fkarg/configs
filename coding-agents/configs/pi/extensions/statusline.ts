@@ -54,6 +54,58 @@ function coloredLineDelta(add: number, del: number) {
   return `\x1b[32m+${add}\x1b[0m/\x1b[31m-${del}\x1b[0m`;
 }
 
+function formatTokens(count: number) {
+  if (count < 1000) return String(count);
+  if (count < 10000) return `${(count / 1000).toFixed(1)}k`;
+  if (count < 1000000) return `${Math.round(count / 1000)}k`;
+  return `${(count / 1000000).toFixed(1)}M`;
+}
+
+function sessionTotals(ctx: ExtensionContext) {
+  const totals = { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, cost: 0, assistantTurns: 0, messages: 0 };
+  for (const entry of ctx.sessionManager.getBranch()) {
+    if (entry.type !== "message") continue;
+    totals.messages++;
+    const message = entry.message as any;
+    if (message.role !== "assistant") continue;
+    totals.assistantTurns++;
+    const usage = message.usage;
+    if (!usage) continue;
+    totals.input += usage.input || 0;
+    totals.output += usage.output || 0;
+    totals.cacheRead += usage.cacheRead || 0;
+    totals.cacheWrite += usage.cacheWrite || 0;
+    totals.cost += usage.cost?.total || 0;
+  }
+  return totals;
+}
+
+function sessionStatus(ctx: ExtensionContext) {
+  const usage = ctx.getContextUsage();
+  const totals = sessionTotals(ctx);
+  const parts = [];
+  if (usage?.tokens) parts.push(`ctx ${formatTokens(usage.tokens)}`);
+  if (totals.assistantTurns) parts.push(`${totals.assistantTurns}t`);
+  if (totals.input || totals.output) parts.push(`↑${formatTokens(totals.input)} ↓${formatTokens(totals.output)}`);
+  if (totals.cost) parts.push(`$${totals.cost.toFixed(3)}`);
+  return parts.length > 0 ? `${C_DIM}${parts.join(" ")}${C_RESET}` : undefined;
+}
+
+function usageReport(ctx: ExtensionContext) {
+  const totals = sessionTotals(ctx);
+  const usage = ctx.getContextUsage();
+  const model = ctx.model ? `${ctx.model.provider}/${ctx.model.id}` : "unknown";
+  return [
+    `Model: ${model}`,
+    `Context: ${usage?.tokens ? formatTokens(usage.tokens) : "unknown"}${usage?.contextWindow ? ` / ${formatTokens(usage.contextWindow)}` : ""}${usage?.percent !== null && usage?.percent !== undefined ? ` (${usage.percent.toFixed(1)}%)` : ""}`,
+    `Turns: ${totals.assistantTurns}`,
+    `Messages on branch: ${totals.messages}`,
+    `Tokens: ↑${formatTokens(totals.input)} ↓${formatTokens(totals.output)} R${formatTokens(totals.cacheRead)} W${formatTokens(totals.cacheWrite)}`,
+    `Cost: $${totals.cost.toFixed(4)}`,
+    `Session: ${ctx.sessionManager.getSessionName() || ctx.sessionManager.getSessionId()}`,
+  ].join("\n");
+}
+
 function formatDuration(seconds: number) {
   const s = Math.max(0, Math.floor(seconds));
   const h = Math.floor(s / 3600);
@@ -134,6 +186,7 @@ async function refresh(
     del: Math.max(0, counts.del - baseline.del),
   };
   ctx.ui.setStatus("fkarg-loc", coloredLineDelta(loc.add, loc.del));
+  ctx.ui.setStatus("fkarg-session", sessionStatus(ctx));
   ctx.ui.setStatus("fkarg-quota", quota);
 }
 
@@ -143,6 +196,16 @@ async function reset(pi: ExtensionAPI, ctx: ExtensionContext) {
 }
 
 export default async function (pi: ExtensionAPI) {
+  let refreshTimer: NodeJS.Timeout | undefined;
+
+  pi.registerCommand("usage", {
+    description: "Show current session/model token and cost usage",
+    handler: async (_args, ctx) => {
+      await refresh(pi, ctx);
+      ctx.ui.notify(usageReport(ctx), "info");
+    },
+  });
+
   pi.registerCommand("statusline-reset", {
     description: "Reset the statusline LOC baseline",
     handler: async (_args, ctx) => {
@@ -152,7 +215,11 @@ export default async function (pi: ExtensionAPI) {
   });
 
   pi.on("session_start", async (_event, ctx) => {
+    if (refreshTimer) clearInterval(refreshTimer);
     await reset(pi, ctx);
+    refreshTimer = setInterval(() => {
+      if (lastContext) void refresh(pi, lastContext);
+    }, 15_000);
   });
 
   pi.on("turn_start", async (_event, ctx) => {
@@ -175,8 +242,19 @@ export default async function (pi: ExtensionAPI) {
     await refresh(pi, ctx);
   });
 
+  pi.on("message_end", async (_event, ctx) => {
+    await refresh(pi, ctx);
+  });
+
+  pi.on("session_info_changed", async (_event, ctx) => {
+    await refresh(pi, ctx);
+  });
+
   pi.on("session_shutdown", async () => {
+    if (refreshTimer) clearInterval(refreshTimer);
+    refreshTimer = undefined;
     lastContext?.ui.setStatus("fkarg-loc", undefined);
+    lastContext?.ui.setStatus("fkarg-session", undefined);
     lastContext?.ui.setStatus("fkarg-quota", undefined);
     lastContext = undefined;
   });

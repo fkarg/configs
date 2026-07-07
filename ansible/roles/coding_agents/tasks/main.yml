@@ -10,6 +10,9 @@
   loop:
     - "~/.config/opencode"
     - "~/.config/opencode/agents"
+    - "~/.config/opencode/plugins"
+    - "~/.config/opencode/shared"
+    - "~/.config/opencode/shared/statusline"
     - "~/.claude"
     - "~/.claude/agents"
     - "~/.claude/skills"
@@ -20,8 +23,13 @@
     - "~/.copilot"
     - "~/.copilot/agents"
     - "~/.pi/agent"
+    - "~/.pi/agent/agents"
+    - "~/.pi/agent/skills"
     - "~/.pi/agent/extensions"
     - "~/.pi/agent/extensions/powerline-footer"
+    - "~/.pi/agent/extensions/subagent"
+    - "~/.pi/agent/shared"
+    - "~/.pi/agent/shared/statusline"
     - "~/.local/bin"
   loop_control:
     loop_var: ca_global_dir
@@ -72,8 +80,15 @@
     - { src: "claude/statusline-loc-reset.sh", dest: "~/.claude/statusline-loc-reset.sh" }
     - { src: "copilot/settings.json",        dest: "~/.copilot/settings.json" }
     - { src: "opencode/opencode.json",       dest: "~/.config/opencode/opencode.json" }
+    - { src: "opencode/tui.json",            dest: "~/.config/opencode/tui.json" }
+    - { src: "opencode/plugins/statusline.tsx", dest: "~/.config/opencode/plugins/statusline.tsx" }
     - { src: "pi/extensions/statusline.ts",   dest: "~/.pi/agent/extensions/statusline.ts" }
+    - { src: "pi/extensions/symbols.ts",      dest: "~/.pi/agent/extensions/symbols.ts" }
+    - { src: "pi/extensions/subagent/index.ts", dest: "~/.pi/agent/extensions/subagent/index.ts" }
+    - { src: "pi/extensions/subagent/agents.ts", dest: "~/.pi/agent/extensions/subagent/agents.ts" }
     - { src: "pi/powerline-footer/theme.json", dest: "~/.pi/agent/extensions/powerline-footer/theme.json" }
+    - { src: "shared/statusline/core.mjs",    dest: "~/.config/opencode/shared/statusline/core.mjs" }
+    - { src: "shared/statusline/core.mjs",    dest: "~/.pi/agent/shared/statusline/core.mjs" }
     # Shared global working-style prefs, one source -> every tool's global instructions file.
     - { src: "shared/AGENTS.md",             dest: "~/.claude/CLAUDE.md" }
     - { src: "shared/AGENTS.md",             dest: "~/.codex/AGENTS.md" }
@@ -205,6 +220,38 @@
   loop: "{{ ca_codex_plugin_skill_globs }}"
   changed_when: false
   tags: [codex]
+
+- name: Discover generated Pi agents
+  find:
+    paths: "{{ coding_agents_source_dir }}/generated/pi/agents"
+    patterns: "*.md"
+  register: ca_pi_agents
+
+- name: Symlink Pi agents for the subagent extension
+  file:
+    src: "{{ item.path }}"
+    dest: "~/.pi/agent/agents/{{ item.path | basename }}"
+    state: link
+    force: true
+  loop: "{{ ca_pi_agents.files }}"
+  loop_control:
+    label: "{{ item.path | basename }}"
+
+- name: Discover generated Pi skills
+  find:
+    paths: "{{ coding_agents_source_dir }}/generated/pi/skills"
+    file_type: directory
+  register: ca_pi_skills
+
+- name: Symlink Pi skills
+  file:
+    src: "{{ item.path }}"
+    dest: "~/.pi/agent/skills/{{ item.path | basename }}"
+    state: link
+    force: true
+  loop: "{{ ca_pi_skills.files }}"
+  loop_control:
+    label: "{{ item.path | basename }}"
 
 - name: Discover generated Copilot CLI agents
   find:

@@ -6,6 +6,7 @@ Outputs (regenerated each run):
     generated/claude/agents/<name>.md           (Claude Code subagent)
     generated/codex/agents/<name>.toml          (Codex CLI subagent)
     generated/copilot/agents/<name>.agent.md    (Copilot CLI custom agent)
+    generated/pi/agents/<name>.md               (Pi subagent extension agent)
 
 Agents with `mode: primary` additionally get a Skill variant, since
 Claude Code and Codex CLI only ever install agents as subagents (no "primary
@@ -187,6 +188,19 @@ def copilot_tools_for(perms: Permissions) -> list[str] | None:
     return allowed
 
 
+def pi_tools_for(perms: Permissions) -> list[str] | None:
+    """Return Pi built-in tool allowlist when restricting; else None (inherit all)."""
+    if perms.edit == "allow" and perms.bash == "allow":
+        return None
+
+    allowed = ["read", "write", "edit", "bash", "symbols"]
+    if perms.edit == "deny":
+        allowed = [t for t in allowed if t not in {"write", "edit"}]
+    if perms.bash == "deny":
+        allowed = [t for t in allowed if t != "bash"]
+    return allowed
+
+
 def codex_sandbox_for(perms: Permissions) -> str | None:
     """Only emit sandbox_mode when restricting; otherwise inherit parent."""
     if perms.edit == "deny":
@@ -242,6 +256,15 @@ def copilot_agent(agent: Agent) -> str:
     return "\n".join(lines) + "\n\n" + agent.body.lstrip()
 
 
+def pi_agent(agent: Agent) -> str:
+    lines = ["---", f"name: {agent.name}", f"description: {yaml_quote(agent.description)}"]
+    tools = pi_tools_for(agent.permissions)
+    if tools is not None:
+        lines.append(f"tools: {', '.join(tools)}")
+    lines.append("---")
+    return "\n".join(lines) + "\n\n" + agent.body.lstrip()
+
+
 def skill_variant(agent: Agent) -> str:
     lines = ["---", f"name: {agent.name}", f"description: {yaml_quote(agent.description)}", "---"]
     return "\n".join(lines) + "\n\n" + agent.body.lstrip()
@@ -261,9 +284,11 @@ def main() -> int:
     claude_dir = OUT / "claude" / "agents"
     codex_dir = OUT / "codex" / "agents"
     copilot_dir = OUT / "copilot" / "agents"
+    pi_dir = OUT / "pi" / "agents"
     claude_skills_dir = OUT / "claude" / "skills"
     codex_skills_dir = OUT / "codex" / "skills"
-    for d in (claude_dir, codex_dir, copilot_dir, claude_skills_dir, codex_skills_dir):
+    pi_skills_dir = OUT / "pi" / "skills"
+    for d in (claude_dir, codex_dir, copilot_dir, pi_dir, claude_skills_dir, codex_skills_dir, pi_skills_dir):
         reset_dir(d)
 
     count = 0
@@ -276,11 +301,12 @@ def main() -> int:
         (claude_dir / f"{agent.name}.md").write_text(claude_agent(agent))
         (codex_dir / f"{agent.name}.toml").write_text(codex_agent(agent))
         (copilot_dir / f"{agent.name}.agent.md").write_text(copilot_agent(agent))
+        (pi_dir / f"{agent.name}.md").write_text(pi_agent(agent))
         count += 1
 
         if agent.mode == "primary":
             skill = skill_variant(agent)
-            for skills_dir in (claude_skills_dir, codex_skills_dir):
+            for skills_dir in (claude_skills_dir, codex_skills_dir, pi_skills_dir):
                 skill_dir = skills_dir / agent.name
                 skill_dir.mkdir(parents=True, exist_ok=True)
                 (skill_dir / "SKILL.md").write_text(skill)
