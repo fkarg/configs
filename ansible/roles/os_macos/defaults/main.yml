@@ -4,3 +4,8 @@ brew_packages_common: []
 brew_packages_extra: []
 brew_casks_common: []
 brew_casks_extra: []
+
+# Run `brew update && brew upgrade` during a playbook run. Defaults on; set false
+# per-host (e.g. caeli, where upgrades happen manually) so routine config/template
+# runs stay fast. Force a one-off with `-e brew_upgrade_enabled=true`.
+brew_upgrade_enabled: true

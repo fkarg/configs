@@ -62,6 +62,11 @@ ctrl_as_cmd_enabled: true
 # also wanted (they sit on q/b/o/... — verify each key_code in Karabiner-EventViewer).
 ctrl_as_cmd_keys: [c, v, x, z, a, w, t, f, n, s, r, l, d, o, return_or_enter]
 
+# brew update/upgrade happens manually here often enough that baking a ~2 min
+# update/upgrade cycle into every config run is just friction. Skip it by
+# default; force a one-off with `-e brew_upgrade_enabled=true`.
+brew_upgrade_enabled: false
+
 # INVARIANT — Top-level only. (See spec for refresh procedure.)
 # Both `brew_packages_common` and `brew_casks_common` below must list ONLY
 # top-level (manually installed) packages, never transitive dependencies.

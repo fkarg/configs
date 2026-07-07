@@ -24,6 +24,7 @@
     update_homebrew: true
     upgrade_all: true
     path: "{{ brew_bin | dirname }}"
+  when: brew_upgrade_enabled | default(true) | bool
   tags: [brew_upgrade]
 
 - name: Install brew formulae
