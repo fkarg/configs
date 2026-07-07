@@ -114,3 +114,4 @@ Make sure you have an ssh key which is registered on your github account for thi
 
 flakes?
 fetchgit nixos-hardware ?? common-modules davon
+- fish plugin to show command history
