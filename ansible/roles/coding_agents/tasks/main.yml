@@ -122,6 +122,13 @@
   register: ca_pi_provider_failover_merge
   changed_when: "'changed:' in ca_pi_provider_failover_merge.stdout"
 
+- name: Patch pi-powerline-footer context usage refresh
+  command:
+    cmd: python3 patch_pi_powerline_footer.py
+    chdir: "{{ coding_agents_source_dir }}"
+  register: ca_pi_powerline_patch
+  changed_when: "'changed:' in ca_pi_powerline_patch.stdout"
+
 - name: Build per-tool agent variants from canonical source
   command:
     cmd: python3 build.py
