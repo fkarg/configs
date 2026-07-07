@@ -9,7 +9,12 @@
       "Bash(uv run pyrefly:*)",
       "Bash(git log:*)",
       "Bash(git check-ignore:*)",
-      "Bash(uv sync:*)"
+      "Bash(uv sync:*)",
+      "Bash(gh pr *)",
+      "Read(//tmp/**)",
+      "Bash(git fetch *)",
+      "Bash(git switch *)",
+      "Bash(timeout 300 pnpm test)"
     ],
     "defaultMode": "auto"
   },
@@ -48,6 +53,9 @@
         ]
       }
     ]
+  },
+  "worktree": {
+    "baseRef": "head"
   },
   "statusLine": {
     "type": "command",
