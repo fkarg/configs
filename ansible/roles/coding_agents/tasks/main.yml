@@ -19,6 +19,9 @@
     - "~/.codex/skills"
     - "~/.copilot"
     - "~/.copilot/agents"
+    - "~/.pi/agent"
+    - "~/.pi/agent/extensions"
+    - "~/.pi/agent/extensions/powerline-footer"
     - "~/.local/bin"
   loop_control:
     loop_var: ca_global_dir
@@ -69,6 +72,8 @@
     - { src: "claude/statusline-loc-reset.sh", dest: "~/.claude/statusline-loc-reset.sh" }
     - { src: "copilot/settings.json",        dest: "~/.copilot/settings.json" }
     - { src: "opencode/opencode.json",       dest: "~/.config/opencode/opencode.json" }
+    - { src: "pi/extensions/statusline.ts",   dest: "~/.pi/agent/extensions/statusline.ts" }
+    - { src: "pi/powerline-footer/theme.json", dest: "~/.pi/agent/extensions/powerline-footer/theme.json" }
     # Shared global working-style prefs, one source -> every tool's global instructions file.
     - { src: "shared/AGENTS.md",             dest: "~/.claude/CLAUDE.md" }
     - { src: "shared/AGENTS.md",             dest: "~/.codex/AGENTS.md" }
@@ -86,6 +91,20 @@
     chdir: "{{ coding_agents_source_dir }}"
   register: ca_codex_merge
   changed_when: "'changed:' in ca_codex_merge.stdout"
+
+- name: Merge curated Pi settings into the local Pi config
+  command:
+    cmd: python3 merge_pi_settings.py
+    chdir: "{{ coding_agents_source_dir }}"
+  register: ca_pi_merge
+  changed_when: "'changed:' in ca_pi_merge.stdout"
+
+- name: Merge curated Pi provider failover settings
+  command:
+    cmd: python3 merge_pi_settings.py configs/pi/provider-failover.json ~/.pi/agent/provider-failover.json
+    chdir: "{{ coding_agents_source_dir }}"
+  register: ca_pi_provider_failover_merge
+  changed_when: "'changed:' in ca_pi_provider_failover_merge.stdout"
 
 - name: Build per-tool agent variants from canonical source
   command:

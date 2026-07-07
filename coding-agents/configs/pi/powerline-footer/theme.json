@@ -1,0 +1,12 @@
+{
+  "colors": {
+    "model": "#d7af00",
+    "path": "#00afaf",
+    "gitClean": "#af5fff",
+    "gitDirty": "#af5fff",
+    "context": "#5f87d7",
+    "tokens": "#ffffff",
+    "cost": "#ffffff",
+    "separator": "dim"
+  }
+}

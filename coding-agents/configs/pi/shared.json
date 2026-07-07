@@ -1,0 +1,26 @@
+{
+  "packages": [
+    "npm:pi-powerline-footer@0.6.1",
+    "npm:pi-multi-account@1.13.14"
+  ],
+  "retry": {
+    "provider": {
+      "maxRetries": 0
+    }
+  },
+  "powerline": {
+    "preset": "default",
+    "customItems": [
+      {
+        "id": "fkarg-loc",
+        "position": "right",
+        "hideWhenMissing": true
+      },
+      {
+        "id": "fkarg-quota",
+        "position": "right",
+        "hideWhenMissing": true
+      }
+    ]
+  }
+}

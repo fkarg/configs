@@ -51,6 +51,7 @@ Each tool's global config splits into two layers:
 | OpenCode | `opencode/opencode.json` | `~/.config/opencode/opencode.json` | symlink                 | env-var secrets                                   |
 | Copilot  | `copilot/settings.json`  | `~/.copilot/settings.json`         | symlink                 | `~/.copilot/config.json` (trustedFolders, login)  |
 | Codex    | `codex/shared.toml`      | `~/.codex/config.toml`             | `merge_codex_config.py` | the rest of `~/.codex/config.toml`                |
+| Pi        | `pi/shared.json`, `pi/provider-failover.json`, `pi/extensions/`, `pi/powerline-footer/` | `~/.pi/agent/`             | merge + symlinked extensions/theme | `auth.json`, sessions, trust, local settings      |
 
 Symlinks work for tools that only read the file or write it in place. **Codex is
 different**: it atomically rewrites `~/.codex/config.toml` (a `rename()` that
@@ -58,6 +59,13 @@ clobbers a symlink) and mixes host state into it. So instead of a symlink,
 `merge_codex_config.py` overlays just the keys from `codex/shared.toml` onto the
 codex-owned local file, leaving trusted projects / `oss_provider` / nux intact.
 Edit shared codex prefs in `codex/shared.toml`, then re-run the role to apply.
+
+Pi is also merge-based for settings because `~/.pi/agent/settings.json` stores
+login-independent but machine-owned state such as enabled models and changelog
+counters. Shared Pi defaults live in `pi/shared.json`; local extensions are
+symlinked into `~/.pi/agent/extensions/`. Package-specific theme overrides, such
+as `pi-powerline-footer/theme.json`, are symlinked under that same extension
+tree.
 
 ### Shared cross-tool prefs (`configs/shared/AGENTS.md`)
 
