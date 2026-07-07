@@ -84,7 +84,10 @@ function sessionStatus(ctx: ExtensionContext) {
   const usage = ctx.getContextUsage();
   const totals = sessionTotals(ctx);
   const parts = [];
-  if (usage?.tokens) parts.push(`ctx ${formatTokens(usage.tokens)}`);
+  if (usage?.tokens) {
+    const percent = usage.percent !== null && usage.percent !== undefined ? ` ${usage.percent.toFixed(1)}%` : "";
+    parts.push(`ctx ${formatTokens(usage.tokens)}${percent}`);
+  }
   if (totals.assistantTurns) parts.push(`${totals.assistantTurns}t`);
   if (totals.input || totals.output) parts.push(`↑${formatTokens(totals.input)} ↓${formatTokens(totals.output)}`);
   if (totals.cost) parts.push(`$${totals.cost.toFixed(3)}`);
@@ -219,7 +222,7 @@ export default async function (pi: ExtensionAPI) {
     await reset(pi, ctx);
     refreshTimer = setInterval(() => {
       if (lastContext) void refresh(pi, lastContext);
-    }, 15_000);
+    }, 5_000);
   });
 
   pi.on("turn_start", async (_event, ctx) => {
@@ -247,6 +250,20 @@ export default async function (pi: ExtensionAPI) {
   });
 
   pi.on("session_info_changed", async (_event, ctx) => {
+    await refresh(pi, ctx);
+  });
+
+  pi.on("session_compact", async (_event, ctx) => {
+    await refresh(pi, ctx);
+    setTimeout(() => void refresh(pi, ctx), 250);
+    setTimeout(() => void refresh(pi, ctx), 1000);
+  });
+
+  pi.on("session_tree", async (_event, ctx) => {
+    await refresh(pi, ctx);
+  });
+
+  pi.on("context", async (_event, ctx) => {
     await refresh(pi, ctx);
   });
 
