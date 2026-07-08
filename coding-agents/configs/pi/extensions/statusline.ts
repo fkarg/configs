@@ -80,20 +80,6 @@ function sessionTotals(ctx: ExtensionContext) {
   return totals;
 }
 
-function sessionStatus(ctx: ExtensionContext) {
-  const usage = ctx.getContextUsage();
-  const totals = sessionTotals(ctx);
-  const parts = [];
-  if (usage?.tokens) {
-    const percent = usage.percent !== null && usage.percent !== undefined ? ` ${usage.percent.toFixed(1)}%` : "";
-    parts.push(`ctx ${formatTokens(usage.tokens)}${percent}`);
-  }
-  if (totals.assistantTurns) parts.push(`${totals.assistantTurns}t`);
-  if (totals.input || totals.output) parts.push(`↑${formatTokens(totals.input)} ↓${formatTokens(totals.output)}`);
-  if (totals.cost) parts.push(`$${totals.cost.toFixed(3)}`);
-  return parts.length > 0 ? `${C_DIM}${parts.join(" ")}${C_RESET}` : undefined;
-}
-
 function usageReport(ctx: ExtensionContext) {
   const totals = sessionTotals(ctx);
   const usage = ctx.getContextUsage();
@@ -189,7 +175,6 @@ async function refresh(
     del: Math.max(0, counts.del - baseline.del),
   };
   ctx.ui.setStatus("fkarg-loc", coloredLineDelta(loc.add, loc.del));
-  ctx.ui.setStatus("fkarg-session", sessionStatus(ctx));
   ctx.ui.setStatus("fkarg-quota", quota);
 }
 
