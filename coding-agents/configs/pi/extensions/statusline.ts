@@ -17,6 +17,7 @@ type UsageWindow = {
 type UsageSnapshot = {
   provider: string;
   family?: string;
+  fetchedAt?: number;
   primary?: UsageWindow;
   secondary?: UsageWindow;
 };
@@ -172,6 +173,7 @@ async function usageSnapshot(provider?: string): Promise<UsageSnapshot | undefin
 async function quotaStatus(ctx: ExtensionContext) {
   const snapshot = await usageSnapshot(ctx.model?.provider).catch(() => undefined);
   if (!snapshot) return undefined;
+  if (snapshot.fetchedAt && Date.now() - snapshot.fetchedAt > 10 * 60 * 1000) return undefined;
   const parts = [];
   if (snapshot.primary) parts.push(quotaSegment(quotaLabel(snapshot, "primary"), snapshot.primary, 5 * 60 * 60, true, false));
   if (snapshot.secondary) parts.push(quotaSegment(quotaLabel(snapshot, "secondary"), snapshot.secondary, 7 * 24 * 60 * 60, false, true));
