@@ -3,10 +3,13 @@
 
 {% if ansible_facts['system'] == 'Darwin' %}
 # Homebrew PATH (macOS)
+# -gP keeps this session-local instead of persisting to the universal
+# fish_user_paths, which lives in the repo-shared fish_variables and
+# would leak macOS paths onto Linux hosts.
 if test -d /opt/homebrew/bin
-    fish_add_path /opt/homebrew/bin
+    fish_add_path -gP /opt/homebrew/bin
 else if test -d /usr/local/bin
-    fish_add_path /usr/local/bin
+    fish_add_path -gP /usr/local/bin
 end
 
 # Homebrew 6.0 made "ask mode" (a confirm prompt before install/upgrade) the
@@ -28,8 +31,8 @@ end
 
 
 
-set -x PATH ~/.local/bin $PATH
-set -x PATH ~/.cargo/bin $PATH
+# fish_add_path -P is idempotent, so nested shells don't re-prepend these.
+fish_add_path -gP ~/.cargo/bin ~/.local/bin ~/.local/share/pnpm/bin
 
 # set -x LD_LIBRARY_PATH (nix-build -E 'import <nixpkgs>' -A 'gcc.cc.lib')/lib64
 # set -x PATH $LD_LIBRARY_PATH $PATH
