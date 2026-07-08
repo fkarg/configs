@@ -22,11 +22,6 @@
         "hideWhenMissing": true
       },
       {
-        "id": "fkarg-session",
-        "position": "right",
-        "hideWhenMissing": true
-      },
-      {
         "id": "fkarg-quota",
         "position": "right",
         "hideWhenMissing": true

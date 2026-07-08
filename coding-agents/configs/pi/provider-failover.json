@@ -1,3 +1,5 @@
 {
-  "showUsage": false
+  "showUsage": true,
+  "usageRefreshMs": 300000,
+  "usageStatusRefreshMs": 60000
 }
