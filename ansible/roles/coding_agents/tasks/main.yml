@@ -83,7 +83,9 @@
     - { src: "opencode/tui.json",            dest: "~/.config/opencode/tui.json" }
     - { src: "opencode/plugins/statusline.tsx", dest: "~/.config/opencode/plugins/statusline.tsx" }
     - { src: "pi/extensions/statusline.ts",   dest: "~/.pi/agent/extensions/statusline.ts" }
+    - { src: "pi/extensions/agents-context.ts", dest: "~/.pi/agent/extensions/agents-context.ts" }
     - { src: "pi/extensions/cwd.ts",         dest: "~/.pi/agent/extensions/cwd.ts" }
+    - { src: "pi/extensions/prompt-tools.ts", dest: "~/.pi/agent/extensions/prompt-tools.ts" }
     - { src: "pi/extensions/symbols.ts",      dest: "~/.pi/agent/extensions/symbols.ts" }
     - { src: "pi/extensions/subagent/index.ts", dest: "~/.pi/agent/extensions/subagent/index.ts" }
     - { src: "pi/extensions/subagent/agents.ts", dest: "~/.pi/agent/extensions/subagent/agents.ts" }
