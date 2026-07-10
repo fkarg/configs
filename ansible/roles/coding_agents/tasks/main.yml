@@ -131,6 +131,13 @@
   register: ca_pi_powerline_patch
   changed_when: "'changed:' in ca_pi_powerline_patch.stdout"
 
+- name: Patch pi-multi-account quota footer formatting
+  command:
+    cmd: python3 patch_pi_multi_account.py
+    chdir: "{{ coding_agents_source_dir }}"
+  register: ca_pi_multi_account_patch
+  changed_when: "'changed:' in ca_pi_multi_account_patch.stdout"
+
 - name: Build per-tool agent variants from canonical source
   command:
     cmd: python3 build.py

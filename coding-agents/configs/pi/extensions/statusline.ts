@@ -169,13 +169,12 @@ async function refresh(
   ctx: ExtensionContext,
 ) {
   lastContext = ctx;
-  const [counts, quota] = await Promise.all([gitDiffCounts(pi, ctx), quotaStatus(ctx)]);
+  const counts = await gitDiffCounts(pi, ctx);
   const loc = {
     add: Math.max(0, counts.add - baseline.add),
     del: Math.max(0, counts.del - baseline.del),
   };
   ctx.ui.setStatus("fkarg-loc", coloredLineDelta(loc.add, loc.del));
-  ctx.ui.setStatus("fkarg-quota", quota);
 }
 
 async function reset(pi: ExtensionAPI, ctx: ExtensionContext) {
