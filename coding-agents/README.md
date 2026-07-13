@@ -48,7 +48,7 @@ Each tool's global config splits into two layers:
 | Tool     | Tracked (curated)        | Synced to                          | Mechanism               | Local-only (untracked)                            |
 | -------- | ------------------------ | ---------------------------------- | ----------------------- | ------------------------------------------------- |
 | Claude   | `claude/settings.json`   | `~/.claude/settings.json`          | symlink                 | `~/.claude/settings.local.json`                   |
-| OpenCode | `opencode/opencode.json` | `~/.config/opencode/opencode.json` | symlink                 | env-var secrets                                   |
+| OpenCode | `opencode/opencode.json`, `opencode/tui.json`, `opencode/plugins/` | `~/.config/opencode/` | symlink | env-var secrets |
 | Copilot  | `copilot/settings.json`  | `~/.copilot/settings.json`         | symlink                 | `~/.copilot/config.json` (trustedFolders, login)  |
 | Codex    | `codex/shared.toml`      | `~/.codex/config.toml`             | `merge_codex_config.py` | the rest of `~/.codex/config.toml`                |
 | Pi        | `pi/shared.json`, `pi/provider-failover.json`, `pi/extensions/`, `pi/powerline-footer/` | `~/.pi/agent/`             | merge + symlinked extensions/theme | `auth.json`, sessions, trust, local settings      |
@@ -59,6 +59,12 @@ clobbers a symlink) and mixes host state into it. So instead of a symlink,
 `merge_codex_config.py` overlays just the keys from `codex/shared.toml` onto the
 codex-owned local file, leaving trusted projects / `oss_provider` / nux intact.
 Edit shared codex prefs in `codex/shared.toml`, then re-run the role to apply.
+
+OpenCode's TUI customization is separate from its main `opencode.json`; edit
+`opencode/tui.json` and local plugins under `opencode/plugins/`. The tracked
+statusline plugin renders an additive bottom bar because OpenCode currently
+exposes `app_bottom` and prompt/sidebar slots, but not a replaceable native
+session footer slot.
 
 Pi is also merge-based for settings because `~/.pi/agent/settings.json` stores
 login-independent but machine-owned state such as enabled models and changelog
