@@ -33,6 +33,19 @@ else
   header="Project AGENTS.md (auto-loaded because no CLAUDE.md is present):"
 fi
 
+# Snapshot what we inject so the PostToolUse companion hook
+# (agents-md-diff-hook.sh) can diff later on-disk changes against it.
+session="$(printf '%s' "$payload" | jq -r '.session_id // empty' 2>/dev/null)" || session=""
+if [ -n "$session" ]; then
+  state="$HOME/.cache/claude-agents-md/$session"
+  mkdir -p "$state" 2>/dev/null &&
+    cp -f "$root/AGENTS.md" "$state/snapshot.md" 2>/dev/null &&
+    printf '%s\n' "$root/AGENTS.md" > "$state/path" 2>/dev/null
+  # Opportunistic GC of snapshots from long-dead sessions.
+  find "$HOME/.cache/claude-agents-md" -mindepth 1 -maxdepth 1 -type d -mtime +7 \
+    -exec rm -rf {} + 2>/dev/null
+fi
+
 jq -Rs --arg h "$header" \
   '{hookSpecificOutput: {hookEventName: "SessionStart", additionalContext: ($h + "\n\n" + .)}}' \
   "$root/AGENTS.md" 2>/dev/null || true
