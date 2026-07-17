@@ -39,9 +39,10 @@ fish_add_path -gP ~/.cargo/bin ~/.local/bin ~/.local/share/pnpm/bin
 
 set -x FZF_DEFAULT_COMMAND 'rg --files --no-ignore --hidden --follow --glob "!.git/*"'
 
-# Force truecolor. kitty sets `term xterm` (for remote terminfo compat), which
-# doesn't advertise the RGB capability, so terminal multiplexers fall back to
-# 256 colors. tmux works around this with `terminal-overrides ",xterm*:RGB"`;
+# Force truecolor. kitty sets `term xterm-256color` for remote terminfo
+# compatibility, but it doesn't advertise the RGB capability, so terminal
+# multiplexers fall back to 256 colors. tmux works around this with
+# `terminal-overrides ",xterm*:RGB"`;
 # zellij has no terminfo override and keys truecolor purely off $COLORTERM, so
 # exporting it here is what makes its (and everything else's) colors correct.
 set -x COLORTERM truecolor
