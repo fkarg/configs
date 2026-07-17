@@ -9,8 +9,11 @@
 #
 # Put ONLY machine-independent preferences here. Never trusted paths, providers,
 # or anything secret.
-model = "gpt-5.5"
-model_reasoning_effort = "medium"
+#
+# `unmanage` lists formerly-curated top-level keys to DELETE from the local
+# config on merge — codex's built-in default takes over. Used to retire pins
+# (e.g. the old model pin) without leaving stale values on other hosts.
+unmanage = ["model", "model_reasoning_effort"]
 personality = "pragmatic"
 
 [tui]

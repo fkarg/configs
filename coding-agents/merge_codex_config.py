@@ -100,14 +100,31 @@ def _set_table(lines: list[str], name: str, table: dict) -> None:
     lines[header_idx + 1 : block_end] = new_keys + kept
 
 
+def _unset_top_level(lines: list[str], keys: list[str]) -> None:
+    """Delete retired curated keys from the preamble (before the first table)."""
+    headers = _header_indices(lines)
+    preamble_end = headers[0] if headers else len(lines)
+    patterns = [_key_line_re(key) for key in keys]
+    kept = [
+        line
+        for i, line in enumerate(lines)
+        if i >= preamble_end or not any(pat.match(line) for pat in patterns)
+    ]
+    lines[:] = kept
+
+
 def merge(shared_path: Path, target_path: Path) -> bool:
     curated = tomllib.loads(shared_path.read_text())
+    unmanage = curated.pop("unmanage", [])
+    if not isinstance(unmanage, list) or not all(isinstance(k, str) for k in unmanage):
+        raise TypeError("shared.toml: `unmanage` must be an array of key names")
     scalars = {k: v for k, v in curated.items() if not isinstance(v, dict)}
     tables = {k: v for k, v in curated.items() if isinstance(v, dict)}
 
     original = target_path.read_text() if target_path.exists() else ""
     lines = original.splitlines()
 
+    _unset_top_level(lines, unmanage)
     _set_top_level(lines, scalars)
     for name, table in tables.items():
         _set_table(lines, name, table)
