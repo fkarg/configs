@@ -144,12 +144,30 @@ def load_agent(path: Path) -> Agent:
         perm_raw = {}
 
     warnings: list[str] = []
+    known_top_keys = {"description", "mode", "permission"}
+    for key in fields:
+        if key not in known_top_keys:
+            warnings.append(f"unknown frontmatter key '{key}' (ignored — not translated to any tool)")
+
     # `task` controls whether the agent can spawn other subagents in opencode;
     # there's no clean cross-tool equivalent, so we accept it as known but skip translation.
     known_perm_keys = {"edit", "bash", "webfetch", "task"}
     for key in perm_raw:
         if key not in known_perm_keys:
             warnings.append(f"unknown permission key '{key}' (ignored)")
+
+    # Only `deny` translates outside opencode: `ask` degrades to allow in
+    # Claude/Copilot/Pi, and per-command bash overrides collapse to the `*` default.
+    for key in ("edit", "bash", "webfetch"):
+        raw = perm_raw.get(key)
+        if raw == "ask" or (isinstance(raw, dict) and "ask" in raw.values()):
+            warnings.append(
+                f"permission {key}: 'ask' is opencode-only — it degrades to ALLOW in Claude/Copilot/Pi"
+            )
+    if isinstance(perm_raw.get("bash"), dict) and set(perm_raw["bash"]) - {"*"}:
+        warnings.append(
+            "permission bash: per-command overrides are opencode-only — other tools get the '*' default"
+        )
 
     permissions = Permissions(
         edit=perm_raw.get("edit", "allow") if isinstance(perm_raw.get("edit"), str) else "allow",

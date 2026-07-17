@@ -162,6 +162,12 @@ Permission semantics are the part that actually needs translation:
 `task:` (opencode's subagent-delegation control) has no clean cross-tool
 analog and is left untranslated.
 
+**Only `deny` survives translation as a restriction.** `ask` is opencode-only and silently degrades to
+*allow* in Claude/Copilot/Pi, and per-command `bash` overrides collapse to the
+`"*"` default everywhere but opencode — don't rely on either as a safety gate
+outside opencode. `build.py` prints a `warn` line for both cases, and for any
+frontmatter key it doesn't translate.
+
 `mode: primary` / `mode: all` agents get installed everywhere as subagents
 even though they were authored as opencode primary modes. They're still
 invokable in the other tools; just don't expect them to behave as a "main mode".
