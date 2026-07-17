@@ -8,6 +8,11 @@ Outputs (regenerated each run):
     generated/copilot/agents/<name>.agent.md    (Copilot CLI custom agent)
     generated/pi/agents/<name>.md               (Pi subagent extension agent)
 
+Sources with `mode: skill` are pure skills — main-thread guidance documents,
+not delegatable workers. They emit only the Skill variants below and no agent
+files (the ansible role likewise skips them for opencode, which has no skill
+concept).
+
 Agents with `mode: primary` additionally get a Skill variant, since
 Claude Code and Codex CLI only ever install agents as subagents (no "primary
 mode" concept), which breaks workflows that need interactive checkpoints with
@@ -298,6 +303,15 @@ def main() -> int:
         for warning in agent.warnings:
             print(f"warn  {agent.name}: {warning}", file=sys.stderr)
 
+        if agent.mode == "skill":
+            skill = skill_variant(agent)
+            for skills_dir in (claude_skills_dir, codex_skills_dir, pi_skills_dir):
+                skill_dir = skills_dir / agent.name
+                skill_dir.mkdir(parents=True, exist_ok=True)
+                (skill_dir / "SKILL.md").write_text(skill)
+            skill_count += 1
+            continue
+
         (claude_dir / f"{agent.name}.md").write_text(claude_agent(agent))
         (codex_dir / f"{agent.name}.toml").write_text(codex_agent(agent))
         (copilot_dir / f"{agent.name}.agent.md").write_text(copilot_agent(agent))
@@ -312,7 +326,7 @@ def main() -> int:
                 (skill_dir / "SKILL.md").write_text(skill)
             skill_count += 1
 
-    print(f"generated {count} agents ({skill_count} also as skills) into {OUT.relative_to(REPO)}/")
+    print(f"generated {count} agents and {skill_count} skills into {OUT.relative_to(REPO)}/")
     return 0
 
 

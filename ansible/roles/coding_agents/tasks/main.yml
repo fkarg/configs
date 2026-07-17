@@ -160,6 +160,9 @@
   loop: "{{ ca_sources.files }}"
   loop_control:
     label: "{{ item.path | basename }}"
+  # mode: skill sources are pure skills; opencode has no skill concept and
+  # would misread them as agents.
+  when: "'mode: skill' not in lookup('file', item.path)"
 
 - name: Discover generated Claude Code agents
   find:

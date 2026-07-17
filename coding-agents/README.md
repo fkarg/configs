@@ -14,6 +14,12 @@ configs/<tool>/         curated global settings, synced to ~/.<tool> (see below)
 merge_codex_config.py   overlays curated codex prefs onto its local config.toml
 ```
 
+Most sources are subagents. `mode: primary` sources additionally get a Skill
+variant (Claude Code / Codex / Pi) so interactive workflows can run in the main
+thread. `mode: skill` sources are *pure* skills — guidance the main agent loads
+while doing the work itself (e.g. `writing-tests`) — and emit no agent files;
+the ansible role also skips them for opencode, which has no skill concept.
+
 ## Codex account switching
 
 `scripts/codex-account` snapshots file-based Codex credentials into
