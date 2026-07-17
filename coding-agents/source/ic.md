@@ -72,7 +72,7 @@ Dispatch fresh-context reviewers **in parallel** — they haven't seen this conv
 
 - Always, for non-trivial changes: `reviewer`, `murphyjitsu-reviewer`.
 - When the change matches their trigger: `security-reviewer`, `test-quality-reviewer` (pass it the step-2 invariants), `performance-reviewer`, `consistency-reviewer`.
-- `simplicity-reviewer` again only if the change budget tripped or new abstractions appeared since its post-green pass.
+- `simplicity-reviewer` again if the change budget tripped or new abstractions appeared since its post-green pass — and always when no cross-model counterpart is available (it's the same-model fallback for the minimalist pass below).
 
 **Cross-model pass (whenever a counterpart is available):** hand the same diff to a different-model-family CLI (selection as in step 3) with an explicitly *minimalist* brief — a different model has different blind spots, and LLM reviewers are verbosity-biased unless told otherwise. Pipe the diff on stdin; the counterpart's sandbox may not be able to read files or run commands:
 
