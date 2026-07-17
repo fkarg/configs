@@ -289,3 +289,22 @@
   loop: "{{ ca_copilot.files }}"
   loop_control:
     label: "{{ item.path | basename }}"
+
+# When a source agent is deleted, build.py stops regenerating it and the
+# per-tool symlinks above start dangling. Remove those (-xtype l = broken
+# symlinks only) so retired agents disappear on every host, not just where
+# they were deleted by hand.
+- name: Remove dangling symlinks of retired agents/skills
+  shell: find {{ ca_agents_dir }} -maxdepth 1 -xtype l -delete
+  loop:
+    - "~/.config/opencode/agents"
+    - "~/.claude/agents"
+    - "~/.claude/skills"
+    - "~/.codex/agents"
+    - "~/.codex/skills"
+    - "~/.copilot/agents"
+    - "~/.pi/agent/agents"
+    - "~/.pi/agent/skills"
+  loop_control:
+    loop_var: ca_agents_dir
+  changed_when: false
