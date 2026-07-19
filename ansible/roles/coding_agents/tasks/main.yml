@@ -291,11 +291,14 @@
     label: "{{ item.path | basename }}"
 
 # When a source agent is deleted, build.py stops regenerating it and the
-# per-tool symlinks above start dangling. Remove those (-xtype l = broken
-# symlinks only) so retired agents disappear on every host, not just where
-# they were deleted by hand.
+# per-tool symlinks above start dangling. Remove those broken symlinks so
+# retired agents disappear on every host, not just where they were deleted by
+# hand. Uses the portable `-type l ! -exec test -e` idiom instead of GNU
+# `-xtype l`: this role also runs on macOS, where the shell module's /bin/sh
+# resolves `find` to BSD /usr/bin/find, which has no -xtype (it errored on
+# every path there).
 - name: Remove dangling symlinks of retired agents/skills
-  shell: find {{ ca_agents_dir }} -maxdepth 1 -xtype l -delete
+  shell: 'find {{ ca_agents_dir }} -maxdepth 1 -type l ! -exec test -e {} \; -delete'
   loop:
     - "~/.config/opencode/agents"
     - "~/.claude/agents"
