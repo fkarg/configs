@@ -75,21 +75,26 @@ brew_upgrade_enabled: false
 brew_packages_common:
   # shell, prompt & file utilities
   - bat
+  - btop
   - coreutils
   - cowsay
   - direnv
   - eza
   - fish
   - fortune
+  - fzf
   - htop
+  - lf
   - ncdu
   - fastfetch
   - ripgrep-all
   - watch
   - wget
   - yq
+  - zellij
   - zoxide
   # editor, language servers & linters
+  - actionlint
   - languagetool
   - neovim
   - tinymist
@@ -123,6 +128,7 @@ brew_packages_common:
   - mosh
   - nmap
   - socat
+  - wireguard-tools
   - xpipe
   # storage & databases
   - minio-mc
@@ -132,7 +138,11 @@ brew_packages_common:
   - graphviz
   - psutils
   - qpdf
+  - svgbob
   - typst
+  # media
+  - ffmpeg
+  - yt-dlp
   # finance / accounting
   - beancount
   - beancount-language-server
@@ -146,9 +156,11 @@ brew_packages_common:
   - ccusage
   - gemini-cli
   - opencode
+  - pi-coding-agent
   # macOS-specific helpers
   - batt
   - m1ddc
+  - pngpaste
   - sleepwatcher
 brew_packages_extra: []
 
@@ -172,6 +184,7 @@ brew_casks_common:
   # communication & messaging
   - betterdiscord-installer
   - discord
+  - element
   - microsoft-teams
   - signal
   - telegram
@@ -189,20 +202,22 @@ brew_casks_common:
   - microsoft-word
   # productivity & documents
   - libreoffice
-  - marktext
+  - mark-text
   - obsidian
   - zotero
   # AI / coding agents
-  - claude-code
+  - claude-code@latest
   - codex
   - comfyui
   - copilot-cli
   - ollama-app
-  - wispr-flow
   # containers & virtualization
   - docker-desktop
   - utm
   # media
   - vlc
-  - yt-music
+  - youtube-to-mp3
+  # misc / experimental
+  - openlogi
+  - pear-desktop
 brew_casks_extra: []
