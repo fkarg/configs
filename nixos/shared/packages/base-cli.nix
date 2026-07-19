@@ -41,6 +41,10 @@
     nettools
     wireguard-tools
 
+    # media
+    ffmpeg
+    yt-dlp
+
     # network debugging
     dig
     ldns
@@ -53,6 +57,8 @@
     ripgrep
     ripgrep-all
     broot
+    fzf
+    lf
     direnv
     kitty
     alacritty

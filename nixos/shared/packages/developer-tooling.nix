@@ -26,8 +26,10 @@
     lazydocker
 
     # general developer utilities
+    actionlint
     lazygit
     graphviz
+    svgbob
     iperf
     ncdu
     psutils
