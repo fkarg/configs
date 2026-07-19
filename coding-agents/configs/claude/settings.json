@@ -18,7 +18,7 @@
     ],
     "defaultMode": "auto"
   },
-  "model": "opus[1m]",
+  "model": "fable",
   "hooks": {
     "SessionStart": [
       {
@@ -42,7 +42,7 @@
         ]
       }
     ],
-    "PostToolUse": [
+    "UserPromptSubmit": [
       {
         "hooks": [
           {
@@ -87,11 +87,11 @@
   "spinnerTipsEnabled": false,
   "effortLevel": "high",
   "askUserQuestionTimeout": "never",
+  "tui": "fullscreen",
   "showThinkingSummaries": true,
   "skipWorkflowUsageWarning": true,
   "editorMode": "normal",
   "verbose": true,
-  "tui": "fullscreen",
   "preferredNotifChannel": "kitty",
   "switchModelsOnFlag": false,
   "fileCheckpointingEnabled": true,

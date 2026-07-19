@@ -1,18 +1,22 @@
 #!/usr/bin/env bash
-# Claude Code PostToolUse hook — inject a diff when the project AGENTS.md
-# changes on disk mid-session.
+# Claude Code UserPromptSubmit hook — inject a diff when the project AGENTS.md
+# changes on disk between turns.
 #
 # Companion to agents-md-hook.sh, which injects AGENTS.md at session start and
-# stashes a snapshot under ~/.cache/claude-agents-md/<session_id>/. After each
-# tool call this compares the snapshot against disk (a cmp of a small file —
-# cheap next to the hook's own process spawn); on change it emits the unified
-# diff as additionalContext — mirroring the native "CLAUDE.md was modified"
-# behavior — then advances the snapshot so later changes diff incrementally.
+# stashes a snapshot under ~/.cache/claude-agents-md/<session_id>/. On each user
+# prompt — before the model acts on it — this compares the snapshot against disk
+# (a cmp of a small file); on change it emits the unified diff as
+# additionalContext — mirroring the native "CLAUDE.md was modified" behavior —
+# then advances the snapshot so later changes diff incrementally.
 #
-# Registered as: hooks.PostToolUse, no matcher (every tool call). Deliberately
-# NOT a FileChanged hook: as of Claude Code 2.1.202 that event runs its hooks
-# but drops their additionalContext, which would advance the snapshot while
-# silently eating the note.
+# Registered as: hooks.UserPromptSubmit (fires once per turn), NOT PostToolUse:
+# AGENTS.md is an instructions file, and the moment its freshness matters is
+# right before the model reasons about a new prompt — not after every tool call.
+# Once-per-turn also drops the per-tool-call process-spawn noise. Trade-off: an
+# edit made *during* a turn isn't seen until the next prompt (fine for an
+# instructions file). Deliberately NOT a FileChanged hook: that event has no
+# decision control and drops additionalContext — it can detect a change but
+# cannot inject the diff.
 #
 # Fail-open: any error (no jq, missing snapshot, ...) yields no output and a
 # clean exit, so a broken hook never disrupts a session.
@@ -36,5 +40,5 @@ diff="$(diff -u --label 'AGENTS.md (as loaded)' --label 'AGENTS.md (current)' \
 cp -f "$file" "$state/snapshot.md" 2>/dev/null
 
 printf '%s' "$diff" | jq -Rs \
-  '{hookSpecificOutput: {hookEventName: "PostToolUse", additionalContext: ("Note: the project AGENTS.md was modified during this session (by the user, another session, or this one). This change is intentional; where the diff below conflicts with the previously loaded copy, the diff wins:\n\n" + .)}}' \
+  '{hookSpecificOutput: {hookEventName: "UserPromptSubmit", additionalContext: ("Note: the project AGENTS.md was modified during this session (by the user, another session, or this one). This change is intentional; where the diff below conflicts with the previously loaded copy, the diff wins:\n\n" + .)}}' \
   2>/dev/null || true
