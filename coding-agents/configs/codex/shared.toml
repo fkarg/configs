@@ -37,7 +37,7 @@ network_access = true
 [features]
 # Add a domain here only when a routine command needs it. Keep this allowlist
 # narrow; `network_access` without the proxy would permit arbitrary egress.
-network_proxy = { enabled = true, domains = { "api.github.com" = "allow" } }
+network_proxy = { enabled = true, domains = { "api.github.com" = "allow", "api.anthropic.com" = "allow" } }
 
 [tui]
 status_line = ["model-with-reasoning", "current-dir", "git-branch", "branch-changes", "run-state", "context-used", "five-hour-limit", "weekly-limit", "used-tokens", "total-input-tokens", "total-output-tokens", "task-progress"]
