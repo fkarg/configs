@@ -38,6 +38,24 @@ class MergeCodexConfigTests(unittest.TestCase):
                 f'writable_roots = ["{expected[0]}", "{expected[1]}"]\n',
             )
 
+    def test_merges_inline_network_proxy_settings(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_path = Path(temp_dir)
+            shared = temp_path / "shared.toml"
+            target = temp_path / "config.toml"
+            shared.write_text(
+                "[features]\n"
+                'network_proxy = { enabled = true, domains = { "api.github.com" = "allow" } }\n'
+            )
+
+            merge_codex_config.merge(shared, target)
+
+            self.assertEqual(
+                target.read_text(),
+                "[features]\n"
+                'network_proxy = { "enabled" = true, "domains" = { "api.github.com" = "allow" } }\n',
+            )
+
 
 if __name__ == "__main__":
     unittest.main()

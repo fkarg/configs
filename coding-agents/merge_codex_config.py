@@ -51,6 +51,8 @@ def _render(value) -> str:
         return _basic_string(value)
     if isinstance(value, list):
         return "[" + ", ".join(_render(v) for v in value) + "]"
+    if isinstance(value, dict):
+        return "{ " + ", ".join(f"{_basic_string(k)} = {_render(v)}" for k, v in value.items()) + " }"
     raise TypeError(f"unsupported curated value type: {type(value).__name__}")
 
 
