@@ -19,6 +19,7 @@
     xclip
     inetutils
     gparted
+    parted
     poppler-utils
     lm_sensors
     tree
