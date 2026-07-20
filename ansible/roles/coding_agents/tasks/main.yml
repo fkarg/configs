@@ -237,7 +237,9 @@
       ln -sfn "$d" "$HOME/.codex/skills/$(basename "$d")"
     done
   args:
-    executable: /bin/bash
+    # POSIX sh only — NixOS ships /bin/sh but no /bin/bash. Keep this script
+    # free of bashisms so it runs on NixOS, macOS, and stock Linux alike.
+    executable: /bin/sh
   loop: "{{ ca_codex_plugin_skill_globs }}"
   changed_when: false
   tags: [codex]
