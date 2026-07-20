@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # this is just a little script to rebase-pulling all git-directories from their respective sources in your ~/Coding dir, but you can change that
 # You can push too or any other command you wanna execute in such a directory
 

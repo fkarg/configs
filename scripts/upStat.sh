@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # mount /dev/sdb1 /datadisk
 feh --no-xinerama --bg-scale /home/pars/Pictures/Space/IMAG7297.JPG

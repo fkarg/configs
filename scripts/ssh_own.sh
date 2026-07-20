@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #-- Script to automate https://help.github.com/articles/why-is-git-always-asking-for-my-password
 
 exec 3<&0

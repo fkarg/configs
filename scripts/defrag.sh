@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # defrag v0.08 by Con Kolivas <kernel@kolivas.org
 # Braindead fs-agnostic defrag to rewrite files in order largest to smallest
 # Run this in the directory you want all the files and subdirectories to be
