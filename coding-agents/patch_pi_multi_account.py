@@ -4,6 +4,10 @@
 The package's built-in `multi-account-quota` status is the accurate/live quota source.
 Patch its compact formatter to use the Claude-style pace arrows/colors we prefer, and
 avoid wrapping ANSI-rich output in a single theme color.
+
+Like the pi-powerline-footer patch, this runs against the local npm package installed
+under ~/.pi/agent/npm; if the package is missing or upstream has changed, it exits
+cleanly with a note rather than breaking the Ansible role.
 """
 from __future__ import annotations
 
@@ -135,21 +139,32 @@ NEW_RENDER = '''			let rendered: string = text;
 '''
 
 
-def replace_once(path: Path, old: str, new: str) -> bool:
+def replace_once(path: Path, old: str, new: str) -> str:
+    """Return 'changed', 'unchanged', or 'skipped' without ever raising."""
+    if not path.exists():
+        print(f"skipped: {path} not installed")
+        return "skipped"
     text = path.read_text()
     if new in text:
-        return False
+        return "unchanged"
     if old not in text:
-        raise SystemExit(f"expected patch target not found in {path}")
+        print(f"skipped: expected patch anchor not found in {path}")
+        return "skipped"
     path.write_text(text.replace(old, new, 1))
-    return True
+    return "changed"
 
 
 def main() -> None:
-    changed = False
-    changed |= replace_once(USAGE, OLD_FORMAT, NEW_FORMAT)
-    changed |= replace_once(INDEX, OLD_RENDER, NEW_RENDER)
-    print("changed: pi-multi-account quota format" if changed else "unchanged: pi-multi-account quota format")
+    results = [
+        replace_once(USAGE, OLD_FORMAT, NEW_FORMAT),
+        replace_once(INDEX, OLD_RENDER, NEW_RENDER),
+    ]
+    if "changed" in results:
+        print("changed: pi-multi-account quota format")
+    elif "skipped" in results:
+        print("skipped: pi-multi-account quota format")
+    else:
+        print("unchanged: pi-multi-account quota format")
 
 
 if __name__ == "__main__":
