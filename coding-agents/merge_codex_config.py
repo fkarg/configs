@@ -118,6 +118,16 @@ def merge(shared_path: Path, target_path: Path) -> bool:
     unmanage = curated.pop("unmanage", [])
     if not isinstance(unmanage, list) or not all(isinstance(k, str) for k in unmanage):
         raise TypeError("shared.toml: `unmanage` must be an array of key names")
+
+    workspace_write = curated.get("sandbox_workspace_write")
+    if isinstance(workspace_write, dict):
+        writable_roots = workspace_write.get("writable_roots")
+        if isinstance(writable_roots, list):
+            workspace_write["writable_roots"] = [
+                str(Path(root).expanduser()) if isinstance(root, str) else root
+                for root in writable_roots
+            ]
+
     scalars = {k: v for k, v in curated.items() if not isinstance(v, dict)}
     tables = {k: v for k, v in curated.items() if isinstance(v, dict)}
 

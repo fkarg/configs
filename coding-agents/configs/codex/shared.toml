@@ -15,6 +15,22 @@
 # (e.g. the old model pin) without leaving stale values on other hosts.
 unmanage = ["model", "model_reasoning_effort"]
 personality = "pragmatic"
+approval_policy = "on-request"
+sandbox_mode = "workspace-write"
+
+[sandbox_workspace_write]
+# The merge script expands ~/ paths per host before writing config.toml.
+# Keep this to individually trusted repositories; never grant ~/Coding itself.
+writable_roots = [
+  "~/Coding/infrastructure",
+  "~/Coding/frontend-react",
+  "~/Coding/fkarg.github.io",
+  "~/Coding/backend-core",
+  "~/Coding/operation",
+  "~/Coding/UnifestBestellBot",
+  "~/configs",
+  "~/finances",
+]
 
 [tui]
 status_line = ["model-with-reasoning", "current-dir", "git-branch", "branch-changes", "run-state", "context-used", "five-hour-limit", "weekly-limit", "used-tokens", "total-input-tokens", "total-output-tokens", "task-progress"]
