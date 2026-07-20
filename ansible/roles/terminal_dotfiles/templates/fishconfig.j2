@@ -32,7 +32,12 @@ end
 
 
 # fish_add_path -P is idempotent, so nested shells don't re-prepend these.
-fish_add_path -gP ~/.cargo/bin ~/.local/bin ~/.local/share/pnpm/bin
+# pnpm resolves its global bin dir to ~/.local/share/pnpm/bin on its own; bun
+# needs BUN_INSTALL/bin exported + on PATH for `bun install -g` shims to resolve.
+# (fish_add_path skips dirs that don't exist yet, so ~/.bun/bin only joins PATH
+# once bun has created it — open a fresh shell after the first `bun install -g`.)
+set -gx BUN_INSTALL ~/.bun
+fish_add_path -gP ~/.cargo/bin ~/.local/bin ~/.local/share/pnpm/bin $BUN_INSTALL/bin
 
 # set -x LD_LIBRARY_PATH (nix-build -E 'import <nixpkgs>' -A 'gcc.cc.lib')/lib64
 # set -x PATH $LD_LIBRARY_PATH $PATH
