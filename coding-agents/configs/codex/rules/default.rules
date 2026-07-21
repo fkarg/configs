@@ -1,19 +1,64 @@
-prefix_rule(pattern=["git", "ls-remote"], decision="allow")
-prefix_rule(pattern=["python3", "assets/ais/albatros-2026/serve_cached_map.py"], decision="allow")
-prefix_rule(pattern=["gh", "issue", "create"], decision="allow")
-prefix_rule(pattern=["docker", "compose"], decision="allow")
-prefix_rule(pattern=["curl"], decision="allow")
-prefix_rule(pattern=["gh", "pr", "view"], decision="allow")
-prefix_rule(pattern=["gh", "run", "view"], decision="allow")
-prefix_rule(pattern=["git", "fetch"], decision="allow")
-prefix_rule(pattern=["uv", "run", "pytest"], decision="allow")
-prefix_rule(pattern=["./scripts/check.sh"], decision="allow")
-prefix_rule(pattern=["uv", "sync"], decision="allow")
-prefix_rule(pattern=["uv", "run", "ruff"], decision="allow")
-prefix_rule(pattern=["uv", "run", "pyright"], decision="allow")
-prefix_rule(pattern=["docker", "build"], decision="allow")
-prefix_rule(pattern=["docker", "run"], decision="allow")
-prefix_rule(pattern=["git", "diff", "--check"], decision="allow")
-prefix_rule(pattern=["uv", "run", "ty", "check"], decision="allow")
-prefix_rule(pattern=["git", "diff", "--cached", "--check"], decision="allow")
-prefix_rule(pattern=["git"], decision="allow")
+# GitHub CLI reads credentials from the host keyring, which is unavailable in
+# the workspace sandbox. Only read-only GitHub operations run without a prompt.
+
+prefix_rule(
+    pattern = ["gh", "auth", "status"],
+    decision = "allow",
+    justification = "GitHub authentication status requires access to the host keyring",
+    match = ["gh auth status -h github.com"],
+)
+
+prefix_rule(
+    pattern = ["gh", "issue", ["view", "list", "status"]],
+    decision = "allow",
+    justification = "Read-only GitHub issue inspection requires host credentials",
+    match = ["gh issue view 682 --json body", "gh issue list --limit 20"],
+    not_match = ["gh issue create --title Example"],
+)
+
+prefix_rule(
+    pattern = ["gh", "pr", ["view", "list", "status", "checks", "diff"]],
+    decision = "allow",
+    justification = "Read-only GitHub pull-request inspection requires host credentials",
+    match = ["gh pr view 687", "gh pr checks 687", "gh pr diff 687"],
+    not_match = ["gh pr create --title Example"],
+)
+
+prefix_rule(
+    pattern = ["gh", "repo", "view"],
+    decision = "allow",
+    justification = "Reading repository metadata requires host credentials",
+    match = ["gh repo view Epistree/frontend-react"],
+)
+
+# Git metadata is protected by workspace-write. Mutating it outside the sandbox
+# also exposes repository hooks and Git helpers, so require approval each time.
+prefix_rule(
+    pattern = ["git", ["fetch", "add", "commit", "push"]],
+    decision = "prompt",
+    justification = "Git metadata mutations and hook-capable operations require approval",
+    match = [
+        "git fetch origin main",
+        "git add app/example.ts",
+        "git commit -m test: example",
+        "git push -u origin HEAD",
+    ],
+)
+
+prefix_rule(
+    pattern = ["git", "worktree", ["add", "remove", "prune"]],
+    decision = "prompt",
+    justification = "Worktree mutations and their hooks require approval",
+    match = [
+        "git worktree add -b 682-fix .worktrees/682-fix main",
+        "git worktree remove .worktrees/682-fix",
+    ],
+)
+
+prefix_rule(
+    pattern = ["gh", ["pr", "issue"], "create"],
+    decision = "prompt",
+    justification = "Creating pull requests or issues changes remote GitHub state",
+    match = ["gh pr create --title Example", "gh issue create --title Example"],
+    not_match = ["gh pr view 687"],
+)
