@@ -11,7 +11,7 @@
     libreoffice-fresh
     languagetool
     tinymist
-    # gimp
+    gimp
 
     # browsers and desktop-entry providers
     # Keep browsers here when they should be selectable as system defaults.
@@ -28,6 +28,7 @@
     discord
     telegram-desktop
     teams-for-linux
+    element-desktop
     thunderbird
     signal-desktop
     karere  # gtk4 client for whatsapp
@@ -51,6 +52,8 @@
     proton-pass
     ollama
     lmstudio
-    ytmdesktop
+    # ytmdesktop currently source-builds through Electron/Yarn and can stall
+    # unattended NixOS upgrades when no cache substitute is available.
+    # ytmdesktop
   ];
 }
