@@ -240,6 +240,10 @@
   hardware.bluetooth.powerOnBoot = true;
   services.blueman.enable = true;
 
+  # Logitech peripheral manager.
+  # this pulls in the package 'solaar' plus the udev rules the receiver needs.
+  hardware.logitech.wireless.enable = true;
+
   specialisation.manual-unlock.configuration = {
     boot.loader.grub.configurationName = "Manual unlock";
     boot.initrd.systemd.services.copy-luks-keyfile = {
