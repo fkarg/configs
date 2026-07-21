@@ -16,6 +16,7 @@
     # infrastructure and containers
     docker-compose
     openvpn
+    xpipe
     k3d
     kubectl
     kubecfg
@@ -34,6 +35,7 @@
     ncdu
     psutils
     qpdf
+    ghostscript
     typst
 
     # financial organization
@@ -47,15 +49,18 @@
     codex
     gemini-cli
     opencode
+    ccusage
 
     # devOps
     ansible
     ansible-language-server
     ansible-lint
+    yamllint
 
     # package managers and misc
     bun
     cabal-install
+    cargo-update
     ghc
     git-filter-repo
     nodejs_24
