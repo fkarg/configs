@@ -1,18 +1,21 @@
 { pkgs, ... }:
 
 let
-  # Out-of-tree MT7927 driver. The bundled mt76 snapshot only compiles against
-  # Linux <= 7.0.x; 7.1 changed the mac80211 ieee80211_mgmt action union
-  # (mgmt->u.action.u) and upstream HEAD has not been ported (the project is in
-  # maintenance mode, waiting on in-tree mt7925 MT7927 support). jolly therefore
-  # pins its default kernel to 7.0 — see boot.kernelPackages in machines/jolly.nix.
+  # Out-of-tree MT7927 driver. The mt76 snapshot was rebased onto the 7.1.x
+  # kernel tarball and now compiles against Linux 6.17–7.1 (a pre-7.1 action-
+  # frame compat patch bridges the mac80211 ieee80211_mgmt union change; an
+  # airoha_offload.h stub bridges 6.17–6.18). jolly's default kernel is
+  # linuxPackages_latest with a 6.18 LTS fallback — see boot.kernelPackages in
+  # machines/jolly.nix. Both projects go obsolete for wifi once in-tree mt7925e
+  # MT7927 support ships (Linux 7.2). Pinned to specific commits since cmspam
+  # auto-updates its mt76 pin on every upstream stable release.
   mt7927NixosSrc = builtins.fetchTarball {
-    url = "https://github.com/cmspam/mt7927-nixos/archive/af666e087bb31b1c59906a9a0ec9208703933b06.tar.gz";
-    sha256 = "1bw33nhrm0ky2z9f0s376g642yl7zxsbcpqpc89w9505hrm0nrgq";
+    url = "https://github.com/cmspam/mt7927-nixos/archive/a391d59fe4e6ad4be6a17cbc3aea29d564137c05.tar.gz";
+    sha256 = "1jsh796w7jsqc9y5431br0j6ll7y7s1zmrfywbrskz6q03r2fwim";
   };
   mt7927DkmsSrc = builtins.fetchTarball {
-    url = "https://github.com/jetm/mediatek-mt7927-dkms/archive/944dd50d890a91e1ae671bb978984d81acb3d438.tar.gz";
-    sha256 = "193z8qqdg3lhx712p212dj49gqjr1nfpdvps80cwy8pksz3hr2cf";
+    url = "https://github.com/jetm/mediatek-mt7927-dkms/archive/ad1f3e4d19fe540aaa1f449ddba86c65db9bfc82.tar.gz";
+    sha256 = "0kbpyrjqc0i228rqj2hvd7yln0dhh0bk3q6lqcz62zggjs2z0xhr";
   };
   mt7927Flake = import (mt7927NixosSrc + "/flake.nix");
   mt7927 = mt7927Flake.outputs {

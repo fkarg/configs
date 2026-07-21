@@ -28,8 +28,8 @@
 
   nixpkgs.overlays = [
     # The nvidia driver build shells out to jq; add it to nativeBuildInputs for
-    # the kernel sets jolly may boot — 7.0 (default) and latest (kept in sync
-    # for when the MT7927 driver supports a newer kernel again).
+    # both kernel sets nixos-rebuild builds here — latest (default boot) and 6.18
+    # (the kernel-6-18 fallback specialisation below).
     (final: prev:
       let
         withJqNvidia = kpkgs: kpkgs.extend (_: kprev: {
@@ -42,7 +42,7 @@
       in
       {
         linuxPackages_latest = withJqNvidia prev.linuxPackages_latest;
-        linuxPackages_7_0 = withJqNvidia prev.linuxPackages_7_0;
+        linuxPackages_6_18 = withJqNvidia prev.linuxPackages_6_18;
       })
 
     # Pin hy3 to the upstream release matching this channel's Hyprland (0.55.x).
@@ -65,15 +65,18 @@
     })
   ];
 
-  # Pin the default generation to 7.0.x: the out-of-tree MT7927 wifi driver
-  # (shared/hardware/mediatek-mt7927.nix) only compiles against this kernel
-  # line. Linux 7.1 (current linuxPackages_latest) breaks the bundled mt76 and
-  # upstream HEAD is not yet ported, so we hold at 7.0 until the in-tree mt7925
-  # MT7927 support merges, then drop the out-of-tree module entirely.
-  boot.kernelPackages = pkgs.linuxPackages_7_0;
+  # Default to linuxPackages_latest (7.1.x). We used to pin 7.0, but nixpkgs
+  # EOL-removed it. The out-of-tree MT7927 driver (shared/hardware/mediatek-
+  # mt7927.nix) was rebased onto the 7.1.x mt76 tarball and now compiles against
+  # 6.17–7.1, so latest works again. In-tree mt7925e MT7927 support lands in 7.2
+  # (final ~late Aug 2026); once nixpkgs ships a 7.2 kernel we can drop the
+  # out-of-tree module for wifi entirely (BT still needs the manual firmware blob
+  # until it merges into linux-firmware). The kernel-6-18 specialisation below is
+  # a fallback on the 6.18 LTS line if a latest bump breaks the wifi build.
+  boot.kernelPackages = pkgs.linuxPackages_latest;
   boot.kernelParams = [
-    "fsck.mode=force"
-    "fsck.repair=yes"
+    # "fsck.mode=force"
+    # "fsck.repair=yes"
     "usbcore.autosuspend=-1"
     "systemd.log_level=info"
     "loglevel=4"
@@ -236,9 +239,13 @@
     environment.systemPackages = [ pkgs.hyprlandPlugins.hy3 ];
   };
 
+  # Fallback kernel on the 6.18 LTS line. Default boot is linuxPackages_latest
+  # (7.1.x); if a nixpkgs bump moves latest past what the out-of-tree MT7927
+  # driver compiles against (e.g. an unported 7.2 mt76), boot this entry to get
+  # wifi back. 6.18 is LTS (EOL ~Dec 2028), so it stays in nixpkgs long-term.
   specialisation.kernel-6-18.configuration = {
     boot.kernelPackages = lib.mkForce pkgs.linuxPackages_6_18;
-    boot.loader.grub.configurationName = "Kernel test - Linux 6.18";
+    boot.loader.grub.configurationName = "Fallback - Linux 6.18 LTS";
   };
 
   virtualisation.docker.enable = true;
