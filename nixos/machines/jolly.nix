@@ -373,7 +373,14 @@
     nvidiaSettings = true;
     powerManagement.enable = true;
   };
-  boot.blacklistedKernelModules = [ "nouveau" ];
+  # Blacklist the AMD Granite Ridge iGPU. The monitor lives on the NVIDIA dGPU,
+  # but with amdgpu loaded aquamarine enumerates the iGPU as a secondary GPU,
+  # flags every buffer "multigpu, forcing linear", and repeatedly spins up then
+  # tears down its renderer for the iGPU's phantom-connected HDMI port ("no
+  # enabled outputs"). That cross-GPU dmabuf path (EGL_BAD_MATCH on import) left
+  # individual workspaces stuck at a degraded framebuffer resolution and made
+  # newly-spawned windows flash-and-vanish. One GPU = none of that.
+  boot.blacklistedKernelModules = [ "nouveau" "amdgpu" ];
 
   environment.systemPackages = with pkgs; [
     pciutils
