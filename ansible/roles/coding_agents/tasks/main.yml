@@ -61,6 +61,19 @@
     label: "{{ ca_codex_prompt.path | basename }}"
   tags: [codex]
 
+# Keep the whole rules directory symlinked, rather than only default.rules.
+# Codex may replace default.rules atomically; replacing a file inside the
+# repository-backed directory preserves the directory symlink and syncs the
+# updated rules back through Git. `force: false` deliberately leaves one-time
+# migration of an existing local rules directory to the operator.
+- name: Symlink Codex approval rules directory
+  file:
+    src: "{{ coding_agents_source_dir }}/configs/codex/rules"
+    dest: "~/.codex/rules"
+    state: link
+    force: false
+  tags: [codex]
+
 # Symlink per-tool global config files that hold only curated, machine-independent
 # settings (no secrets, no host paths) and that the tool reads or writes in place.
 # Editing on any machine writes back through the symlink, so changes propagate via

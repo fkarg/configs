@@ -56,7 +56,7 @@ Each tool's global config splits into two layers:
 | Claude   | `claude/settings.json`   | `~/.claude/settings.json`          | symlink                 | `~/.claude/settings.local.json`                   |
 | OpenCode | `opencode/opencode.json`, `opencode/tui.json`, `opencode/plugins/` | `~/.config/opencode/` | symlink | env-var secrets |
 | Copilot  | `copilot/settings.json`  | `~/.copilot/settings.json`         | symlink                 | `~/.copilot/config.json` (trustedFolders, login)  |
-| Codex    | `codex/shared.toml`      | `~/.codex/config.toml`             | `merge_codex_config.py` | the rest of `~/.codex/config.toml`                |
+| Codex    | `codex/shared.toml`, `codex/rules/` | `~/.codex/config.toml`, `~/.codex/rules/` | merge + directory symlink | the rest of `~/.codex/config.toml` |
 | Pi        | `pi/shared.json`, `pi/provider-failover.json`, `pi/extensions/`, `pi/powerline-footer/` | `~/.pi/agent/`             | merge + symlinked extensions/theme | `auth.json`, sessions, trust, local settings      |
 
 Symlinks work for tools that only read the file or write it in place. **Codex is
@@ -65,6 +65,13 @@ clobbers a symlink) and mixes host state into it. So instead of a symlink,
 `merge_codex_config.py` overlays just the keys from `codex/shared.toml` onto the
 codex-owned local file, leaving trusted projects / `oss_provider` / nux intact.
 Edit shared codex prefs in `codex/shared.toml`, then re-run the role to apply.
+
+Persisted Codex command-approval rules are the exception: `codex/rules/` is
+symlinked as the whole `~/.codex/rules` directory. This keeps local approval
+additions bidirectionally synced through Git, including when Codex atomically
+replaces `default.rules`. On a machine with an existing `~/.codex/rules`
+directory, move it aside and reconcile its rules with the tracked file once
+before running the role; the role intentionally does not delete that directory.
 
 OpenCode's TUI customization is separate from its main `opencode.json`; edit
 `opencode/tui.json` and local plugins under `opencode/plugins/`. The tracked
