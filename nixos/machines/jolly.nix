@@ -182,23 +182,57 @@
   };
   boot.initrd.luks.devices."cryptroot".keyFileTimeout = 65;
 
-  # GRUB keeps the large kernel/initrd artifacts off the small EFI system
-  # partition, unlike the previous systemd-boot setup on this host.
+  # Root is LUKS, unlocked by a USB keyfile inside the initrd, so the
+  # bootloader runs before the store is readable and every generation's
+  # kernel+initrd must live on an unencrypted partition. That's the 8GB ext4
+  # /boot (carved out of swap, 2026-07); the 1GB ESP is mounted at /boot/efi
+  # and holds only the GRUB EFI binary. See docs/jolly.md "Boot partition &
+  # rollback depth" for the layout and the runbook that created it.
   boot.loader.systemd-boot.enable = false;
   boot.loader.grub = {
     enable = true;
     efiSupport = true;
     device = "nodev";
-    configurationLimit = 1;
+    # Capacity guard for the 8GB ext4 /boot, not a retention policy (that's
+    # nix.gc, 90d). Each generation stages up to ~220MB worst-case (default
+    # initrd + manual-unlock specialisation initrd + 6.18 fallback
+    # kernel+initrd; unchanged files are shared between generations), so 30
+    # fits with ample headroom. Deeper rollback than the menu shows:
+    # nixos-rebuild --rollback re-stages on demand. See docs/jolly.md.
+    configurationLimit = 30;
+    # Only the auto-generated generation list is trustworthy for rollback — it's
+    # GC-tracked. A hand-written menuentry pinning specific /nix/store paths rots
+    # the moment GC collects them, so we don't keep one. Windows entries are safe:
+    # they chainload firmware boot managers by fs-uuid, nothing in the nix store.
     extraEntries = ''
-      menuentry "NixOS - Known-good fallback generation 8 (Linux 6.12.89)" --class nixos {
-        search --set=drive1 --fs-uuid DC22-8B46
-        linux ($drive1)//kernels/ss16kh3phklqxgn1dpaa8bwz14wwp84c-linux-6.12.89-bzImage init=/nix/store/5j58nn0b768qlxa3f408k8b3s2pa86j6-nixos-system-jolly-26.05pre998534.d233902339c0/init zswap.enabled=1 zswap.compressor=lz4 zswap.max_pool_percent=25 systemd.log_level=info loglevel=4 root=fstab loglevel=4 lsm=landlock,yama,bpf
-        initrd ($drive1)//kernels/kxny1jr30pbfigdjxlyaqp172h4h160d-initrd-linux-6.12.89-initrd
+      menuentry "Windows (internal ESP)" --class windows {
+        # Match the Windows ESP by fs-uuid, not label: GRUB's `search --label`
+        # is case-sensitive and the FAT label is upper-case SYSTEM (two other
+        # partitions are labelled EFI, so labels are ambiguous here anyway).
+        search --no-floppy --set=win_esp --fs-uuid 4E4C-51EE
+        if [ -f ($win_esp)/EFI/Microsoft/Boot/bootmgfw.efi ]; then
+          chainloader ($win_esp)/EFI/Microsoft/Boot/bootmgfw.efi
+        else
+          echo "Windows boot manager missing on internal ESP 4E4C-51EE"
+          sleep 5
+        fi
+      }
+      menuentry "Windows (via USB EFI)" --class windows {
+        # Temporary boot path: the internal Windows ESP is currently not
+        # bootable, but the USB ESP labelled EFI still has a working Windows
+        # boot manager/BCD store for this install.
+        search --no-floppy --set=win_usb_esp --fs-uuid 67E3-17ED
+        if [ -f ($win_usb_esp)/EFI/Microsoft/Boot/bootmgfw.efi ]; then
+          chainloader ($win_usb_esp)/EFI/Microsoft/Boot/bootmgfw.efi
+        else
+          echo "Windows USB boot manager missing on ESP 67E3-17ED"
+          sleep 5
+        fi
       }
     '';
   };
   boot.loader.efi.canTouchEfiVariables = true;
+  boot.loader.efi.efiSysMountPoint = "/boot/efi";
   boot.loader.generic-extlinux-compatible.enable = false;
 
   hardware.enableRedistributableFirmware = true;
