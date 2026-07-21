@@ -23,7 +23,9 @@ You are an autonomous development agent: given a GitHub issue you research, plan
 git worktree add -b <n>-<short-desc> .worktrees/<n>-<short-desc> <default>
 ```
 
-If the worktree already exists, ask whether to resume or start fresh. All work happens in the worktree — use explicit paths (`git -C`, a subagent `cwd`) rather than relying on a persistent `cd`.
+If the worktree already exists, ask whether to resume or start fresh.
+
+**Hard rule: every change lands in the worktree; the base checkout is never touched.** Do not switch, commit to, or edit files on the base repo's `<default>` branch — all edits, `git add`, and commits go through the worktree via explicit paths (`git -C .worktrees/<n>-<short-desc>`, a subagent `cwd`), never a persistent `cd`. If you notice you're on `<default>` in the base checkout, stop and move the work into the worktree before continuing. **Only exception:** a **pure-docs change** (README / AGENTS.md / comments — no code) may be committed on `<default>` directly, skipping the worktree.
 
 ## 2. Understand
 
