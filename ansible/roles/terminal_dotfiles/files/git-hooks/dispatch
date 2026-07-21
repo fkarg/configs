@@ -8,10 +8,10 @@
 # (pre-commit, pre-push, ...). The standard hook names are symlinked to this
 # script; it does its own work (commit-msg attribution blocking) and then
 # delegates to the repo's own hook of the same name, so per-project hooks
-# (pre-commit framework, etc.) are NOT silently disabled. We probe two
-# locations, in order: the repo's default .git/hooks dir, and a conventional
-# in-tree .githooks/ dir (which git never auto-discovers on its own). First
-# executable match wins.
+# (pre-commit framework, etc.) are NOT silently disabled. We probe the shared
+# .git/hooks dir, a worktree-specific hooks dir when distinct, and a
+# conventional in-tree .githooks/ dir (which Git never auto-discovers on its
+# own). First executable match wins.
 #
 # A repo that sets its OWN core.hooksPath (husky -> .husky, or core.hooksPath
 # = .githooks) overrides the global path entirely and never reaches this
@@ -53,13 +53,20 @@ EOF
 fi
 
 # --- delegate to the repo's own hook of the same name, if any ---
-# Candidate dirs in priority order: the default per-repo hooks dir (.git/hooks,
-# normally shadowed by our global core.hooksPath) and the conventional in-tree
-# .githooks/ dir. First executable match wins.
+# Candidate dirs in priority order: Git's shared hooks dir, a worktree-specific
+# hooks dir when distinct, and the conventional in-tree .githooks/ dir. First
+# executable match wins.
+git_common_dir="$(git rev-parse --git-common-dir 2>/dev/null || true)"
 git_dir="$(git rev-parse --git-dir 2>/dev/null || true)"
 toplevel="$(git rev-parse --show-toplevel 2>/dev/null || true)"
-for dir in "${git_dir:+$git_dir/hooks}" "${toplevel:+$toplevel/.githooks}"; do
-  [ -n "$dir" ] || continue
+candidate_dirs=()
+[ -n "$git_common_dir" ] && candidate_dirs+=("$git_common_dir/hooks")
+if [ -n "$git_dir" ] && [ "$git_dir" != "$git_common_dir" ]; then
+  candidate_dirs+=("$git_dir/hooks")
+fi
+[ -n "$toplevel" ] && candidate_dirs+=("$toplevel/.githooks")
+
+for dir in "${candidate_dirs[@]}"; do
   local_hook="$dir/$hook"
   # Guard against recursing into ourselves (e.g. a repo whose core.hooksPath
   # points back here).
