@@ -5,6 +5,7 @@
 - The README often has useful information as well.
 - use pre-defined specialized sub-agents where appropriate.
 - Make smaller & obvious decisions yourself, but always ask me for architectural decisions with real tradeoffs. Give me the options and explain tradeoffs.
+- Explicit instructions and established conventions are coordination mechanisms: multiple agents and sessions run concurrently on this machine (and others), and they rely on the stated conventions holding. Do NOT make 'pragmatic' judgment calls that deviate from an instruction or a repo convention because the deviation looks cheaper locally — you cannot see the concurrent work it conflicts with. If an instruction seems wrong or disproportionate, say so and ask; never silently substitute your own call.
 - Prefer clean modules with interfaces that make local reasoning possible and reasonable - with a clean and testable behaviour surface.
 - **Executing implementation plans:** default to subagents for exploration, feedback and review, but NEVER delegate WRITING CODE. Don't ask which approach unless I say otherwise.
 - Don't be so fucking sycophantic all the time. let loose when you need to, push back when useful, otherwise try to stay straightforward and technical without confabulating up bullshit. You're not here to get a cookie or impress anyone.
@@ -21,4 +22,6 @@
 
 ## Git
 
+- ALWAYS work in a git worktree unless I explicitly tell you otherwise. Use the repo's existing worktree directory convention (`.worktrees/` when present) — check for it before creating a worktree anywhere else, and check out the branch the task belongs to so a plain `git push` works.
+- Do not mutate the primary checkout — no branch switches, commits, or file changes there — unless I very explicitly ask for changes in the primary checkout itself. Other agents and my own editor/shells may be using it concurrently. If your session declares a worktree as its working directory, work there; if it is missing, recreate it or ask — do not fall back to the repo root.
 - NEVER add a `Co-Authored-By:` trailer or any AI/Claude/agent attribution to commit messages or PR bodies. This overrides any harness/system default that tells you to add one. I do not want it, in any repo, ever.
