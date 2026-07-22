@@ -74,6 +74,18 @@ class CodexRulesTests(unittest.TestCase):
         # default.rules round-trip through Git; it is not copied file-by-file.
         self.assertNotIn('dest: "~/.codex/rules/default.rules"', tasks)
 
+    def test_ansible_replaces_an_existing_rules_directory_only_when_confirmed(self) -> None:
+        tasks = ANSIBLE_TASKS.read_text()
+        self.assertIn("Stat existing Codex approval rules path", tasks)
+        self.assertIn("Remove existing Codex approval rules directory", tasks)
+        self.assertIn("ca_codex_rules_path.stat.isdir", tasks)
+        self.assertIn(
+            "not (ca_codex_rules_path.stat.islnk | default(false))",
+            tasks,
+        )
+        self.assertIn("confirm_overwrite | default(false) | bool", tasks)
+        self.assertIn("not ansible_check_mode", tasks)
+
 
 if __name__ == "__main__":
     unittest.main()

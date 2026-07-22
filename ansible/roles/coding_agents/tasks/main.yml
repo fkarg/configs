@@ -64,14 +64,37 @@
 # Keep the whole rules directory symlinked, rather than only default.rules.
 # Codex may replace default.rules atomically; replacing a file inside the
 # repository-backed directory preserves the directory symlink and syncs the
-# updated rules back through Git. `force: false` deliberately leaves one-time
-# migration of an existing local rules directory to the operator.
+# updated rules back through Git. Existing real directories follow the shared
+# confirm_overwrite safety convention used by the dotfile roles.
+- name: Stat existing Codex approval rules path
+  stat:
+    path: "~/.codex/rules"
+  register: ca_codex_rules_path
+  tags: [codex]
+
+- name: Remove existing Codex approval rules directory
+  file:
+    path: "~/.codex/rules"
+    state: absent
+  when:
+    - ca_codex_rules_path.stat.exists
+    - ca_codex_rules_path.stat.isdir | default(false)
+    - not (ca_codex_rules_path.stat.islnk | default(false))
+    - confirm_overwrite | default(false) | bool
+    - not ansible_check_mode
+  tags: [codex]
+
 - name: Symlink Codex approval rules directory
   file:
     src: "{{ coding_agents_source_dir }}/configs/codex/rules"
     dest: "~/.codex/rules"
     state: link
     force: false
+  when: >
+    not (ca_codex_rules_path.stat.exists
+         and ca_codex_rules_path.stat.isdir | default(false)
+         and not (ca_codex_rules_path.stat.islnk | default(false)))
+    or ((confirm_overwrite | default(false) | bool) and not ansible_check_mode)
   tags: [codex]
 
 # Symlink per-tool global config files that hold only curated, machine-independent

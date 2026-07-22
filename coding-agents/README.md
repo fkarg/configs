@@ -70,8 +70,9 @@ Persisted Codex command-approval rules are the exception: `codex/rules/` is
 symlinked as the whole `~/.codex/rules` directory. This keeps local approval
 additions bidirectionally synced through Git, including when Codex atomically
 replaces `default.rules`. On a machine with an existing `~/.codex/rules`
-directory, move it aside and reconcile its rules with the tracked file once
-before running the role; the role intentionally does not delete that directory.
+directory, the role preserves it by default. Pass `-e confirm_overwrite=true`
+to replace it with the managed symlink; this remains non-destructive in check
+mode.
 
 OpenCode's TUI customization is separate from its main `opencode.json`; edit
 `opencode/tui.json` and local plugins under `opencode/plugins/`. The tracked
