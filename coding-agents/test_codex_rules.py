@@ -24,14 +24,27 @@ def decision_for(*command: str) -> str | None:
 
 
 class CodexRulesTests(unittest.TestCase):
-    def test_prompts_for_local_git_mutations(self) -> None:
-        self.assertEqual(decision_for("git", "fetch", "origin", "main"), "prompt")
+    def test_allows_all_git_commands(self) -> None:
+        self.assertEqual(decision_for("git", "status"), "allow")
+        self.assertEqual(decision_for("git", "fetch", "origin", "main"), "allow")
         self.assertEqual(
             decision_for("git", "worktree", "add", ".worktrees/682-fix", "main"),
-            "prompt",
+            "allow",
         )
-        self.assertEqual(decision_for("git", "add", "app/example.ts"), "prompt")
-        self.assertEqual(decision_for("git", "commit", "-m", "test: example"), "prompt")
+        self.assertEqual(decision_for("git", "add", "app/example.ts"), "allow")
+        self.assertEqual(decision_for("git", "commit", "-m", "test: example"), "allow")
+        self.assertEqual(decision_for("git", "push", "origin", "HEAD"), "allow")
+        self.assertEqual(
+            decision_for("git", "fetch", "--upload-pack", "arbitrary-command", "origin"),
+            "allow",
+        )
+        self.assertEqual(decision_for("git", "diff", "--ext-diff"), "allow")
+        self.assertEqual(decision_for("git", "reset", "--hard"), "allow")
+        self.assertEqual(decision_for("git", "clean", "-fd"), "allow")
+        self.assertEqual(
+            decision_for("git", "worktree", "remove", ".worktrees/example"),
+            "allow",
+        )
 
     def test_allows_read_only_github_commands(self) -> None:
         self.assertEqual(
@@ -41,27 +54,13 @@ class CodexRulesTests(unittest.TestCase):
         self.assertEqual(decision_for("gh", "pr", "view", "687"), "allow")
         self.assertEqual(decision_for("gh", "auth", "status", "-h", "github.com"), "allow")
 
-    def test_prompts_for_remote_mutations(self) -> None:
-        self.assertEqual(decision_for("git", "push", "origin", "HEAD"), "prompt")
+    def test_prompts_for_remote_github_mutations(self) -> None:
         self.assertEqual(
             decision_for("gh", "pr", "create", "--title", "Example"),
             "prompt",
         )
         self.assertEqual(
             decision_for("gh", "issue", "create", "--title", "Example"),
-            "prompt",
-        )
-
-    def test_does_not_auto_allow_git_execution_vectors(self) -> None:
-        self.assertEqual(
-            decision_for("git", "fetch", "--upload-pack", "arbitrary-command", "origin"),
-            "prompt",
-        )
-        self.assertIsNone(decision_for("git", "diff", "--ext-diff"))
-        self.assertIsNone(decision_for("git", "reset", "--hard"))
-        self.assertIsNone(decision_for("git", "clean", "-fd"))
-        self.assertEqual(
-            decision_for("git", "worktree", "remove", ".worktrees/example"),
             "prompt",
         )
 

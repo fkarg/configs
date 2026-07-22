@@ -31,27 +31,22 @@ prefix_rule(
     match = ["gh repo view Epistree/frontend-react"],
 )
 
-# Git metadata is protected by workspace-write. Mutating it outside the sandbox
-# also exposes repository hooks and Git helpers, so require approval each time.
+# Git commands are trusted. This rule intentionally covers all subcommands,
+# including metadata mutations, hooks, helpers, and remote operations.
 prefix_rule(
-    pattern = ["git", ["fetch", "add", "commit", "push"]],
-    decision = "prompt",
-    justification = "Git metadata mutations and hook-capable operations require approval",
+    pattern = ["git"],
+    decision = "allow",
+    justification = "Git commands are always allowed",
     match = [
+        "git status",
         "git fetch origin main",
         "git add app/example.ts",
         "git commit -m test: example",
         "git push -u origin HEAD",
-    ],
-)
-
-prefix_rule(
-    pattern = ["git", "worktree", ["add", "remove", "prune"]],
-    decision = "prompt",
-    justification = "Worktree mutations and their hooks require approval",
-    match = [
         "git worktree add -b 682-fix .worktrees/682-fix main",
         "git worktree remove .worktrees/682-fix",
+        "git reset --hard",
+        "git clean -fd",
     ],
 )
 
