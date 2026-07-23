@@ -397,5 +397,7 @@
     # booted into the `i2c-kvm` specialisation (i2c stays off otherwise).
     ddcutil
     zotero
+    # YouTube Music client; autostarted on ws4 by dotconfig/hypr/startup-apps.sh.
+    pear-desktop
   ];
 }
