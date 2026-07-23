@@ -110,8 +110,24 @@ This flag is ignored under `--check` mode for safety.
 
 Make sure you have an ssh key which is registered on your github account for this computer already.
 
+## Related configs & further resources
+
+Actively-maintained repos that occupy the same "Ansible-as-provisioner + Nix-for-Nix-hosts + raw dotfiles" niche. Useful both as prior art and as concrete migration targets for the TODOs below.
+
+- **[valiantlynx/dotfiles](https://github.com/valiantlynx/dotfiles)** — the closest architectural twin. `curl` bootstrap → OS-detect → install Ansible → `main.yml` with `pre_tasks/`+`group_vars/`+`roles/`, one role per tool, and NixOS kept as its own sub-tree (Ubuntu/Arch/NixOS/macOS/Windows). Same push model and role-per-tool layering as here. Read it to sanity-check our Ansible layering against a parallel-evolved twin; nothing to import directly.
+- **[szaffarano/nix-dotfiles](https://github.com/szaffarano/nix-dotfiles)** — same "keep Ansible *and* Nix" philosophy, but the mature Nix end-state we haven't reached: flake with `home-manager`, `nixos-hardware`, `sops-nix`, and `renovate`. The best single reference for the `flakes?` / `nixos-hardware` TODOs below.
+- **[alyraffauf/infra](https://github.com/alyraffauf/infra)** — broader scope (adds K8s + Terraform) but the same flake + Ansible + sops + renovate spine. Useful if this repo ever grows a real server fleet.
+- **[eoli3n/dotfiles](https://github.com/eoli3n/dotfiles)** — pure-Ansible (no Nix), but *the* reference for Ansible-driven dotfiles with `host_vars`/`group_vars` and **Docker-based role testing** in CI. Directly relevant to our "no tests/lint" gap.
+
+Tradeoffs worth a deliberate decision rather than drift:
+
+- **home-manager vs. raw-dotfiles-via-Ansible.** They manage user dotfiles *as Nix* on Nix hosts (rollback, atomicity); we symlink raw dotfiles via `terminal_dotfiles`/`graphical_dotfiles` (editable-in-place, portable to non-Nix hosts — a real advantage for the `terminal` profile). Not a clear win either way.
+- **sops-nix / sops for secrets.** Since this repo is public and deliberately tracks no secrets, sops would let secrets live encrypted *in-repo* instead of being kept out entirely — only worth it if that constraint ever chafes.
+
+What's genuinely unique here (no dedup opportunity found): the `coding-agents/` generator that fans one source file out to four CLIs with per-tool permission translation. No comparable repo surfaced.
+
 ## TODO
 
-flakes?
+flakes? — see `szaffarano/nix-dotfiles` above for the flake + `nixos-hardware` end-state
 fetchgit nixos-hardware ?? common-modules davon
 - fish plugin to show command history
