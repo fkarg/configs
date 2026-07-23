@@ -7,3 +7,7 @@ launch
 new_tab backend
 cd ~/Coding/backend-core
 launch
+
+new_tab infrastructure
+cd ~/Coding/infrastructure
+launch
