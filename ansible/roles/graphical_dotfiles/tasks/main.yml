@@ -192,6 +192,15 @@
   when: ansible_facts['system'] == 'Linux'
   tags: [hyprland]
 
+- name: Link hyprland game-mode helper
+  file:
+    src: "~/{{ configs_repo }}/{{ dotconfigdir }}/hypr/game-mode"
+    dest: ~/.config/hypr/game-mode
+    state: link
+    force: true
+  when: ansible_facts['system'] == 'Linux'
+  tags: [hyprland]
+
 # Per-user .desktop entries (for launcher discovery of small helpers).
 - name: Ensure ~/.local/share/applications exists
   file:

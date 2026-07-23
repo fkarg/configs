@@ -1,0 +1,56 @@
+#!/usr/bin/env bash
+# game-mode — free desktop VRAM before/while gaming on the 8 GB 3070.
+#
+# Usage:
+#   game-mode on              # free VRAM now (manual toggle)
+#   game-mode off             # restore anything game-mode changed
+#   game-mode -- <cmd...>     # on -> run <cmd> (blocks) -> off, even on crash
+#
+# As a Steam launch option:
+#   ~/.config/hypr/game-mode -- %command%
+#
+# What it reclaims: closes background GPU clients (Electron apps, etc.) that sit
+# idle eating VRAM while you game. It does NOT touch Steam (needed to launch) or
+# Firefox (see the FIREFOX section — that mechanism is still being decided).
+set -euo pipefail
+
+# --- background GPU hogs to close on `on` -------------------------------------
+# Matched against full cmdline (pgrep -f), so NixOS-wrapped binaries — whose
+# real comm is .<name>-wrapped — are still caught. Add your own idle GPU apps.
+GPU_HOGS=(
+    "YouTube Music"          # Electron music client (~0.5 GB VRAM)
+    # "vesktop"              # Discord
+    # "slack"
+    # "obsidian"
+)
+
+# --- direct_scanout opt-in (OFF by default; verified off on 0.55.4) -----------
+# Enabling lets Hyprland hand a true-fullscreen game straight to the display and
+# stop compositing that output — less VRAM churn + better VRR pacing. Known to
+# occasionally glitch HDR/cursor/VRR on NVIDIA, so it's opt-in: flip to 1 and
+# test one fullscreen game before trusting it.
+USE_DIRECT_SCANOUT=0
+
+game_on() {
+    for pat in "${GPU_HOGS[@]}"; do
+        pkill -f -- "$pat" 2>/dev/null && echo "game-mode: closed '$pat'" || true
+    done
+    if [[ "$USE_DIRECT_SCANOUT" == 1 ]]; then
+        hyprctl keyword render:direct_scanout 1 >/dev/null && \
+            echo "game-mode: direct_scanout on"
+    fi
+}
+
+game_off() {
+    if [[ "$USE_DIRECT_SCANOUT" == 1 ]]; then
+        hyprctl keyword render:direct_scanout 0 >/dev/null && \
+            echo "game-mode: direct_scanout off"
+    fi
+}
+
+case "${1:-}" in
+    on)  game_on ;;
+    off) game_off ;;
+    --)  shift; game_on; trap game_off EXIT; "$@" ;;
+    *)   echo "usage: game-mode on|off | game-mode -- <cmd...>" >&2; exit 2 ;;
+esac
