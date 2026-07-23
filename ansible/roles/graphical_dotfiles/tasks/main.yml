@@ -174,6 +174,15 @@
   when: ansible_facts['system'] == 'Linux'
   tags: [hyprland]
 
+- name: Link hyprland startup-apps script
+  file:
+    src: "~/{{ configs_repo }}/{{ dotconfigdir }}/hypr/startup-apps.sh"
+    dest: ~/.config/hypr/startup-apps.sh
+    state: link
+    force: true
+  when: ansible_facts['system'] == 'Linux'
+  tags: [hyprland]
+
 - name: Link hyprland resize helper
   file:
     src: "~/{{ configs_repo }}/{{ dotconfigdir }}/hypr/hypr-resize"

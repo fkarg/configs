@@ -1,0 +1,9 @@
+# Dev terminal for workspace 3: one tab per active project.
+# Launched by dotconfig/hypr/startup-apps.sh via `kitty --session`.
+new_tab frontend
+cd ~/Coding/frontend-react
+launch
+
+new_tab backend
+cd ~/Coding/backend-core
+launch
