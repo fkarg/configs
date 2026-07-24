@@ -44,25 +44,6 @@
         linuxPackages_latest = withJqNvidia prev.linuxPackages_latest;
         linuxPackages_6_18 = withJqNvidia prev.linuxPackages_6_18;
       })
-
-    # Pin hy3 to the upstream release matching this channel's Hyprland (0.55.x).
-    # nixpkgs ships hy3 0.54.2.1, which no longer compiles against hyprland
-    # 0.55.2 (Hyprland dropped CCompositor::closeWindow and changed the
-    # Vector2D/CBox API). The hl0.55.0 tag tracks hyprland 0.55.x and is
-    # cache-backed. Consumed by the i2c-hy3 specialisation below.
-    (final: prev: {
-      hyprlandPlugins = prev.hyprlandPlugins // {
-        hy3 = prev.hyprlandPlugins.hy3.overrideAttrs (_: {
-          version = "0.55.0";
-          src = final.fetchFromGitHub {
-            owner = "outfoxxed";
-            repo = "hy3";
-            rev = "hl0.55.0";
-            hash = "sha256-P3wwiIfqo89evW7xzI+wOI/qM1WPZBiiSmGNtBmYeVk=";
-          };
-        });
-      };
-    })
   ];
 
   # Default to linuxPackages_latest (7.1.x). We used to pin 7.0, but nixpkgs
@@ -263,18 +244,6 @@
       "systemd.show_status=1"
       "rd.systemd.show_status=1"
     ];
-  };
-
-  # Opt-in specialisation for the hy3 Hyprland layout. Booting this entry makes
-  # the hy3 plugin available at /run/current-system/sw/lib/libhy3.so; the
-  # guarded exec-once in dotconfig/hypr/hyprland.conf detects it and switches
-  # the layout to hy3 for reliable N-way tiled resize. Default boot has no hy3
-  # .so, so it stays on dwindle. Pick this entry to try manual i3-style tiling;
-  # fall back to the default generation if anything misbehaves. (i2c is on in
-  # both, so the Ctrl+Shift+F12 KVM bind works regardless.)
-  specialisation.hy3.configuration = {
-    boot.loader.grub.configurationName = "hy3 (manual tiling)";
-    environment.systemPackages = [ pkgs.hyprlandPlugins.hy3 ];
   };
 
   # Fallback kernel on the 6.18 LTS line. Default boot is linuxPackages_latest

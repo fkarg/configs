@@ -106,15 +106,6 @@
     hyprpaper
     hyprpicker
     hyprpolkitagent
-    # hy3 plugin (column-based layout for clean N-way splits on ultrawide) is
-    # deliberately NOT in this shared base profile. The nixpkgs hy3 (0.54.2.1)
-    # fails to compile against hyprland 0.55.x, so it is pinned to the upstream
-    # hl0.55.0 tag via an overlay in nixos/machines/jolly.nix and enabled only
-    # through that host's `i2c-hy3` specialisation. The guarded exec-once in
-    # dotconfig/hypr/hyprland.conf loads it from
-    # /run/current-system/sw/lib/libhy3.so and switches the layout to hy3 when
-    # that specialisation is booted; the default boot stays on dwindle.
-
     # screenshots and clipboard
     grim
     hyprshot
