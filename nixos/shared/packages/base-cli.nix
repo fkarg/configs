@@ -8,6 +8,7 @@
     git-lfs
     eza
     curl
+    openssl
     fish
     htop
     btop
