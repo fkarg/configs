@@ -368,5 +368,13 @@
     zotero
     # YouTube Music client; autostarted on ws4 by dotconfig/hypr/startup-apps.sh.
     pear-desktop
+    # boincmgr silently exits 1 on the GTK Wayland backend during NVIDIA EGL
+    # init; it runs fine under Xwayland, so shadow it with a wrapper that
+    # forces the x11 backend. hiPrio wins the bin/boincmgr collision with the
+    # plain boinc package that services.boinc puts in systemPackages.
+    (lib.hiPrio (pkgs.writeShellScriptBin "boincmgr" ''
+      export GDK_BACKEND=x11
+      exec ${pkgs.boinc}/bin/boincmgr "$@"
+    ''))
   ];
 }
