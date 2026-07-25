@@ -37,9 +37,11 @@ SETUVAR _fish_abbr_n:nmcli\x20d\x20w
 SETUVAR _fish_abbr_ne:nix\x2denv\x20\x2de
 SETUVAR _fish_abbr_ni:nix\x2denv\x20\x2diA\x20nixpkgs\x2e
 SETUVAR _fish_abbr_nq:nix\x2denv\x20\x2dq
-SETUVAR _fish_abbr_nrb:sudo\x20nixos\x2drebuild\x20boot\x20\x2d\x2dupgrade\x20\x2dj8
-SETUVAR _fish_abbr_nrs:sudo\x20nixos\x2drebuild\x20switch
+SETUVAR _fish_abbr_nrb:sudo\x20nixos\x2drebuild\x20boot\x20\x2d\x2dupgrade\x20\x2dj8\x20\x26\x7c\x20nom
+SETUVAR _fish_abbr_nrs:sudo\x20nixos\x2drebuild\x20switch\x20\x26\x7c\x20nom
 SETUVAR _fish_abbr_ns:nix\x2dshell
+SETUVAR _fish_abbr_nsi:nix\x2dsearch\x20\x2d\x2dindex
+SETUVAR _fish_abbr_nso:nix\x2dsearch\x2dtv\x20print\x20\x7c\x20fzf\x20\x2d\x2dpreview\x20\x27nix\x2dsearch\x2dtv\x20preview\x20\x7b\x7d\x27\x20\x2d\x2dscheme\x20history
 SETUVAR _fish_abbr_nsp:nix\x2dshell\x20\x2dp
 SETUVAR _fish_abbr_nu:nix\x2denv\x20\x2du
 SETUVAR _fish_abbr_p:pnpm
