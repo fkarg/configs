@@ -37,7 +37,7 @@ SETUVAR _fish_abbr_n:nmcli\x20d\x20w
 SETUVAR _fish_abbr_ne:nix\x2denv\x20\x2de
 SETUVAR _fish_abbr_ni:nix\x2denv\x20\x2diA\x20nixpkgs\x2e
 SETUVAR _fish_abbr_nq:nix\x2denv\x20\x2dq
-SETUVAR _fish_abbr_nrb:sudo\x20nixos\x2drebuild\x20boot\x20\x2d\x2dupgrade\x20\x2dj8\x20\x26\x7c\x20nom
+SETUVAR _fish_abbr_nrb:sudo\x20nixos\x2drebuild\x20boot\x20\x2d\x2dupgrade\x20\x2dj8\x20\x26\x7c\x20nom\x3b\x20and\x20nix\x20\x2d\x2dextra\x2dexperimental\x2dfeatures\x20nix\x2dcommand\x20store\x20diff\x2dclosures\x20/run/current\x2dsystem\x20/nix/var/nix/profiles/system
 SETUVAR _fish_abbr_nrs:sudo\x20nixos\x2drebuild\x20switch\x20\x26\x7c\x20nom
 SETUVAR _fish_abbr_ns:nix\x2dshell
 SETUVAR _fish_abbr_nsi:nix\x2dsearch\x20\x2d\x2dindex
