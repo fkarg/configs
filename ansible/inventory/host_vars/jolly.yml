@@ -36,8 +36,8 @@ background_image: "{{ home_dir }}/{{ configs_repo }}/pictures/IMAG7297.JPG"
 # via `m1ddc display <id> get input`). The panel's other inputs: 0x11 HDMI-1,
 # 0x12 HDMI-2, 0x0f DisplayPort-1. Works on every boot now that
 # hardware.i2c.enable is default-on (see nixos/machines/jolly.nix).
+# The switch fires exactly once — a re-select hold loop fought the monitor's
+# input arbitration and made the switch flicker back and forth. If caeli has
+# no signal yet (still booting), just press again once it's up.
 kvm_switch_enabled: true
 kvm_switch_target_input: 21
-# Keep re-selecting caeli's input for a minute so the monitor does not auto-hop
-# back while caeli is still waking/booting and has no signal yet.
-kvm_switch_hold_seconds: 60
