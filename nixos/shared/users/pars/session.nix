@@ -11,6 +11,17 @@
     # that's where the shared libs go, you can find which one you need using
     # nix-locate --top-level libstdc++.so.6  (replace this with your lib)
     # ^ this requires `nix-index` pkg
+
+    # Chromium runtime deps, so Playwright's downloaded browser (pnpm
+    # test:e2e) launches without an FHS wrapper. Verified against
+    # chrome-headless-shell 149.
+    glib nspr nss atk at-spi2-atk at-spi2-core cups dbus libdrm
+    gtk3 gdk-pixbuf pango cairo expat libxkbcommon mesa libgbm alsa-lib
+    fontconfig freetype libglvnd systemd
+    libx11 libxcomposite libxdamage libxext
+    libxfixes libxrandr libxcb libxcursor
+    libxi libxtst libxrender libxscrnsaver
+    libxshmfence
   ];
 
   environment.variables = {
