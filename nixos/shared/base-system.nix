@@ -3,6 +3,11 @@
 {
   # automatically run `nix-store --optimize`
   nix.settings.auto-optimise-store = true;
+  # fsync store paths before registering them as valid: without this, a
+  # power loss mid-build/download leaves zero-length files that Nix still
+  # considers valid (bit jolly on 2026-07-27, corrupted gen 44's mesa +
+  # graphics-driver.conf and broke every compositor)
+  nix.settings.fsync-store-paths = true;
   nix.gc = {
     automatic = true;
     dates = "weekly";
