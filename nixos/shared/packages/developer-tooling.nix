@@ -29,6 +29,7 @@
     # general developer utilities
     actionlint
     lazygit
+    pre-commit
     graphviz
     svgbob
     iperf
