@@ -94,13 +94,14 @@ Write both in-thread — they go to the checkpoint and into the PR body:
 
 Then delegate to `production-readiness` with the same diff and worktree path. Route its follow-ups per the target repo's AGENTS.md; filing an issue in another repo is outward-facing — confirm with the user first.
 
-Present the map, the reading guide, the synthesized findings, and the production report in-thread, then proceed directly to shipping — no approval pause. The PR itself is the review checkpoint. Only stop here if an unresolved 🔴 finding or a tripped change budget is still open — those go to the user before shipping.
+Don't present any of this to the user yet — mid-workflow output gets buried under the reasoning and tool calls that follow. Proceed directly to shipping; everything surfaces in the PR body and the final report (step 8). Only stop here if an unresolved 🔴 finding or a tripped change budget is still open — those go to the user before shipping.
 
 ## 8. Ship
 
 1. `git add -A`, then delegate to the `commit` agent (`<module>: <summary>` style; mention `Closes #<n>`).
 2. `git push -u origin HEAD`, then `gh pr create --base <default>` — the PR body carries the architectural map and reading guide.
 3. Keep the worktree while external review feedback is likely; otherwise `git worktree remove` it.
+4. **Final report — the one message the user actually reads.** End the run with a single consolidated message: the PR link, the architectural map, the reviewer's reading guide, the synthesized review findings, and the production report. Everything earlier has scrolled past; this message must stand alone.
 
 ## Principles
 
