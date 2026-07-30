@@ -1,0 +1,8 @@
+# Scratchpad (Super+S) system monitor: btop, plus GPU usage next to it.
+# Launched by dotconfig/hypr/startup-apps.sh via `kitty --session`.
+new_tab btop
+launch btop
+focus
+
+new_tab gpu
+launch watch -d nvidia-smi

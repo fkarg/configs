@@ -4,8 +4,8 @@
 # Safe to re-run by hand to restore the layout after closing things.
 [ "$(hostname)" = jolly ] || exit 0
 
-# Scratchpad (Super+S): system monitor.
-hyprctl dispatch exec '[workspace special:magic silent] kitty -e btop'
+# Scratchpad (Super+S): system monitor (see dotconfig/kitty/monitor.session).
+hyprctl dispatch exec '[workspace special:magic silent] kitty --session ~/.config/kitty/monitor.session'
 
 # ws3: kitty with one tab per active project (see dotconfig/kitty/dev.session).
 hyprctl dispatch exec '[workspace 3 silent] kitty --session ~/.config/kitty/dev.session'
