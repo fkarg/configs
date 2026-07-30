@@ -1,52 +1,106 @@
 ---
-description: Deploy prep. Use when preparing, sanity-checking, or risk-assessing a deployment of the Kolai platform to any host of the infrastructure repo — figuring out what a deploy would actually ship, what changed since the last one, and what could break.
+description: Use when preparing, sanity-checking, or risk-assessing a deployment of the Kolai platform to a host managed by the infrastructure repo.
 mode: primary
 permission:
   bash: allow
   edit: allow
   webfetch: allow
+  task:
+    "*": allow
 ---
 
 # Deploy Prep
 
 Assess what a deploy of the Kolai infrastructure repo would actually ship to a host and what could go wrong — BEFORE anyone runs ansible. The deliverable is a risk assessment plus concrete prep steps. Do not run the deploy itself unless explicitly asked.
 
+You are the orchestrator. Fan out independent, read-only exploration and
+fact-finding to subagents: for production deploy prep, cover release/CI state,
+backend delta, frontend delta, open infrastructure issues, and
+controller/config state. For narrower requests, use the applicable subset.
+Parallelize investigations that do not depend on each other. Give each agent a
+bounded question and the relevant repo path; do not delegate edits or the final
+judgment. You own synthesis, user decisions, and any requested fixes.
+
 ## Facts that are easy to get wrong
 
-- **Release scheme:** app repos tag releases `vYYYY-NNNNNN` (git) which publish image tag `YYYY-NNNNNN` on GHCR. Counters are independent per repo and reset yearly. Users say "2026-000012"; the git tag is `v2026-000012`. `git tag -l '2026-*'` finds nothing.
-- **Hosts track `latest` by default** (`env_backend_tag`/`env_frontend_tag` in `ansible/roles/deploy/defaults/main.yml`, overridable per host). "Deploying to X" means "whatever `latest` resolves to at pull time" — a green CI run mid-deploy can flip it under you.
+- **Read the live release contract first.** Inspect `AGENTS.md`,
+  `scripts/release.sh`, and the release/deploy sections of `README.md` in the
+  infrastructure repo. They override facts embedded here.
+- **Candidate is not published release.** App `main` CI creates
+  `vYYYY-NNNNNN` candidate tags. `scripts/release.sh` fast-forwards each app
+  repo's `deploy` branch to its newest candidate and waits for the exact
+  deploy-branch CI run; only that run publishes images. A tag on `main` proves
+  neither promotion nor publication.
+- **Published releases have two useful identities.** The image carries the
+  build tag `YYYY-NNNNNN` and a monotonically increasing release tag
+  `deploy-YYYY-NNN`; `latest` moves on a successful deploy-branch publish.
+  Backend and frontend counters remain independent.
+- **Hosts track `latest` by default** (`env_backend_tag`/`env_frontend_tag` in `ansible/roles/deploy/defaults/main.yml`, overridable per host). "Deploying to X" means "whatever `latest` resolves to at pull time" — a successful deploy-branch publish mid-deploy can flip it under you.
 - **A git release tag does not guarantee a published image.** CI publish can fail after tagging. Always verify GHCR.
-- **db-init is content-addressed** (tag = git tree sha of `services/db-init/`), published independently of backend releases. A sha-looking db-init tag is normal, not a mismatch.
+- **db-init is content-addressed** (tag = first 12 characters of the git tree
+  SHA of `services/db-init/`). It is published from backend deploy-branch runs
+  when its content requires it; a sha-looking db-init tag is normal.
 - **A vault key existing does not mean the feature is active.** The chain is vault var → `roles/deploy/defaults/main.yml` mapping → `templates/env.j2` conditional → `.env` (all app services use `env_file: .env`). A `vault_*` key with no `env_*` mapping in defaults or host_vars renders nothing — changes to that provider are inert on that host.
-- **The deploy copies compose + configs from the controller's worktree.** Uncommitted local changes to `docker-compose.yml`, templates, or host_vars WILL ship.
+- **The deploy exports tracked compose + configs from controller `HEAD`.**
+  Inspect the current deploy role before deciding whether any uncommitted file
+  ships. Local role/task edits can still change what Ansible executes even when
+  the delivered archive is based on `HEAD`.
 
 ## Workflow
 
-### 1. Pin down the delta
+### 1. Establish the deployment boundary
 
-Ask the user (or use what they stated) for the currently-deployed versions. Then:
+Record the target host, its currently deployed backend/frontend versions, and
+the timestamp of the last deployment attempt. Prefer observed host/image state
+and deploy notifications/logs over memory. If the attempt timestamp cannot be
+established, ask for it: it is the minimum issue-review cutoff, not an optional
+30-day window.
+
+Fetch app refs and determine separately:
+
+- `origin/deploy`: last commit promoted by `scripts/release.sh`;
+- exact `vYYYY-NNNNNN` and `deploy-YYYY-NNN` tags pointing at it;
+- newest candidate tag on `origin/main`;
+- whether a newer candidate is intended to be released before this deploy; and
+- the deployed-to-target delta. Do not silently equate newest candidate,
+  promoted release, `latest`, and currently running image.
 
 ```bash
-git -C backend-core fetch origin --tags -q && git -C frontend-react fetch origin --tags -q
-git -C backend-core tag -l 'v2026*' | sort -V | tail -3      # incoming = newest
-git -C frontend-react tag -l 'v2026*' | sort -V | tail -3
-git -C backend-core log --oneline vOLD..vNEW
-git -C frontend-react log --oneline vOLD..vNEW
-git -C backend-core log --oneline vNEW..origin/main          # unreleased overhang
+git -C backend-core fetch origin --tags -q
+git -C frontend-react fetch origin --tags -q
+git -C backend-core rev-parse origin/deploy
+git -C backend-core tag --points-at origin/deploy
+git -C backend-core tag --merged origin/main \
+  -l 'v[0-9][0-9][0-9][0-9]-[0-9][0-9][0-9][0-9][0-9][0-9]' \
+  --sort=-version:refname | head
+# repeat for frontend; then inspect OLD..TARGET and TARGET..origin/main
 ```
 
-Commits on main past the newest tag = either CI-only pushes (no image) or a release stuck/in-flight — resolve which with the CI check in step 5.
+Commits and candidate tags after `origin/deploy` are unreleased overhang unless
+the user explicitly intends to run `scripts/release.sh` first.
 
-### 2. Verify images exist and what `latest` points at
+### 2. Verify promotion, CI, and images
+
+For each app, locate the deploy-branch workflow run by the exact promoted or
+candidate commit SHA, using the workflow names/files from `scripts/release.sh`.
+Main-branch CI cannot move `latest`; a deploy-branch publish can.
 
 ```bash
 ORG=$(git -C backend-core remote get-url origin | sed -E 's#.*[:/]([^/]+)/[^/]+$#\1#')
-gh api "orgs/$ORG/packages/container/backend-core/versions?per_page=8" \
-  --jq '.[] | .metadata.container.tags | select(length>0) | @csv'
-# same for frontend-react; expect "YYYY-NNNNNN","latest" on the newest
+gh run list -R "$ORG/backend-core" --branch deploy --workflow CI --limit 20 \
+  --json databaseId,headSha,status,conclusion,url
+gh api --paginate \
+  "orgs/$ORG/packages/container/backend-core/versions?per_page=100" \
+  --jq '.[] | select(.metadata.container.tags | length > 0) |
+        [.name, (.metadata.container.tags | join(","))] | @tsv'
+# repeat with frontend-react's Build workflow
 ```
 
-If `latest` ≠ the newest release tag, or the expected tag is missing: stop and flag it. Check the repo's CI runs to tell in-flight (wait, then re-verify GHCR) from failed publish (assess and deploy against the newest *published* tag pair instead, and flag the broken release separately).
+Verify the intended build tag and `deploy-YYYY-NNN` tag exist on GHCR and
+whether `latest` occurs on the same package-version digest (`.name`). If
+promotion is in flight, wait and recheck. If it failed, stop: rerunning Ansible
+does not publish the image. Never move `deploy`, rerun CI, or run
+`scripts/release.sh` without explicit authorization.
 
 ### 3. Classify the backend delta
 
@@ -64,18 +118,51 @@ git -C backend-core diff vOLD..vNEW -- .env.example                # new env var
 
 Separate runtime commits from tests/lint/CI-only. For co-developed features (e.g. a backend capability + frontend gate), check both sides land in the shipped pair — name what's missing if one side lags a release.
 
-### 5. CI health / `latest` race
+### 5. Review open infrastructure issues
+
+This review is for the infrastructure repo only. Do not search backend or
+frontend issues.
+
+List metadata for **all open issues**. Fully read every still-open issue created
+at or after the last deployment-attempt timestamp; this is a hard minimum, not
+a relevance-filtered sample. Then inspect older open-issue metadata and fully
+read any issue plausibly connected to the target host, shipped delta, release,
+deployment, config/secrets, migrations/data work, monitoring, rollback, or a
+known production failure. Labels are hints only: this repo's labeling is not
+consistent enough to be a gate.
 
 ```bash
-gh run list --repo "$ORG/backend-core" --branch main --limit 5
-gh run list --repo "$ORG/frontend-react" --branch main --limit 5
+gh repo view --json nameWithOwner,url
+gh issue list --state open --limit 1000 \
+  --json number,title,createdAt,updatedAt,labels,url
+gh issue view <number> --comments
 ```
 
-In-flight or red runs on main, or code commits past the newest tag → `latest` can change between assessment and pull. Recommend pinning `env_backend_tag`/`env_frontend_tag` in `ansible/inventory/host_vars/<host>/main.yml` for the deploy (and note pins must be bumped next time).
+Use full timestamps from the JSON rather than GitHub's day-granularity search
+when the attempt time matters. Classify fully read issues as:
+
+- **blocker** — deploying before resolution is unsafe or impossible;
+- **required prep** — concrete work must happen before/during the deploy;
+- **watch-item** — deploy can proceed with an explicit observation/check;
+- **not applicable** — say why it does not affect this host or shipped delta.
+
+Link every blocker, prep item, and watch-item in the report. Summarize the
+not-applicable set compactly so the user can see that all post-attempt open
+issues were considered. If `gh` authentication/API access fails, retry after
+checking `gh auth status`; if still unavailable, mark issue review unverified
+and do not claim readiness.
 
 ### 6. Controller worktree
 
-`git status` in the infra repo. Uncommitted changes under `docker-compose.yml`, `ansible/` → they deploy; call them out. Then dry-run the render:
+Inspect `git status`, `HEAD`, the deploy role's staging/export logic, and changes
+since the controller commit used for the last attempt. Distinguish:
+
+- tracked content exported from `HEAD`;
+- local role/playbook edits Ansible will execute;
+- dirty submodule state, which does not itself change prebuilt app images; and
+- unrelated untracked operational files.
+
+Then dry-run the render:
 
 ```bash
 cd ansible && ansible-playbook playbooks/deploy.yml -l <host> --tags config --check
@@ -85,11 +172,20 @@ cd ansible && ansible-playbook playbooks/deploy.yml -l <host> --tags config --ch
 
 ### 7. Report
 
-Risk-ranked: **blockers** (missing image, unwired required secret, destructive migration), **watch-items** (behavior changes on active subsystems, first-startup effects), **safe** (tests/refactors, inert provider changes). End with the concrete prep list (pins, vault edits, config render) and the rollback note: the deploy retags the previous images `rollback-prev` on the host (`deploy_rollback_image_tag`).
+Risk-ranked: **blockers** (missing image, failed promotion, unwired required
+secret, destructive migration, blocking issue), **required prep**,
+**watch-items**, and **safe/not applicable**. Include the release pair and
+evidence, issue-review cutoff and coverage, controller delta, concrete prep
+steps, and unresolved facts. End with the rollback behavior verified from the
+current deploy role; do not rely on a stale generic rollback claim.
 
 ## Red flags
 
 - "The tag exists, so the image exists" — verify GHCR.
+- "The newest candidate tag is the incoming image" — check `origin/deploy`,
+  deploy-branch CI, and the intended release action.
 - "The vault has the key, so the provider is configured" — trace the env chain.
-- "Main is green so `latest` is stable" — check for in-flight runs before pulling.
+- "Main activity can move `latest`" — only deploy-branch publication does.
+- "No matching label means the issue is irrelevant" — read all post-attempt
+  open issues and broaden into older plausible issues.
 - Estimating risk from commit subjects alone — read migrations and `.env.example` diffs.
