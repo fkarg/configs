@@ -94,7 +94,7 @@ Write both in-thread — they go to the checkpoint and into the PR body:
 
 Then delegate to `production-readiness` with the same diff and worktree path. Route its follow-ups per the target repo's AGENTS.md; filing an issue in another repo is outward-facing — confirm with the user first.
 
-**Checkpoint:** present the map, the reading guide, the synthesized findings, and the production report. **Wait for the user.**
+Present the map, the reading guide, the synthesized findings, and the production report in-thread, then proceed directly to shipping — no approval pause. The PR itself is the review checkpoint. Only stop here if an unresolved 🔴 finding or a tripped change budget is still open — those go to the user before shipping.
 
 ## 8. Ship
 
