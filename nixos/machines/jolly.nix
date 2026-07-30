@@ -368,6 +368,11 @@
     zotero
     # YouTube Music client; autostarted on ws4 by dotconfig/hypr/startup-apps.sh.
     pear-desktop
+    # btop's GPU panel dlopens libnvidia-ml.so.1; the plain btop from the shared
+    # package lists lacks /run/opengl-driver/lib in its runpath, so NVML never
+    # loads and the GPU section silently disappears. The cuda variant stamps the
+    # driver runpath in; hiPrio wins the bin/btop collision.
+    (lib.hiPrio btop-cuda)
     # boincmgr silently exits 1 on the GTK Wayland backend during NVIDIA EGL
     # init; it runs fine under Xwayland, so shadow it with a wrapper that
     # forces the x11 backend. hiPrio wins the bin/boincmgr collision with the
