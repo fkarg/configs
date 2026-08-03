@@ -146,7 +146,7 @@ symlink appeared in `~/.claude/skills/<name>/` (and `~/.codex/skills/<name>/`).
 1. Edit `source/<name>.md`.
 2. From `~/configs`, run:
    ```sh
-   ansible-playbook ansible/site.yml -l <host> --tags coding-agents
+   ansible-playbook ansible/site.yml -l <host> --tags coding_agents
    ```
 3. Test in your tool.
 
