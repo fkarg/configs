@@ -19,6 +19,7 @@
     "defaultMode": "auto"
   },
   "model": "fable",
+  "cleanupPeriodDays": 3650,
   "hooks": {
     "SessionStart": [
       {
