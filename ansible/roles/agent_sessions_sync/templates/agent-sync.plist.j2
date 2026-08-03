@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>Label</key>
+	<string>eu.kolai.agent-sync</string>
+	<key>ProgramArguments</key>
+	<array>
+		<string>{{ home_dir }}/.local/bin/agent-sync</string>
+		<string>both</string>
+	</array>
+	<key>EnvironmentVariables</key>
+	<dict>
+		<!-- Homebrew first: macOS /usr/bin/rsync is openrsync, which honours
+		     --update but does not document it. agent-sync's conflict rule
+		     depends on that flag, so use the GNU rsync the Linux hosts run. -->
+		<key>PATH</key>
+		<string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+		<key>AGENT_SYNC_HUB</key>
+		<string>{{ agent_sync_hub }}</string>
+		<key>AGENT_SYNC_CANON_HOME</key>
+		<string>{{ agent_sync_canon_home }}</string>
+		<key>AGENT_SYNC_SETTLE_MIN</key>
+		<string>{{ agent_sync_settle_min }}</string>
+	</dict>
+	<key>StartInterval</key>
+	<integer>{{ agent_sync_interval }}</integer>
+	<key>RunAtLoad</key>
+	<false/>
+	<key>ProcessType</key>
+	<string>Background</string>
+	<key>StandardOutPath</key>
+	<string>/tmp/agent-sync.log</string>
+	<key>StandardErrorPath</key>
+	<string>/tmp/agent-sync.log</string>
+</dict>
+</plist>

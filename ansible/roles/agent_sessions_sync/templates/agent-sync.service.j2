@@ -1,0 +1,14 @@
+[Unit]
+Description=Sync Claude Code + Codex session history with {{ agent_sync_hub }}
+# No network-online.target: user units start before it on most setups, and
+# agent-sync already exits quietly when the hub is unreachable.
+
+[Service]
+Type=oneshot
+Environment=AGENT_SYNC_HUB={{ agent_sync_hub }}
+Environment=AGENT_SYNC_CANON_HOME={{ agent_sync_canon_home }}
+Environment=AGENT_SYNC_SETTLE_MIN={{ agent_sync_settle_min }}
+# User units inherit a minimal PATH; rsync/ssh/find must be resolvable. The nix
+# profile comes first so NixOS hosts get their own toolchain.
+Environment=PATH=%h/.nix-profile/bin:/run/current-system/sw/bin:/usr/local/bin:/usr/bin:/bin
+ExecStart=%h/.local/bin/agent-sync both

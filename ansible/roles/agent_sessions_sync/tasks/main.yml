@@ -1,0 +1,86 @@
+---
+# Install agent-sync plus its periodic trigger. The latency-sensitive path is
+# the SessionEnd hook (wired up by the coding_agents role); the timer here is
+# the backstop for crashed sessions and for Codex, which has no hook.
+
+- name: Ensure ~/.local/bin exists
+  file:
+    path: ~/.local/bin
+    state: directory
+    mode: '0755'
+
+- name: Install agent-sync
+  file:
+    src: "{{ repo_root }}/scripts/agent-sync"
+    dest: ~/.local/bin/agent-sync
+    state: link
+    force: true
+
+- name: Ensure agent-sync is executable
+  file:
+    path: "{{ repo_root }}/scripts/agent-sync"
+    mode: '0755'
+
+# ============================================
+# PERIODIC TRIGGER — launchd on macOS, systemd user timer elsewhere
+# ============================================
+
+- name: Ensure user LaunchAgents directory exists (macOS)
+  file:
+    path: ~/Library/LaunchAgents
+    state: directory
+    mode: '0755'
+  when: ansible_facts['system'] == 'Darwin'
+
+- name: Install agent-sync LaunchAgent (macOS)
+  template:
+    src: agent-sync.plist.j2
+    dest: ~/Library/LaunchAgents/eu.kolai.agent-sync.plist
+    mode: '0644'
+  when: ansible_facts['system'] == 'Darwin'
+  register: _agent_sync_plist
+
+# launchd caches the loaded job; a changed plist needs an explicit reload to
+# take effect before the next login.
+- name: Reload agent-sync LaunchAgent (macOS)
+  shell: |
+    launchctl bootout gui/$(id -u)/eu.kolai.agent-sync 2>/dev/null || true
+    launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/eu.kolai.agent-sync.plist
+  when:
+    - ansible_facts['system'] == 'Darwin'
+    - _agent_sync_plist is changed
+    - not ansible_check_mode
+  changed_when: true
+
+- name: Ensure user systemd directory exists (Linux)
+  file:
+    path: ~/.config/systemd/user
+    state: directory
+    mode: '0755'
+  when: ansible_facts['system'] == 'Linux'
+
+# Written as user units rather than declared in the NixOS config on purpose:
+# jolly's rule is to prepare system changes for the next boot instead of
+# live-switching, so a nixos-rebuild would delay this behind a reboot. User
+# units apply on the ansible run itself and keep both hosts on one code path.
+- name: Install agent-sync systemd user units (Linux)
+  template:
+    src: "{{ item }}.j2"
+    dest: "~/.config/systemd/user/{{ item }}"
+    mode: '0644'
+  loop:
+    - agent-sync.service
+    - agent-sync.timer
+  when: ansible_facts['system'] == 'Linux'
+  register: _agent_sync_units
+
+- name: Enable agent-sync timer (Linux)
+  systemd:
+    name: agent-sync.timer
+    scope: user
+    enabled: true
+    state: started
+    daemon_reload: "{{ _agent_sync_units is changed }}"
+  when:
+    - ansible_facts['system'] == 'Linux'
+    - not ansible_check_mode

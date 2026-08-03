@@ -9,6 +9,7 @@ host_roles:
   - personal
   - graphical_dotfiles
   - coding_agents
+  - agent_sessions_sync
 
 # This is a personal workstation with repo-managed dotfiles. If an app creates
 # a real config file/dir first, repair it back to the repo symlink on rerun.

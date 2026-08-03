@@ -63,6 +63,16 @@
           }
         ]
       }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ~/.claude/session-end-sync-hook.sh"
+          }
+        ]
+      }
     ]
   },
   "worktree": {

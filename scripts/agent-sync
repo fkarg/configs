@@ -1,0 +1,282 @@
+#!/usr/bin/env bash
+# agent-sync — unify Claude Code + Codex session history across hosts.
+#
+# WHY THIS EXISTS
+# Claude Code stores each conversation at
+#   ~/.claude/projects/<cwd, non-alphanumerics replaced by '-'>/<uuid>.jsonl
+# so the same repo keys differently per host: caeli produces
+# -Users-felix-Coding-backend-core, the Linux hosts -home-pars-Coding-backend-core.
+# Copying transcripts around verbatim therefore does nothing — `claude --resume`
+# looks in the directory derived from the *local* cwd and never sees them.
+#
+# Resume depends ONLY on that directory name. The `cwd` fields recorded inside
+# the transcript are not consulted: a transcript whose entries all say
+# /Users/felix/configs resumes cleanly, with full history intact, from a project
+# directory keyed to a completely different path (verified directly). Unifying
+# history is thus purely a rename on the way in and out.
+#
+# CANONICAL NAMESPACE
+# The hub's own encoding (/home/pars) is canonical, because the hub and jolly
+# already produce it natively — only caeli transforms. The hub's live
+# ~/.claude/projects IS the store, so the hub syncs nothing itself.
+#
+# Codex needs no transform at all: rollouts live under
+# ~/.codex/sessions/YYYY/MM/DD/rollout-<ts>-<uuid>.jsonl, date-partitioned with
+# no path encoding anywhere, so that half is a straight tree sync.
+#
+# SAFETY RULES (deliberate, do not "simplify" away)
+#   --update    newest mtime wins, so the hub arbitrates when the same session
+#               was resumed on two hosts. Transcripts are append-only, so newest
+#               is also longest in every non-branching case.
+#   --backup    the version being overwritten is kept rather than lost, which is
+#               the safety net under --update's newest-wins.
+#   no --delete a GC or a stale local copy must never remove history from the
+#               other hosts. This is the failure mode that motivated the whole
+#               setup (Claude Code's cleanupPeriodDays defaulted to 30 days and
+#               was silently pruning transcripts on every machine).
+#   settle age  files still being appended to by a live session are skipped, so
+#               a half-written last line is never what lands on the hub. The
+#               next run picks them up once quiet.
+#
+# Usage:
+#   agent-sync             push, then pull
+#   agent-sync push        local -> hub
+#   agent-sync pull        hub -> local
+#   agent-sync file PATH   push a single transcript (used by the SessionEnd hook)
+#
+# Env overrides: AGENT_SYNC_HUB, AGENT_SYNC_CANON_HOME, AGENT_SYNC_SETTLE_MIN.
+
+set -uo pipefail
+
+HUB="${AGENT_SYNC_HUB:-fkarg.de}"
+CANON_HOME="${AGENT_SYNC_CANON_HOME:-/home/pars}"
+SETTLE_MIN="${AGENT_SYNC_SETTLE_MIN:-2}"
+
+CLAUDE_LOCAL="$HOME/.claude/projects"
+CODEX_LOCAL="$HOME/.codex/sessions"
+CLAUDE_REMOTE=".claude/projects"
+CODEX_REMOTE=".codex/sessions"
+
+STAMP="$(date +%F)"
+LOCAL_BACKUP="$HOME/.agent-sync-conflicts/$STAMP"
+REMOTE_BACKUP="$CANON_HOME/.agent-sync-conflicts/$STAMP"
+
+# Reuse one SSH connection across the per-directory rsync calls; without this a
+# host with a dozen project directories pays a full handshake for each.
+SSH_CTL="$HOME/.ssh/agent-sync-%C"
+SSH_CMD="ssh -o BatchMode=yes -o ConnectTimeout=10 \
+-o ControlMaster=auto -o ControlPath=$SSH_CTL -o ControlPersist=30"
+
+log() { printf '%s agent-sync: %s\n' "$(date +%H:%M:%S)" "$*" >&2; }
+
+# AGENT_SYNC_DRY=1 shows what would move without touching anything. Worth having
+# in a tool that writes into two agents' state directories on three machines.
+RSYNC_EXTRA=()
+if [ -n "${AGENT_SYNC_DRY:-}" ]; then
+	RSYNC_EXTRA=(--dry-run --itemize-changes)
+fi
+
+# Claude Code's project-directory encoding: every non-alphanumeric byte becomes '-'.
+enc() { printf '%s' "$1" | sed 's/[^a-zA-Z0-9]/-/g'; }
+
+LOCAL_ENC="$(enc "$HOME")"
+CANON_ENC="$(enc "$CANON_HOME")"
+
+# Map a project directory name between the local and canonical namespaces.
+# Names that don't start with the home prefix (/tmp checkouts, other users'
+# paths) pass through untouched: they still sync as history, they're simply not
+# resumable anywhere but their origin host, which is correct.
+#
+# Matching requires the prefix to be followed by '-' (or be the whole name), so
+# a sibling home like /Users/felixtest can't be mistaken for /Users/felix.
+to_canon() {
+	case "$1" in
+	"$LOCAL_ENC") printf '%s' "$CANON_ENC" ;;
+	"$LOCAL_ENC"-*) printf '%s%s' "$CANON_ENC" "${1#"$LOCAL_ENC"}" ;;
+	*) printf '%s' "$1" ;;
+	esac
+}
+
+to_local() {
+	case "$1" in
+	"$CANON_ENC") printf '%s' "$LOCAL_ENC" ;;
+	"$CANON_ENC"-*) printf '%s%s' "$LOCAL_ENC" "${1#"$CANON_ENC"}" ;;
+	*) printf '%s' "$1" ;;
+	esac
+}
+
+hub_reachable() {
+	$SSH_CMD -o ConnectTimeout=5 "$HUB" true 2>/dev/null
+}
+
+# Serialise full runs. The periodic timer and a manual invocation overlapping
+# would have two rsyncs racing on the same files. Single-file pushes skip this
+# on purpose — they touch exactly one path and must not wait behind a full sync.
+LOCKDIR="$HOME/.agent-sync.lock"
+take_lock() {
+	if ! mkdir "$LOCKDIR" 2>/dev/null; then
+		# A crashed run leaves the directory behind; reclaim it after an hour.
+		if [ -n "$(find "$LOCKDIR" -maxdepth 0 -mmin +60 2>/dev/null)" ]; then
+			rmdir "$LOCKDIR" 2>/dev/null && mkdir "$LOCKDIR" 2>/dev/null
+		else
+			log "another run holds the lock, skipping"
+			exit 0
+		fi
+	fi
+	trap 'rmdir "$LOCKDIR" 2>/dev/null' EXIT
+}
+
+# Never synced, for different reasons:
+#
+#   sessions-index.json — a lazily-built local cache (only some project dirs
+#     have one) whose entries embed absolute paths like
+#     /Users/felix/.claude/projects/...  Copied to another host those paths
+#     point nowhere, and under --update one host's index would replace another's
+#     and drop that host's own sessions from the picker. Resume does not need
+#     it: a transcript dropped into a project directory with no index resumes
+#     fine, and Claude Code rebuilds the cache on its own.
+#
+#   memory/ — per-project agent memory is machine-local by deliberate
+#     convention (durable knowledge belongs in the repo's AGENTS.md instead).
+#     It would also merge badly: the .md files never collide, but MEMORY.md is a
+#     single index that both hosts append to, so newest-wins would silently
+#     orphan whichever entries the losing copy held.
+SYNC_EXCLUDES=(--exclude=sessions-index.json --exclude=memory/)
+
+# Emit the settled files under $1, as paths relative to it, for --files-from.
+# --files-from bypasses the usual filter rules, so the exclusions above have to
+# be applied here as well as on the pull side.
+settled_files() {
+	(cd "$1" 2>/dev/null && find . -type f -mmin "+$SETTLE_MIN" -print |
+		sed 's|^\./||' |
+		grep -v -e '^memory/' -e '/memory/' -e '^sessions-index\.json$' -e '/sessions-index\.json$')
+}
+
+push_claude() {
+	[ -d "$CLAUDE_LOCAL" ] || return 0
+	local dir name canon list
+	for dir in "$CLAUDE_LOCAL"/*/; do
+		[ -d "$dir" ] || continue
+		name="$(basename "$dir")"
+		canon="$(to_canon "$name")"
+		list="$(settled_files "$dir")"
+		[ -n "$list" ] || continue
+		printf '%s\n' "$list" | rsync -a --update "${RSYNC_EXTRA[@]}" \
+			--backup --backup-dir="$REMOTE_BACKUP/$canon" \
+			--files-from=- -e "$SSH_CMD" \
+			"$dir" "$HUB:$CLAUDE_REMOTE/$canon/" ||
+			log "push failed for $name"
+	done
+}
+
+pull_claude() {
+	local canon name list
+	# Enumerate on the hub, then map each name back into this host's namespace.
+	while IFS= read -r canon; do
+		[ -n "$canon" ] || continue
+		name="$(to_local "$canon")"
+		# rsync won't create the destination's parent, so make it first — but
+		# not under --dry-run, which must leave the filesystem untouched.
+		if [ -n "${AGENT_SYNC_DRY:-}" ]; then
+			[ -d "$CLAUDE_LOCAL/$name" ] || continue
+		else
+			mkdir -p "$CLAUDE_LOCAL/$name" || continue
+		fi
+		rsync -a --update "${RSYNC_EXTRA[@]}" "${SYNC_EXCLUDES[@]}" \
+			--backup --backup-dir="$LOCAL_BACKUP/$name" \
+			-e "$SSH_CMD" \
+			"$HUB:$CLAUDE_REMOTE/$canon/" "$CLAUDE_LOCAL/$name/" ||
+			log "pull failed for $canon"
+		# Don't leave an empty directory behind if the hub had nothing for it.
+		rmdir "$CLAUDE_LOCAL/$name" 2>/dev/null
+	done < <($SSH_CMD "$HUB" "ls -1 $CLAUDE_REMOTE 2>/dev/null" 2>/dev/null)
+}
+
+push_codex() {
+	[ -d "$CODEX_LOCAL" ] || return 0
+	local list
+	list="$(settled_files "$CODEX_LOCAL")"
+	[ -n "$list" ] || return 0
+	printf '%s\n' "$list" | rsync -a --update "${RSYNC_EXTRA[@]}" \
+		--backup --backup-dir="$REMOTE_BACKUP/codex-sessions" \
+		--files-from=- -e "$SSH_CMD" \
+		"$CODEX_LOCAL/" "$HUB:$CODEX_REMOTE/" ||
+		log "codex push failed"
+}
+
+pull_codex() {
+	mkdir -p "$CODEX_LOCAL" || return 0
+	rsync -a --update "${RSYNC_EXTRA[@]}" "${SYNC_EXCLUDES[@]}" \
+		--backup --backup-dir="$LOCAL_BACKUP/codex-sessions" \
+		-e "$SSH_CMD" \
+		"$HUB:$CODEX_REMOTE/" "$CODEX_LOCAL/" ||
+		log "codex pull failed"
+}
+
+# Push exactly one transcript. Used by the SessionEnd hook, where the file is
+# complete and we want it on the hub immediately rather than up to a timer
+# interval later.
+push_file() {
+	local path="$1" rel dirname rest canon
+	[ -f "$path" ] || return 0
+	case "$path" in
+	"$CLAUDE_LOCAL"/*) rel="${path#"$CLAUDE_LOCAL"/}" ;;
+	*)
+		log "not a Claude transcript: $path"
+		return 0
+		;;
+	esac
+	dirname="${rel%%/*}"
+	rest="${rel#*/}"
+	[ "$dirname" != "$rel" ] || return 0
+	canon="$(to_canon "$dirname")"
+	rsync -a --update "${RSYNC_EXTRA[@]}" \
+		--backup --backup-dir="$REMOTE_BACKUP/$canon" \
+		--files-from=<(printf '%s\n' "$rest") -e "$SSH_CMD" \
+		"$CLAUDE_LOCAL/$dirname/" "$HUB:$CLAUDE_REMOTE/$canon/" ||
+		log "single-file push failed for $rel"
+}
+
+case "${1:-both}" in
+file)
+	[ $# -ge 2 ] || {
+		log "file mode needs a path"
+		exit 1
+	}
+	hub_reachable || exit 0
+	push_file "$2"
+	;;
+push)
+	hub_reachable || {
+		log "hub unreachable"
+		exit 0
+	}
+	take_lock
+	push_claude
+	push_codex
+	;;
+pull)
+	hub_reachable || {
+		log "hub unreachable"
+		exit 0
+	}
+	take_lock
+	pull_claude
+	pull_codex
+	;;
+both)
+	hub_reachable || {
+		log "hub unreachable"
+		exit 0
+	}
+	take_lock
+	push_claude
+	push_codex
+	pull_claude
+	pull_codex
+	;;
+*)
+	log "usage: agent-sync [push|pull|both|file PATH]"
+	exit 1
+	;;
+esac

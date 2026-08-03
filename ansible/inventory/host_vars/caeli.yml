@@ -9,6 +9,7 @@ host_roles:
   - os_macos
   - graphical_dotfiles
   - coding_agents
+  - agent_sessions_sync
 
 # identity
 username: felix
@@ -84,6 +85,11 @@ brew_packages_common:
   - ncdu
   - fastfetch
   - ripgrep-all
+  # GNU rsync. macOS ships openrsync, which honours --update but doesn't
+  # document it; agent-sync's conflict rule depends on that flag, so pin the
+  # same implementation the Linux hosts run rather than trust undocumented
+  # behaviour to survive an OS update.
+  - rsync
   - watch
   - wget
   - yq

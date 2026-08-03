@@ -1,0 +1,26 @@
+---
+# agent-sync: unified Claude Code + Codex session history across hosts.
+#
+# Deliberately a separate role rather than part of `coding_agents`: that role is
+# in the generic `terminal` profile and lands on unfamiliar VMs, which must not
+# start pushing session history to a personal hub. This role is opt-in per host.
+
+# Sync hub. Its own ~/.claude/projects is the canonical store, so the hub does
+# NOT get this role — it is a passive rsync target that needs nothing installed.
+# Must be an ssh alias or hostname reachable with key auth from every synced host.
+agent_sync_hub: fkarg.de
+
+# Home directory on the hub. Defines the canonical project-directory encoding
+# (/home/pars -> "-home-pars-..."), which the hub and jolly already produce
+# natively; only macOS hosts transform.
+agent_sync_canon_home: /home/pars
+
+# Skip transcripts modified within this many minutes: a live session appends
+# continuously, and a half-written final line should never be what lands on the
+# hub. The next run collects them once quiet.
+agent_sync_settle_min: 2
+
+# Backstop interval, in seconds. The SessionEnd hook handles the latency-
+# sensitive path (a finished session is on the hub within seconds), so this only
+# needs to catch crashed sessions and Codex rollouts, which have no hook.
+agent_sync_interval: 1800

@@ -1,0 +1,14 @@
+[Unit]
+Description=Periodic Claude Code + Codex session history sync
+
+[Timer]
+# Backstop only — the SessionEnd hook covers the latency-sensitive path.
+OnBootSec=5min
+OnUnitActiveSec={{ agent_sync_interval }}s
+# Catch up after the machine was asleep or powered off, which jolly often is.
+Persistent=true
+# Don't have every host hit the hub on the same second.
+RandomizedDelaySec=120
+
+[Install]
+WantedBy=timers.target

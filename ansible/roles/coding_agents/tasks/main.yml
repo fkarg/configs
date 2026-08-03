@@ -114,6 +114,7 @@
     - { src: "claude/agents-md-hook.sh",     dest: "~/.claude/agents-md-hook.sh" }
     - { src: "claude/agents-md-diff-hook.sh", dest: "~/.claude/agents-md-diff-hook.sh" }
     - { src: "claude/stop-queue-hook.sh",    dest: "~/.claude/stop-queue-hook.sh" }
+    - { src: "claude/session-end-sync-hook.sh", dest: "~/.claude/session-end-sync-hook.sh" }
     - { src: "claude/statusline-loc-reset.sh", dest: "~/.claude/statusline-loc-reset.sh" }
     - { src: "copilot/settings.json",        dest: "~/.copilot/settings.json" }
     - { src: "opencode/opencode.json",       dest: "~/.config/opencode/opencode.json" }
