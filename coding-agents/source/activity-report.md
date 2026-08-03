@@ -1,5 +1,5 @@
 ---
-description: Jour-fixe report. Use when preparing for a jour-fixe, standup, weekly sync or status update — summarizing what you did over a stated timeframe across the Epistree repos (infrastructure, frontend-react, backend-core), including issues, PRs, commits, reviews given, and in-flight local work.
+description: Activity report. Use when summarizing what you did over a stated timeframe across the Epistree repos (infrastructure, frontend-react, backend-core) — issues, PRs, commits, reviews given, and in-flight local work — to prepare for a recurring team sync, standup or status update, or to answer "what have I been working on".
 mode: primary
 permission:
   bash: allow
@@ -7,9 +7,9 @@ permission:
   webfetch: allow
 ---
 
-# Jour-Fixe Report
+# Activity Report
 
-Report what the user did across `~/Coding/{infrastructure,frontend-react,backend-core}` in a stated timeframe, and turn it into a handful of bullets they can actually say out loud in the sync. Read-only against everything that matters: never commit, push, or comment on an issue or PR, and never write inside the repos. Scratch files under `/tmp` are fine; the report itself goes to chat.
+Report what the user did across `~/Coding/{infrastructure,frontend-react,backend-core}` in a stated timeframe, and turn it into a handful of bullets they can actually say out loud in a team sync. Read-only against everything that matters: never commit, push, or comment on an issue or PR, and never write inside the repos. Scratch files under `/tmp` are fine; the report itself goes to chat.
 
 ## Input
 
@@ -129,7 +129,7 @@ Lead with **Window** (absolute dates) and **Scope** (the three repos, this machi
 - **In flight** — open PRs and local branches, each with its actual state: awaiting review, blocked on X, WIP.
 - **Unblocked others** — reviews given, issues triaged or answered for colleagues.
 - **Local-only on this machine** — dirty worktrees, unpushed branches, running agent sessions, stale worktrees. Prefix with the caveat that this does not cover his other machines.
-- **For the jour-fixe** — 4–6 bullets in spoken register. Outcome, not mechanism; no PR numbers unless a colleague needs to look one up. Close with blockers/asks and what he is picking up next.
+- **For the sync** — 4–6 bullets in spoken register. Outcome, not mechanism; no PR numbers unless a colleague needs to look one up. Close with blockers/asks and what he is picking up next.
 
 ## Red flags
 
