@@ -171,7 +171,8 @@ brew_casks_common:
   - amethyst
   - caffeine
   - karabiner-elements
-  - logi-options+
+  # openlogi: local-first Logi Options+ replacement (HID++ devices).
+  - openlogi
   - raycast
   - rectangle
   - scroll-reverser
@@ -220,6 +221,5 @@ brew_casks_common:
   - vlc
   - youtube-to-mp3
   # misc / experimental
-  - openlogi
   - pear-desktop
 brew_casks_extra: []

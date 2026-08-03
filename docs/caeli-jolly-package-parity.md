@@ -51,7 +51,7 @@ tokei, ghc, node, bun, pnpm, uv, rustup, docker, the k8s tools, beancount suite,
 | proton-pass | `proton-pass` | |
 | mark-text | `marktext` | |
 | copilot-cli | (via bun/npm global) | not from nixpkgs |
-| logi-options+ / openlogi | `services.solaar.enable` (jolly.nix) | **added** — Logitech mgr + udev rules |
+| openlogi | `hardware.logitech.wireless.{enable,enableGraphical}` (jolly.nix) | Logitech mgr (solaar) + udev rules; logi-options+ dropped on both |
 | comfyui | — | not installed (not wanted yet) |
 | proton-drive | — | no native Linux client (web only) |
 
@@ -74,5 +74,5 @@ tokei, ghc, node, bun, pnpm, uv, rustup, docker, the k8s tools, beancount suite,
 
 ## No mapping (intentionally absent on jolly)
 
-betterdiscord-installer, youtube-to-mp3, pear-desktop, openlogi (the cask, not the Logitech
-receiver), tor-browser is present, microsoft office casks — covered above.
+betterdiscord-installer, youtube-to-mp3, pear-desktop, tor-browser is present, microsoft
+office casks — covered above.

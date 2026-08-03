@@ -221,9 +221,11 @@
   hardware.bluetooth.powerOnBoot = true;
   services.blueman.enable = true;
 
-  # Logitech peripheral manager.
-  # this pulls in the package 'solaar' plus the udev rules the receiver needs.
+  # Logitech peripheral manager. `enable` only gives ltunify + the udev rules
+  # the receiver needs; `enableGraphical` is what installs solaar itself.
+  # (There is no services.solaar module in nixpkgs — hardware.logitech is it.)
   hardware.logitech.wireless.enable = true;
+  hardware.logitech.wireless.enableGraphical = true;
 
   specialisation.manual-unlock.configuration = {
     boot.loader.grub.configurationName = "Manual unlock";

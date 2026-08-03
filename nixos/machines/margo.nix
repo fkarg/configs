@@ -195,7 +195,9 @@
   #   '';
   # };
 
-  # solaar is a manager for logitech unifying devices
-  # services.solaar.enable = true;
+  # Logitech peripheral manager. `enable` only gives ltunify + the udev rules
+  # the receiver needs; `enableGraphical` is what installs solaar itself.
+  # (There is no services.solaar module in nixpkgs — hardware.logitech is it.)
   hardware.logitech.wireless.enable = true;
+  hardware.logitech.wireless.enableGraphical = true;
 }
