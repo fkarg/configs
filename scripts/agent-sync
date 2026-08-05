@@ -44,7 +44,8 @@
 #   agent-sync pull        hub -> local
 #   agent-sync file PATH   push a single transcript (used by the SessionEnd hook)
 #
-# Env overrides: AGENT_SYNC_HUB, AGENT_SYNC_CANON_HOME, AGENT_SYNC_SETTLE_MIN.
+# Env overrides: AGENT_SYNC_HUB, AGENT_SYNC_CANON_HOME, AGENT_SYNC_SETTLE_MIN,
+# AGENT_SYNC_PROGRESS.
 
 set -uo pipefail
 
@@ -75,6 +76,26 @@ RSYNC_EXTRA=()
 if [ -n "${AGENT_SYNC_DRY:-}" ]; then
 	RSYNC_EXTRA=(--dry-run --itemize-changes)
 fi
+
+# Manual runs get live byte, percentage, and transfer-rate output. Periodic
+# service runs have no terminal and stay quiet; AGENT_SYNC_PROGRESS=1 overrides
+# that distinction for troubleshooting. Older macOS rsync falls back to its
+# per-file progress format because it does not support --info=progress2.
+SHOW_PROGRESS=0
+RSYNC_PROGRESS=()
+if [ -n "${AGENT_SYNC_PROGRESS:-}" ] || [ -t 1 ]; then
+	SHOW_PROGRESS=1
+	if rsync --help 2>&1 | grep -q -- '--info='; then
+		RSYNC_PROGRESS=(--human-readable --info=progress2)
+	else
+		RSYNC_PROGRESS=(--human-readable --progress)
+	fi
+fi
+
+show_progress() {
+	[ "$SHOW_PROGRESS" -eq 1 ] && printf '[%s] %s\n' "$1" "$2" >&2
+	return 0
+}
 
 # Claude Code's project-directory encoding: every non-alphanumeric byte becomes '-'.
 enc() { printf '%s' "$1" | sed 's/[^a-zA-Z0-9]/-/g'; }
@@ -171,14 +192,21 @@ settled_files() {
 
 push_claude() {
 	[ -d "$CLAUDE_LOCAL" ] || return 0
-	local dir name canon list
+	local dir name canon list index=0
+	local dirs=()
 	for dir in "$CLAUDE_LOCAL"/*/; do
 		[ -d "$dir" ] || continue
+		dirs+=("$dir")
+	done
+	local total="${#dirs[@]}"
+	for dir in "${dirs[@]}"; do
+		index=$((index + 1))
 		name="$(basename "$dir")"
 		canon="$(to_canon "$name")"
 		list="$(settled_files "$dir")"
 		[ -n "$list" ] || continue
-		printf '%s\n' "$list" | rsync -a --update "${RSYNC_EXTRA[@]}" \
+		show_progress "push $index/$total" "$name"
+		printf '%s\n' "$list" | rsync -a --update "${RSYNC_EXTRA[@]}" "${RSYNC_PROGRESS[@]}" \
 			--backup --backup-dir="$REMOTE_BACKUP/$canon" \
 			--files-from=- -e "$SSH_CMD" \
 			"$dir" "$HUB:$CLAUDE_REMOTE/$canon/" ||
@@ -187,10 +215,16 @@ push_claude() {
 }
 
 pull_claude() {
-	local canon name list
+	local canon name index=0
+	local canons=()
 	# Enumerate on the hub, then map each name back into this host's namespace.
 	while IFS= read -r canon; do
 		[ -n "$canon" ] || continue
+		canons+=("$canon")
+	done < <($SSH_CMD "$HUB" "ls -1 $CLAUDE_REMOTE 2>/dev/null" 2>/dev/null)
+	local total="${#canons[@]}"
+	for canon in "${canons[@]}"; do
+		index=$((index + 1))
 		name="$(to_local "$canon")"
 		# rsync won't create the destination's parent, so make it first — but
 		# not under --dry-run, which must leave the filesystem untouched.
@@ -199,14 +233,15 @@ pull_claude() {
 		else
 			mkdir -p "$CLAUDE_LOCAL/$name" || continue
 		fi
-		rsync -a --update "${RSYNC_EXTRA[@]}" "${SYNC_EXCLUDES[@]}" \
+		show_progress "pull $index/$total" "$canon"
+		rsync -a --update "${RSYNC_EXTRA[@]}" "${RSYNC_PROGRESS[@]}" "${SYNC_EXCLUDES[@]}" \
 			--backup --backup-dir="$LOCAL_BACKUP/$name" \
 			-e "$SSH_CMD" \
 			"$HUB:$CLAUDE_REMOTE/$canon/" "$CLAUDE_LOCAL/$name/" ||
 			log "pull failed for $canon"
 		# Don't leave an empty directory behind if the hub had nothing for it.
 		rmdir "$CLAUDE_LOCAL/$name" 2>/dev/null
-	done < <($SSH_CMD "$HUB" "ls -1 $CLAUDE_REMOTE 2>/dev/null" 2>/dev/null)
+	done
 }
 
 push_codex() {
@@ -214,7 +249,8 @@ push_codex() {
 	local list
 	list="$(settled_files "$CODEX_LOCAL")"
 	[ -n "$list" ] || return 0
-	printf '%s\n' "$list" | rsync -a --update "${RSYNC_EXTRA[@]}" \
+	show_progress "push codex" "$CODEX_REMOTE"
+	printf '%s\n' "$list" | rsync -a --update "${RSYNC_EXTRA[@]}" "${RSYNC_PROGRESS[@]}" \
 		--backup --backup-dir="$REMOTE_BACKUP/codex-sessions" \
 		--files-from=- -e "$SSH_CMD" \
 		"$CODEX_LOCAL/" "$HUB:$CODEX_REMOTE/" ||
@@ -223,7 +259,8 @@ push_codex() {
 
 pull_codex() {
 	mkdir -p "$CODEX_LOCAL" || return 0
-	rsync -a --update "${RSYNC_EXTRA[@]}" "${SYNC_EXCLUDES[@]}" \
+	show_progress "pull codex" "$CODEX_REMOTE"
+	rsync -a --update "${RSYNC_EXTRA[@]}" "${RSYNC_PROGRESS[@]}" "${SYNC_EXCLUDES[@]}" \
 		--backup --backup-dir="$LOCAL_BACKUP/codex-sessions" \
 		-e "$SSH_CMD" \
 		"$HUB:$CODEX_REMOTE/" "$CODEX_LOCAL/" ||
@@ -247,7 +284,7 @@ push_file() {
 	rest="${rel#*/}"
 	[ "$dirname" != "$rel" ] || return 0
 	canon="$(to_canon "$dirname")"
-	rsync -a --update "${RSYNC_EXTRA[@]}" \
+	rsync -a --update "${RSYNC_EXTRA[@]}" "${RSYNC_PROGRESS[@]}" \
 		--backup --backup-dir="$REMOTE_BACKUP/$canon" \
 		--files-from=<(printf '%s\n' "$rest") -e "$SSH_CMD" \
 		"$CLAUDE_LOCAL/$dirname/" "$HUB:$CLAUDE_REMOTE/$canon/" ||
