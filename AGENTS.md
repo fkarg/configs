@@ -22,6 +22,8 @@ Personal configuration monorepo driving three loosely-coupled subsystems:
 - **`confirm_overwrite=false` by default.** `terminal_dotfiles` skips symlinking over real config directories (fish/kitty/nvim/broot create their own on first launch). Pass `-e confirm_overwrite=true` to force; ignored under `--check` for safety.
 - **`group_vars/all.yml` holds shared identity + cross-role config** (git identity, `home_dir` computed from OS, `repos_list`, `repo_root`). Roles read these rather than redefining defaults.
 
+- **Roles describe a clean install, not migrations.** Never add tasks whose only purpose is removing/renaming legacy state that a fresh install wouldn't have (stale symlinks, renamed configs). One-time cleanups are done manually per host.
+
 Validating changes: there are no tests/lint. Use `--check --diff` against a real host, or `./scripts/ansible_smoketest.sh`. Subset by role with `--tags <role>`.
 
 ## NixOS layer
