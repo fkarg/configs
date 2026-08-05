@@ -114,16 +114,33 @@ hub_reachable() {
 # on purpose — they touch exactly one path and must not wait behind a full sync.
 LOCKDIR="$HOME/.agent-sync.lock"
 take_lock() {
-	if ! mkdir "$LOCKDIR" 2>/dev/null; then
-		# A crashed run leaves the directory behind; reclaim it after an hour.
-		if [ -n "$(find "$LOCKDIR" -maxdepth 0 -mmin +60 2>/dev/null)" ]; then
-			rmdir "$LOCKDIR" 2>/dev/null && mkdir "$LOCKDIR" 2>/dev/null
+	while ! mkdir "$LOCKDIR" 2>/dev/null; do
+		if [ -f "$LOCKDIR/pid" ]; then
+			local lock_pid
+			read -r lock_pid <"$LOCKDIR/pid" || lock_pid=""
+			case "$lock_pid" in
+			*[!0-9]*|'') ;;
+			*)
+				if kill -0 "$lock_pid" 2>/dev/null; then
+					log "another run holds the lock, skipping"
+					exit 0
+				fi
+				;;
+			esac
+			rm -f "$LOCKDIR/pid" 2>/dev/null && rmdir "$LOCKDIR" 2>/dev/null && continue
 		else
-			log "another run holds the lock, skipping"
-			exit 0
+			# A process may be between mkdir and writing its PID. Only reclaim an
+			# empty directory after that short creation window has safely elapsed.
+			if [ -n "$(find "$LOCKDIR" -maxdepth 0 -mmin +1 2>/dev/null)" ] &&
+				rmdir "$LOCKDIR" 2>/dev/null; then
+				continue
+			fi
 		fi
-	fi
-	trap 'rmdir "$LOCKDIR" 2>/dev/null' EXIT
+		log "another run holds the lock, skipping"
+		exit 0
+	done
+	printf '%s\n' "$$" >"$LOCKDIR/pid"
+	trap 'rm -f "$LOCKDIR/pid" 2>/dev/null; rmdir "$LOCKDIR" 2>/dev/null' EXIT
 }
 
 # Never synced, for different reasons:
