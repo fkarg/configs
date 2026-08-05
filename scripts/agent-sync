@@ -135,6 +135,11 @@ hub_reachable() {
 # on purpose — they touch exactly one path and must not wait behind a full sync.
 LOCKDIR="$HOME/.agent-sync.lock"
 take_lock() {
+	# A short-lived flock-based version used this path as an empty regular file.
+	# Migrate that exact artifact before creating the PID-bearing lock directory.
+	if [ -f "$LOCKDIR" ] && [ ! -s "$LOCKDIR" ]; then
+		rm -f "$LOCKDIR"
+	fi
 	while ! mkdir "$LOCKDIR" 2>/dev/null; do
 		if [ -f "$LOCKDIR/pid" ]; then
 			local lock_pid
@@ -143,7 +148,7 @@ take_lock() {
 			*[!0-9]*|'') ;;
 			*)
 				if kill -0 "$lock_pid" 2>/dev/null; then
-					log "another run holds the lock, skipping"
+					log "another run (pid $lock_pid) holds the lock, skipping"
 					exit 0
 				fi
 				;;

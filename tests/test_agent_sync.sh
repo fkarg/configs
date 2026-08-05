@@ -21,6 +21,9 @@ fake_bin="$test_root/bin"
 mkdir -p "$home_dir/.codex/sessions" "$fake_bin"
 printf 'settled transcript\n' >"$home_dir/.codex/sessions/rollout.jsonl"
 touch -d '3 minutes ago' "$home_dir/.codex/sessions/rollout.jsonl"
+# A short-lived flock-based implementation left this regular file behind on
+# deployed hosts. The directory-based PID lock must migrate it automatically.
+: >"$home_dir/.agent-sync.lock"
 
 cat >"$fake_bin/ssh" <<'EOF'
 #!/usr/bin/env bash
@@ -61,7 +64,8 @@ env HOME="$home_dir" PATH="$fake_bin:$PATH" "$sync_script" push \
 	echo 'agent-sync allowed concurrent full syncs' >&2
 	exit 1
 }
-grep -F 'another run holds the lock, skipping' "$test_root/concurrent.log" >/dev/null
+grep -F "another run (pid $sync_pid) holds the lock, skipping" \
+	"$test_root/concurrent.log" >/dev/null
 
 kill -KILL -- "-$sync_pid"
 
