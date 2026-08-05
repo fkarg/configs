@@ -155,25 +155,6 @@
     - not (_hyprland_lua.stat.exists | default(false) and not (_hyprland_lua.stat.islnk | default(false)) and not (confirm_overwrite | default(false) | bool))
   tags: [hyprland]
 
-# The hyprlang-era config was migrated to hyprland.lua (Hyprland >= 0.55).
-# Remove the now-dangling symlink left behind on provisioned hosts; real files
-# (unmanaged local configs) are left alone.
-- name: Remove stale hyprland.conf symlink
-  stat:
-    path: ~/.config/hypr/hyprland.conf
-  register: _hyprland_conf_stale
-  when: ansible_facts['system'] == 'Linux'
-  tags: [hyprland]
-
-- name: Clean up legacy hyprland.conf symlink
-  file:
-    path: ~/.config/hypr/hyprland.conf
-    state: absent
-  when:
-    - ansible_facts['system'] == 'Linux'
-    - _hyprland_conf_stale.stat.islnk | default(false)
-  tags: [hyprland]
-
 - name: Template hyprland KVM switch script
   template:
     src: kvm_switch.sh.j2
