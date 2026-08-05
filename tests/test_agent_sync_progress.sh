@@ -11,6 +11,7 @@ mkdir -p "$home_dir" "$fake_bin"
 
 cat >"$fake_bin/ssh" <<'EOF'
 #!/usr/bin/env bash
+printf '%s\n' "$*" >>"$SSH_ARGS_LOG"
 case "$*" in
 *"ls -1 .claude/projects"*)
 	printf '%s\n' \
@@ -32,23 +33,30 @@ chmod +x "$fake_bin/ssh" "$fake_bin/rsync"
 
 progress_args="$test_root/progress-args.log"
 progress_output="$test_root/progress-output.log"
-AGENT_SYNC_PROGRESS=1 RSYNC_ARGS_LOG="$progress_args" \
+ssh_args="$test_root/ssh-args.log"
+AGENT_SYNC_PROGRESS=1 RSYNC_ARGS_LOG="$progress_args" SSH_ARGS_LOG="$ssh_args" \
 	HOME="$home_dir" PATH="$fake_bin:$PATH" "$sync_script" pull \
 	>"$progress_output" 2>&1
 
-grep -Fx '[pull 1/2] -home-pars-Coding-alpha' "$progress_output" || {
+escape="$(printf '\033')"
+grep -F "${escape}[s[pull 1/2] -home-pars-Coding-alpha" "$progress_output" || {
 	cat "$progress_output" >&2
-	echo 'missing first pull folder heading' >&2
+	echo 'missing initial two-line dashboard' >&2
 	exit 1
 }
-grep -Fx '[pull 2/2] -home-pars-Coding-beta' "$progress_output"
-grep -Fx '[pull codex] .codex/sessions' "$progress_output"
+grep -F "${escape}[u${escape}[J[pull 2/2] -home-pars-Coding-beta" "$progress_output"
+grep -F "${escape}[u${escape}[J[pull codex] .codex/sessions" "$progress_output"
+[ "$(grep -F -c "${escape}[s" "$progress_output")" -eq 1 ]
+[ "$(grep -F -c "${escape}[u${escape}[J" "$progress_output")" -eq 2 ]
 [ "$(grep -c -- '--info=progress2' "$progress_args")" -eq 3 ]
 [ "$(grep -c -- '--human-readable' "$progress_args")" -eq 3 ]
+[ "$(grep -c -- '-x' "$progress_args")" -eq 3 ]
+[ "$(grep -c -- '-x' "$ssh_args")" -eq 2 ]
 
 quiet_args="$test_root/quiet-args.log"
 quiet_output="$test_root/quiet-output.log"
-RSYNC_ARGS_LOG="$quiet_args" HOME="$home_dir" PATH="$fake_bin:$PATH" \
+RSYNC_ARGS_LOG="$quiet_args" SSH_ARGS_LOG="$ssh_args" \
+	HOME="$home_dir" PATH="$fake_bin:$PATH" \
 	"$sync_script" pull >"$quiet_output" 2>&1
 
 if grep -F -- '--info=progress2' "$quiet_args" >/dev/null; then

@@ -65,10 +65,17 @@ REMOTE_BACKUP="$CANON_HOME/.agent-sync-conflicts/$STAMP"
 # Reuse one SSH connection across the per-directory rsync calls; without this a
 # host with a dozen project directories pays a full handshake for each.
 SSH_CTL="$HOME/.ssh/agent-sync-%C"
-SSH_CMD="ssh -o BatchMode=yes -o ConnectTimeout=10 \
+SSH_CMD="ssh -x -o BatchMode=yes -o ConnectTimeout=10 \
 -o ControlMaster=auto -o ControlPath=$SSH_CTL -o ControlPersist=30"
 
-log() { printf '%s agent-sync: %s\n' "$(date +%H:%M:%S)" "$*" >&2; }
+DASHBOARD_ACTIVE=0
+log() {
+	if [ "$DASHBOARD_ACTIVE" -eq 1 ]; then
+		printf '\033[u\033[J' >&2
+		DASHBOARD_ACTIVE=0
+	fi
+	printf '%s agent-sync: %s\n' "$(date +%H:%M:%S)" "$*" >&2
+}
 
 # AGENT_SYNC_DRY=1 shows what would move without touching anything. Worth having
 # in a tool that writes into two agents' state directories on three machines.
@@ -93,7 +100,14 @@ if [ -n "${AGENT_SYNC_PROGRESS:-}" ] || [ -t 1 ]; then
 fi
 
 show_progress() {
-	[ "$SHOW_PROGRESS" -eq 1 ] && printf '[%s] %s\n' "$1" "$2" >&2
+	[ "$SHOW_PROGRESS" -eq 1 ] || return 0
+	if [ "$DASHBOARD_ACTIVE" -eq 1 ]; then
+		printf '\033[u\033[J' >&2
+	else
+		printf '\033[s' >&2
+		DASHBOARD_ACTIVE=1
+	fi
+	printf '[%s] %s\n' "$1" "$2" >&2
 	return 0
 }
 
