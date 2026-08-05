@@ -126,33 +126,52 @@
   when: ansible_facts['system'] == 'Linux'
   tags: [hyprland]
 
-- name: Check if hyprland.conf is already a symlink
+- name: Check if hyprland.lua is already a symlink
   stat:
-    path: ~/.config/hypr/hyprland.conf
-  register: _hyprland_conf
+    path: ~/.config/hypr/hyprland.lua
+  register: _hyprland_lua
   when: ansible_facts['system'] == 'Linux'
   tags: [hyprland]
 
-- name: Remove existing hyprland.conf file (confirm_overwrite=true)
+- name: Remove existing hyprland.lua file (confirm_overwrite=true)
   file:
-    path: ~/.config/hypr/hyprland.conf
+    path: ~/.config/hypr/hyprland.lua
     state: absent
   when:
     - ansible_facts['system'] == 'Linux'
-    - _hyprland_conf.stat.exists | default(false)
-    - not (_hyprland_conf.stat.islnk | default(false))
+    - _hyprland_lua.stat.exists | default(false)
+    - not (_hyprland_lua.stat.islnk | default(false))
     - confirm_overwrite | default(false) | bool
     - not ansible_check_mode
   tags: [hyprland]
 
 - name: Link hyprland config file
   file:
-    src: "~/{{ configs_repo }}/{{ dotconfigdir }}/hypr/hyprland.conf"
-    dest: ~/.config/hypr/hyprland.conf
+    src: "~/{{ configs_repo }}/{{ dotconfigdir }}/hypr/hyprland.lua"
+    dest: ~/.config/hypr/hyprland.lua
     state: link
   when:
     - ansible_facts['system'] == 'Linux'
-    - not (_hyprland_conf.stat.exists | default(false) and not (_hyprland_conf.stat.islnk | default(false)) and not (confirm_overwrite | default(false) | bool))
+    - not (_hyprland_lua.stat.exists | default(false) and not (_hyprland_lua.stat.islnk | default(false)) and not (confirm_overwrite | default(false) | bool))
+  tags: [hyprland]
+
+# The hyprlang-era config was migrated to hyprland.lua (Hyprland >= 0.55).
+# Remove the now-dangling symlink left behind on provisioned hosts; real files
+# (unmanaged local configs) are left alone.
+- name: Remove stale hyprland.conf symlink
+  stat:
+    path: ~/.config/hypr/hyprland.conf
+  register: _hyprland_conf_stale
+  when: ansible_facts['system'] == 'Linux'
+  tags: [hyprland]
+
+- name: Clean up legacy hyprland.conf symlink
+  file:
+    path: ~/.config/hypr/hyprland.conf
+    state: absent
+  when:
+    - ansible_facts['system'] == 'Linux'
+    - _hyprland_conf_stale.stat.islnk | default(false)
   tags: [hyprland]
 
 - name: Template hyprland KVM switch script
