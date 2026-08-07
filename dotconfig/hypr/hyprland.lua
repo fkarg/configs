@@ -387,18 +387,12 @@ hl.bind(mainMod .. " + SHIFT + up",    hl.dsp.window.move({ direction = "up" }))
 hl.bind(mainMod .. " + SHIFT + down",  hl.dsp.window.move({ direction = "down" }))
 
 -- Layout control.
--- FIXME: `split` and `setlayout` are not dispatchers — not in Hyprland core
--- (hl.dsp has no such entries) and not in hy3 (which uses hy3:makegroup /
--- hy3:changegroup). These three binds have never done anything, same as the
--- dropped `focuswindow parent/child` ones; the Lua switch only made the failure
--- visible. Under hy3 the equivalents would be `hy3:makegroup, h` / `, v` and
--- `hy3:changegroup, toggletab` via hl.dsp.layout(); under dwindle there is no
--- equivalent. Left as-is pending a decision — untestable without booting the
--- i2c-hy3 specialisation.
-hl.bind(mainMod .. " + H", hl.dsp.exec_cmd("hyprctl dispatch split h"))
-hl.bind(mainMod .. " + T", hl.dsp.exec_cmd("hyprctl dispatch split v"))
+-- SUPER+H/T/W previously called `split h` / `split v` / `setlayout tabbed`,
+-- carried over from the i3 config. Hyprland has no such dispatchers (and hy3
+-- uses hy3:makegroup / hy3:changegroup), so they never did anything — dropped,
+-- like the `focuswindow parent/child` binds before them. togglesplit is real
+-- and stays.
 hl.bind(mainMod .. " + L", hl.dsp.layout("togglesplit"))
-hl.bind(mainMod .. " + W", hl.dsp.exec_cmd("hyprctl dispatch setlayout tabbed"))
 hl.bind(mainMod .. " + SHIFT + E", hl.dsp.layout("togglesplit"))
 -- The old `focuswindow, parent` / `focuswindow, child` binds on SUPER+P and
 -- SUPER+comma were dropped: `focuswindow` takes a window selector, so "parent"
