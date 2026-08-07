@@ -57,7 +57,10 @@ tiled_count=$(hyprctl clients -j \
 active_floating=$(hyprctl activewindow -j | jq -r '.floating')
 
 if [ "$active_floating" = "false" ] && [ "$tiled_count" -le 1 ]; then
-  hyprctl dispatch togglefloating >/dev/null
+  hyprctl dispatch 'hl.dsp.window.float({ action = "toggle" })' >/dev/null
 fi
 
-hyprctl dispatch resizeactive exact "$tw" "$th" >/dev/null
+# Under a Lua config hyprctl takes Lua, not the old `dispatcher arg arg` form.
+# window.resize's x/y are absolute logical pixels (applying it twice is a no-op),
+# so this is a direct replacement for the old `resizeactive exact`.
+hyprctl dispatch "hl.dsp.window.resize({ x = $tw, y = $th })" >/dev/null

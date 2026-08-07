@@ -71,7 +71,16 @@ hl.on("hyprland.start", function()
     -- stay on dwindle without a missing-plugin error. hy3 gives reliable N-way
     -- tiled resize where dwindle's binary split-tree collapses columns for 3+
     -- windows.
-    hl.exec_cmd("sh -c '[ -e /run/current-system/sw/lib/libhy3.so ] && hyprctl plugin load /run/current-system/sw/lib/libhy3.so && hyprctl keyword general:layout hy3'")
+    -- Done natively rather than by shelling out to hyprctl: `hyprctl keyword`
+    -- does not exist under a Lua config ("keyword can't work with non-legacy
+    -- parsers"), so the old sh guard silently left the layout on dwindle.
+    local hy3_so = "/run/current-system/sw/lib/libhy3.so"
+    local probe = io.open(hy3_so, "r")
+    if probe then
+        probe:close()
+        hl.plugin.load(hy3_so)
+        hl.config({ general = { layout = "hy3" } })
+    end
     hl.exec_cmd("hyprlauncher -d")
     hl.exec_cmd("waybar -c ~/.config/waybar/hyprland.jsonc -s ~/.config/waybar/style.css")
     hl.exec_cmd("hypridle")
@@ -353,8 +362,10 @@ hl.bind(mainMod .. " + ALT + Space", hl.dsp.exec_cmd("rofi -show drun"))
 -- hl.bind(mainMod .. " + SHIFT + Q", hl.dsp.exit())
 
 -- Keyboard layout switching. This changes Hyprland live state, not the config.
-hl.bind(mainMod .. " + B", hl.dsp.exec_cmd("hyprctl keyword input.kb_layout de,neo"))
-hl.bind(mainMod .. " + SHIFT + B", hl.dsp.exec_cmd("hyprctl keyword input.kb_layout de"))
+-- hl.bind takes a plain function, so these apply the change in-process instead
+-- of shelling out to `hyprctl keyword`, which no longer exists under Lua.
+hl.bind(mainMod .. " + B", function() hl.config({ input = { kb_layout = "de,neo" } }) end)
+hl.bind(mainMod .. " + SHIFT + B", function() hl.config({ input = { kb_layout = "de" } }) end)
 
 -- Focus movement uses Neo-friendly N/M/G/D plus arrow-key fallbacks.
 hl.bind(mainMod .. " + N", hl.dsp.focus({ direction = "left" }))
@@ -375,9 +386,15 @@ hl.bind(mainMod .. " + SHIFT + right", hl.dsp.window.move({ direction = "right" 
 hl.bind(mainMod .. " + SHIFT + up",    hl.dsp.window.move({ direction = "up" }))
 hl.bind(mainMod .. " + SHIFT + down",  hl.dsp.window.move({ direction = "down" }))
 
--- Layout control. The `split`/`setlayout` hyprctl calls are kept verbatim from
--- the old config (they are runtime dispatches, unaffected by the config
--- language).
+-- Layout control.
+-- FIXME: `split` and `setlayout` are not dispatchers — not in Hyprland core
+-- (hl.dsp has no such entries) and not in hy3 (which uses hy3:makegroup /
+-- hy3:changegroup). These three binds have never done anything, same as the
+-- dropped `focuswindow parent/child` ones; the Lua switch only made the failure
+-- visible. Under hy3 the equivalents would be `hy3:makegroup, h` / `, v` and
+-- `hy3:changegroup, toggletab` via hl.dsp.layout(); under dwindle there is no
+-- equivalent. Left as-is pending a decision — untestable without booting the
+-- i2c-hy3 specialisation.
 hl.bind(mainMod .. " + H", hl.dsp.exec_cmd("hyprctl dispatch split h"))
 hl.bind(mainMod .. " + T", hl.dsp.exec_cmd("hyprctl dispatch split v"))
 hl.bind(mainMod .. " + L", hl.dsp.layout("togglesplit"))

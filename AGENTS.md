@@ -34,6 +34,30 @@ README covers the high-level rules (live entrypoint is `/etc/nixos/configuration
 - Repo-root `configuration.nix` is a reference entrypoint, not authoritative for every machine. Machine-local `hardware-configuration.nix` stays on the host.
 - See `docs/jolly.md` for the recovery context behind the boot-vs-switch rule.
 
+### Hyprland is on a Lua config — `hyprctl` takes Lua, not the legacy syntax
+
+`dotconfig/hypr/hyprland.lua` replaced `hyprland.conf`. This also changes **every
+external caller**, which is easy to miss: with a Lua config root, `hyprctl`'s
+parser is Lua too.
+
+- `hyprctl dispatch <name> <args>` → `hyprctl dispatch '<lua expr>'`, e.g.
+  `hyprctl dispatch 'hl.dsp.window.float({ action = "toggle" })'`. This applies
+  to *every* dispatcher, including argument-less-looking ones like `dpms on`.
+- `hyprctl keyword a:b v` → `hyprctl eval 'hl.config({ a = { b = v } })'`
+  (`keyword` errors with "can't work with non-legacy parsers").
+- exec with window rules: `hyprctl eval 'hl.exec_cmd([[cmd]], {workspace = [[3 silent]]})'`
+  — the bracket contents become the rule table *value*, and `{silent = true}` is
+  rejected ("unknown effect").
+- `hyprctl` exits **7** on a parse error. Check it in scripts: the failure mode is
+  otherwise completely silent (this is how the whole login autostart broke).
+
+**`hl.dsp.dpms` needs a table**: `hl.dsp.dpms({ action = "on" })`. A bare string
+leaves `action` nil and turns the display **off**. On jolly that is not
+recoverable — the monitor is also the USB KVM hub, so ~90s without a DP signal
+makes it auto-switch input and take the keyboard, audio and ethernet with it.
+Never probe dpms against the real display; `hyprctl output create headless` gives
+you a throwaway monitor to test against.
+
 ## coding-agents
 
 A generator: **one source file per agent** fans out to four CLIs (Claude Code, Codex, Copilot CLI, OpenCode). **The full guide is `coding-agents/README.md` — read it before creating or editing any agent or skill.** The essentials:

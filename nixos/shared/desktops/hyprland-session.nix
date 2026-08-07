@@ -28,11 +28,17 @@
   security.rtkit.enable = true;
   security.polkit.enable = true;
 
+  # dpms is a Lua expression now: under a Lua config `hyprctl dispatch dpms on`
+  # no longer parses and the screen simply never blanks or never comes back.
+  # The `action` key is mandatory — hl.dsp.dpms("on") (a bare string) leaves
+  # action nil and turns the display OFF. On jolly that is not recoverable
+  # without a reboot: the monitor is also the USB KVM hub, so after ~90s without
+  # a DP signal it auto-switches input and takes the keyboard with it.
   environment.etc."xdg/hypr/hypridle.conf".text = ''
     general {
         lock_cmd = pidof hyprlock || hyprlock
         before_sleep_cmd = loginctl lock-session
-        after_sleep_cmd = hyprctl dispatch dpms on
+        after_sleep_cmd = hyprctl dispatch 'hl.dsp.dpms({ action = "on" })'
     }
 
     listener {
@@ -42,8 +48,8 @@
 
     listener {
         timeout = 1200
-        on-timeout = hyprctl dispatch dpms off
-        on-resume = hyprctl dispatch dpms on
+        on-timeout = hyprctl dispatch 'hl.dsp.dpms({ action = "off" })'
+        on-resume = hyprctl dispatch 'hl.dsp.dpms({ action = "on" })'
     }
   '';
 

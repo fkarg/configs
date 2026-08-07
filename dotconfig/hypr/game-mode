@@ -36,14 +36,14 @@ game_on() {
         pkill -f -- "$pat" 2>/dev/null && echo "game-mode: closed '$pat'" || true
     done
     if [[ "$USE_DIRECT_SCANOUT" == 1 ]]; then
-        hyprctl keyword render:direct_scanout 1 >/dev/null && \
+        hyprctl eval 'hl.config({ render = { direct_scanout = 1 } })' >/dev/null && \
             echo "game-mode: direct_scanout on"
     fi
 }
 
 game_off() {
     if [[ "$USE_DIRECT_SCANOUT" == 1 ]]; then
-        hyprctl keyword render:direct_scanout 0 >/dev/null && \
+        hyprctl eval 'hl.config({ render = { direct_scanout = 0 } })' >/dev/null && \
             echo "game-mode: direct_scanout off"
     fi
 }
