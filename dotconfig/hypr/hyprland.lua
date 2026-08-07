@@ -364,8 +364,12 @@ hl.bind(mainMod .. " + ALT + Space", hl.dsp.exec_cmd("rofi -show drun"))
 -- Keyboard layout switching. This changes Hyprland live state, not the config.
 -- hl.bind takes a plain function, so these apply the change in-process instead
 -- of shelling out to `hyprctl keyword`, which no longer exists under Lua.
-hl.bind(mainMod .. " + B", function() hl.config({ input = { kb_layout = "de,neo" } }) end)
-hl.bind(mainMod .. " + SHIFT + B", function() hl.config({ input = { kb_layout = "de" } }) end)
+hl.bind(mainMod .. " + B", function()
+    hl.config({ input = { kb_layout = "de", kb_variant = "neo" } })
+end)
+hl.bind(mainMod .. " + SHIFT + B", function()
+    hl.config({ input = { kb_layout = "de", kb_variant = "" } })
+end)
 
 -- Focus movement uses Neo-friendly N/M/G/D plus arrow-key fallbacks.
 hl.bind(mainMod .. " + N", hl.dsp.focus({ direction = "left" }))
