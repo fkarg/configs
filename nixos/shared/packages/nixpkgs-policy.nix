@@ -19,8 +19,9 @@
       # the nixos-unstable channel yet; drop this once it has.
       hyprland = prev.hyprland.overrideAttrs (old: {
         postPatch = ''
-          substituteInPlace CMakeLists.txt start/CMakeLists.txt hyprpm/CMakeLists.txt \
-            --replace-fail "glaze 7...<8" "glaze"
+          sed -i \
+            's|find_package(glaze 7\.\.\.<8 QUIET)|find_package(glaze QUIET)|g' \
+            CMakeLists.txt start/CMakeLists.txt hyprpm/CMakeLists.txt
         '' + (old.postPatch or "");
       });
 
