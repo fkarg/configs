@@ -88,7 +88,13 @@
     requiredBy = [ "systemd-cryptsetup@cryptroot.service" ];
     before = [ "systemd-cryptsetup@cryptroot.service" ];
     unitConfig.DefaultDependencies = false;
-    serviceConfig.TimeoutSec = 70;
+    serviceConfig = {
+      Type = "oneshot";
+      # The helper is a hard prerequisite of cryptroot.  Keep its worst-case
+      # runtime comfortably below this timeout so a missing or damaged USB key
+      # reaches the successful password-fallback path instead of being killed.
+      TimeoutSec = 60;
+    };
     script = lib.mkForce ''
       mkdir -p /tmp/usbkey
       echo "copy-luks-keyfile: starting USB/removable search..."
@@ -147,21 +153,23 @@
         done
       }
 
-      for attempt in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30; do
+      for attempt in 1 2 3 4 5; do
         udevadm settle --timeout=2 || true
 
         for dev in $(candidate_devices); do
           try_key_device "$dev"
         done
 
-        echo "copy-luks-keyfile: searching for USB key... (attempt $attempt/30)"
+        echo "copy-luks-keyfile: searching for USB key... (attempt $attempt/5)"
         sleep 2
       done
 
       echo "copy-luks-keyfile: keyfile not found, will prompt for password"
     '';
   };
-  boot.initrd.luks.devices."cryptroot".keyFileTimeout = 65;
+  # USB discovery has already completed before cryptsetup starts.  If no key
+  # was copied, wait only briefly before systemd's implied password fallback.
+  boot.initrd.luks.devices."cryptroot".keyFileTimeout = 5;
 
   # Root is LUKS, unlocked by a USB keyfile inside the initrd, so the
   # bootloader runs before the store is readable and every generation's
