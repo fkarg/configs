@@ -46,23 +46,18 @@ class CodexRulesTests(unittest.TestCase):
             "allow",
         )
 
-    def test_allows_read_only_github_commands(self) -> None:
-        self.assertEqual(
-            decision_for("gh", "issue", "view", "682", "--json", "body"),
-            "allow",
-        )
-        self.assertEqual(decision_for("gh", "pr", "view", "687"), "allow")
-        self.assertEqual(decision_for("gh", "auth", "status", "-h", "github.com"), "allow")
-
-    def test_prompts_for_remote_github_mutations(self) -> None:
-        self.assertEqual(
-            decision_for("gh", "pr", "create", "--title", "Example"),
-            "prompt",
-        )
-        self.assertEqual(
-            decision_for("gh", "issue", "create", "--title", "Example"),
-            "prompt",
-        )
+    def test_allows_all_github_commands(self) -> None:
+        commands = [
+            ("gh", "auth", "status", "-h", "github.com"),
+            ("gh", "issue", "view", "682", "--json", "body"),
+            ("gh", "pr", "create", "--title", "Example"),
+            ("gh", "api", "graphql", "-f", "query={viewer{login}}"),
+            ("gh", "run", "rerun", "1234"),
+            ("gh", "extension", "exec", "example"),
+        ]
+        for command in commands:
+            with self.subTest(command=command):
+                self.assertEqual(decision_for(*command), "allow")
 
     def test_prompts_for_claude_print_mode_only(self) -> None:
         self.assertEqual(

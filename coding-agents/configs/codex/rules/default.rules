@@ -1,34 +1,18 @@
-# Sandboxed GitHub CLI reaches the host keyring through the curated D-Bus socket.
-# Keep these read-only host rules as compatibility fallbacks.
+# GitHub CLI credentials live in the host keyring and are unavailable in the
+# workspace sandbox. All gh commands run on the host without prompting.
 
 prefix_rule(
-    pattern = ["gh", "auth", "status"],
+    pattern = ["gh"],
     decision = "allow",
-    justification = "GitHub authentication status requires access to the host keyring",
-    match = ["gh auth status -h github.com"],
-)
-
-prefix_rule(
-    pattern = ["gh", "issue", ["view", "list", "status"]],
-    decision = "allow",
-    justification = "Read-only GitHub issue inspection requires host credentials",
-    match = ["gh issue view 682 --json body", "gh issue list --limit 20"],
-    not_match = ["gh issue create --title Example"],
-)
-
-prefix_rule(
-    pattern = ["gh", "pr", ["view", "list", "status", "checks", "diff"]],
-    decision = "allow",
-    justification = "Read-only GitHub pull-request inspection requires host credentials",
-    match = ["gh pr view 687", "gh pr checks 687", "gh pr diff 687"],
-    not_match = ["gh pr create --title Example"],
-)
-
-prefix_rule(
-    pattern = ["gh", "repo", "view"],
-    decision = "allow",
-    justification = "Reading repository metadata requires host credentials",
-    match = ["gh repo view Epistree/frontend-react"],
+    justification = "GitHub CLI always needs access to host keyring credentials",
+    match = [
+        "gh auth status -h github.com",
+        "gh issue view 682 --json body",
+        "gh pr create --title Example",
+        "gh api graphql -f query={viewer{login}}",
+        "gh run rerun 1234",
+        "gh extension exec example",
+    ],
 )
 
 # Git commands are trusted. This rule intentionally covers all subcommands,
@@ -48,14 +32,6 @@ prefix_rule(
         "git reset --hard",
         "git clean -fd",
     ],
-)
-
-prefix_rule(
-    pattern = ["gh", ["pr", "issue"], "create"],
-    decision = "prompt",
-    justification = "Creating pull requests or issues changes remote GitHub state",
-    match = ["gh pr create --title Example", "gh issue create --title Example"],
-    not_match = ["gh pr view 687"],
 )
 
 prefix_rule(

@@ -16,6 +16,7 @@
 unmanage = ["model", "model_reasoning_effort"]
 personality = "pragmatic"
 approval_policy = "on-request"
+approvals_reviewer = "auto_review"
 sandbox_mode = "workspace-write"
 
 [sandbox_workspace_write]
@@ -35,9 +36,9 @@ writable_roots = [
 network_access = true
 
 [features]
-# Add a domain or socket here only when a routine command needs it. Keep this
-# allowlist narrow; `network_access` without the proxy permits arbitrary egress.
-network_proxy = { enabled = true, domains = { "api.github.com" = "allow", "api.anthropic.com" = "allow" }, unix_sockets = { "/run/user/1000/bus" = "allow" } }
+# Add a domain here only when a routine command needs it. Keep this allowlist
+# narrow; `network_access` without the proxy would permit arbitrary egress.
+network_proxy = { enabled = true, domains = { "api.github.com" = "allow", "api.anthropic.com" = "allow" } }
 
 [tui]
 status_line = ["model-with-reasoning", "current-dir", "git-branch", "branch-changes", "run-state", "context-used", "five-hour-limit", "weekly-limit", "used-tokens", "total-input-tokens", "total-output-tokens", "task-progress"]

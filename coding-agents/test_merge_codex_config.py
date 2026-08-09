@@ -18,17 +18,16 @@ SPEC.loader.exec_module(merge_codex_config)
 
 
 class MergeCodexConfigTests(unittest.TestCase):
-    def test_shared_config_allows_the_user_dbus_socket(self) -> None:
+    def test_shared_config_uses_automatic_approval_review(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             target = Path(temp_dir) / "config.toml"
 
             merge_codex_config.merge(SHARED_CONFIG, target)
 
             merged = tomllib.loads(target.read_text())
-            self.assertEqual(
-                merged["features"]["network_proxy"]["unix_sockets"],
-                {"/run/user/1000/bus": "allow"},
-            )
+            self.assertEqual(merged["approval_policy"], "on-request")
+            self.assertEqual(merged["approvals_reviewer"], "auto_review")
+            self.assertEqual(merged["sandbox_mode"], "workspace-write")
 
     def test_expands_home_relative_writable_roots(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:

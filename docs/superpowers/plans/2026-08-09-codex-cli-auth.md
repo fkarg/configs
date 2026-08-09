@@ -2,15 +2,15 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Keep Codex's normal workspace sandbox enabled while making keyring-backed `gh` commands usable, prompting narrowly for host-side `claude -p`, and providing bubblewrap explicitly on NixOS hosts.
+**Goal:** Make authenticated GitHub and Claude CLI workflows reliable without defaulting whole Codex sessions to Approve All, provide bubblewrap explicitly, and start every managed machine in “Approve for me.”
 
-**Architecture:** The curated Codex config will allow only the verified user D-Bus socket through its existing network proxy, so GitHub CLI stays sandboxed and uses the host keyring. Execution policy will prompt for the specific nested-agent prefix `claude -p`, and the shared Nix package list will provide the sandbox binary Codex otherwise bundles.
+**Architecture:** All `gh` invocations escape the sandbox through one explicit allow rule so they can use the host keyring. `claude -p` uses a narrower prompt rule, shared Codex config selects the automatic approvals reviewer, and the Nix package list provides bubblewrap.
 
 **Tech Stack:** TOML, Codex Starlark execution policy, Python `unittest`, NixOS modules
 
 ---
 
-### Task 1: Allow sandboxed GitHub CLI to reach the user keyring
+### Task 1: Default every machine to automatic approval review
 
 **Files:**
 - Modify: `coding-agents/test_merge_codex_config.py`
@@ -18,94 +18,136 @@
 
 - [ ] **Step 1: Write the failing real-config regression test**
 
-Add `import tomllib`, define the real shared-config path, and add this test to `MergeCodexConfigTests`:
+Add `import tomllib`, define the real shared config path, and add:
 
 ```python
 SHARED_CONFIG = Path(__file__).parent / "configs" / "codex" / "shared.toml"
 
-def test_shared_config_allows_the_user_dbus_socket(self) -> None:
+def test_shared_config_uses_automatic_approval_review(self) -> None:
     with tempfile.TemporaryDirectory() as temp_dir:
         target = Path(temp_dir) / "config.toml"
 
         merge_codex_config.merge(SHARED_CONFIG, target)
 
         merged = tomllib.loads(target.read_text())
-        self.assertEqual(
-            merged["features"]["network_proxy"]["unix_sockets"],
-            {"/run/user/1000/bus": "allow"},
-        )
+        self.assertEqual(merged["approval_policy"], "on-request")
+        self.assertEqual(merged["approvals_reviewer"], "auto_review")
+        self.assertEqual(merged["sandbox_mode"], "workspace-write")
 ```
 
-- [ ] **Step 2: Run the regression test and verify RED**
-
-Run:
+- [ ] **Step 2: Run the test and verify RED**
 
 ```bash
-python3 -m unittest coding-agents.test_merge_codex_config.MergeCodexConfigTests.test_shared_config_allows_the_user_dbus_socket
+python3 -m unittest coding-agents.test_merge_codex_config.MergeCodexConfigTests.test_shared_config_uses_automatic_approval_review
 ```
 
-Expected: `ERROR` with `KeyError: 'unix_sockets'`, proving the real shared config lacks the required socket.
+Expected: `ERROR` with `KeyError: 'approvals_reviewer'`.
 
-- [ ] **Step 3: Add the exact socket to the curated proxy config**
+- [ ] **Step 3: Add the persistent shared setting**
 
-Replace the `network_proxy` value in `coding-agents/configs/codex/shared.toml` with:
+Keep the existing policy and sandbox keys, inserting:
 
 ```toml
-network_proxy = { enabled = true, domains = { "api.github.com" = "allow", "api.anthropic.com" = "allow" }, unix_sockets = { "/run/user/1000/bus" = "allow" } }
+approval_policy = "on-request"
+approvals_reviewer = "auto_review"
+sandbox_mode = "workspace-write"
 ```
 
-Update the nearby comment to state that both outbound domains and the user D-Bus socket are narrowly allowlisted.
+Do not add the disproven D-Bus socket setting to `features.network_proxy`.
 
 - [ ] **Step 4: Run the focused and full merge tests and verify GREEN**
 
-Run:
-
 ```bash
-python3 -m unittest coding-agents.test_merge_codex_config.MergeCodexConfigTests.test_shared_config_allows_the_user_dbus_socket
+python3 -m unittest coding-agents.test_merge_codex_config.MergeCodexConfigTests.test_shared_config_uses_automatic_approval_review
 python3 -m unittest coding-agents/test_merge_codex_config.py
 ```
 
-Expected: the focused test reports `Ran 1 test ... OK`; the file reports `Ran 3 tests ... OK`.
+Expected: one focused test and all three merge tests pass.
 
-- [ ] **Step 5: Commit the socket configuration and regression test**
-
-```bash
-git add coding-agents/test_merge_codex_config.py coding-agents/configs/codex/shared.toml
-git commit -m "codex: expose user keyring to sandboxed gh"
-```
-
-### Task 2: Prompt narrowly for host-side Claude print mode
+### Task 2: Allow every GitHub CLI invocation on the host
 
 **Files:**
 - Modify: `coding-agents/test_codex_rules.py`
 - Modify: `coding-agents/configs/codex/rules/default.rules`
 
-- [ ] **Step 1: Write the failing execution-policy regression test**
+- [ ] **Step 1: Write the failing broad-policy regression test**
 
-Add this test to `CodexRulesTests`:
+Replace the read-only and mutation-specific GitHub tests with:
+
+```python
+def test_allows_all_github_commands(self) -> None:
+    commands = [
+        ("gh", "auth", "status", "-h", "github.com"),
+        ("gh", "issue", "view", "682", "--json", "body"),
+        ("gh", "pr", "create", "--title", "Example"),
+        ("gh", "api", "graphql", "-f", "query={viewer{login}}"),
+        ("gh", "run", "rerun", "1234"),
+        ("gh", "extension", "exec", "example"),
+    ]
+    for command in commands:
+        with self.subTest(command=command):
+            self.assertEqual(decision_for(*command), "allow")
+```
+
+- [ ] **Step 2: Run the test and verify RED**
+
+```bash
+python3 -m unittest coding-agents.test_codex_rules.CodexRulesTests.test_allows_all_github_commands
+```
+
+Expected: mutation commands still resolve to `prompt`, while unlisted command
+families resolve to no decision.
+
+- [ ] **Step 3: Replace every GitHub rule with one allow rule**
+
+```python
+# GitHub CLI credentials live in the host keyring and are unavailable in the
+# workspace sandbox. All gh commands run on the host without prompting.
+prefix_rule(
+    pattern = ["gh"],
+    decision = "allow",
+    justification = "GitHub CLI always needs access to host keyring credentials",
+    match = [
+        "gh auth status -h github.com",
+        "gh issue view 682 --json body",
+        "gh pr create --title Example",
+        "gh api graphql -f query={viewer{login}}",
+        "gh run rerun 1234",
+        "gh extension exec example",
+    ],
+)
+```
+
+Remove the narrower GitHub allow and prompt rules so no more-restrictive match
+overrides this decision.
+
+- [ ] **Step 4: Run the focused and full rule tests and verify GREEN**
+
+```bash
+python3 -m unittest coding-agents.test_codex_rules.CodexRulesTests.test_allows_all_github_commands
+python3 -m unittest coding-agents/test_codex_rules.py
+```
+
+Expected: one focused test and all five rule tests pass.
+
+### Task 3: Prompt narrowly for host-side Claude print mode
+
+**Files:**
+- Modify: `coding-agents/test_codex_rules.py`
+- Modify: `coding-agents/configs/codex/rules/default.rules`
+
+- [ ] **Step 1: Add the failing execution-policy test**
 
 ```python
 def test_prompts_for_claude_print_mode_only(self) -> None:
-    self.assertEqual(
-        decision_for("claude", "-p", "Review this design"),
-        "prompt",
-    )
+    self.assertEqual(decision_for("claude", "-p", "Review this design"), "prompt")
     self.assertIsNone(decision_for("claude", "auth", "status"))
 ```
 
-- [ ] **Step 2: Run the regression test and verify RED**
+- [ ] **Step 2: Verify RED, then add the minimal rule**
 
-Run:
-
-```bash
-python3 -m unittest coding-agents.test_codex_rules.CodexRulesTests.test_prompts_for_claude_print_mode_only
-```
-
-Expected: `FAIL` because the actual decision for `claude -p` is `None`.
-
-- [ ] **Step 3: Add the minimal prompt rule**
-
-Append this rule to `coding-agents/configs/codex/rules/default.rules` without altering unrelated local rules:
+Run the focused test and confirm `claude -p` initially resolves to no decision,
+then add:
 
 ```python
 prefix_rule(
@@ -117,34 +159,21 @@ prefix_rule(
 )
 ```
 
-Update the existing GitHub rule comment to explain that the read-only host rules remain as compatibility fallbacks while ordinary sandboxed GitHub commands use the D-Bus socket.
-
-- [ ] **Step 4: Run the focused and full rule tests and verify GREEN**
-
-Run:
+- [ ] **Step 3: Verify GREEN**
 
 ```bash
 python3 -m unittest coding-agents.test_codex_rules.CodexRulesTests.test_prompts_for_claude_print_mode_only
 python3 -m unittest coding-agents/test_codex_rules.py
 ```
 
-Expected: the focused test reports `Ran 1 test ... OK`; the file reports `Ran 6 tests ... OK`.
+Expected: the focused and full rule suites pass.
 
-- [ ] **Step 5: Commit the Claude execution policy and regression test**
-
-```bash
-git add coding-agents/test_codex_rules.py coding-agents/configs/codex/rules/default.rules
-git commit -m "codex: prompt for host-side claude print mode"
-```
-
-### Task 3: Provide bubblewrap explicitly on NixOS hosts
+### Task 4: Provide bubblewrap explicitly on NixOS hosts
 
 **Files:**
 - Modify: `nixos/shared/packages/developer-tooling.nix`
 
 - [ ] **Step 1: Add bubblewrap beside the agent harnesses**
-
-Insert `bubblewrap` before `claude-code` in the `# agent harnesses` package group:
 
 ```nix
     # agent harnesses
@@ -152,9 +181,7 @@ Insert `bubblewrap` before `claude-code` in the `# agent harnesses` package grou
     claude-code
 ```
 
-- [ ] **Step 2: Verify the Nix expression parses**
-
-Run:
+- [ ] **Step 2: Parse-check the Nix expression**
 
 ```bash
 nix-instantiate --parse nixos/shared/packages/developer-tooling.nix >/dev/null
@@ -162,46 +189,32 @@ nix-instantiate --parse nixos/shared/packages/developer-tooling.nix >/dev/null
 
 Expected: exit status 0 with no stderr.
 
-- [ ] **Step 3: Commit the package declaration**
-
-```bash
-git add nixos/shared/packages/developer-tooling.nix
-git commit -m "nixos: add bubblewrap to developer tooling"
-```
-
-### Task 4: Verify the integrated configuration and land it
+### Task 5: Commit, verify, review, and land
 
 **Files:**
-- Verify: `coding-agents/configs/codex/shared.toml`
-- Verify: `coding-agents/configs/codex/rules/default.rules`
-- Verify: `nixos/shared/packages/developer-tooling.nix`
+- Verify all files named above plus the design and plan documents.
 
-- [ ] **Step 1: Run all relevant automated checks**
+- [ ] **Step 1: Commit the corrected Codex behavior**
 
-Run:
+```bash
+git add coding-agents/configs/codex/shared.toml coding-agents/configs/codex/rules/default.rules coding-agents/test_merge_codex_config.py coding-agents/test_codex_rules.py docs/superpowers/specs/2026-08-09-codex-cli-auth-design.md docs/superpowers/plans/2026-08-09-codex-cli-auth.md
+git commit -m "codex: allow authenticated CLI host access"
+```
+
+- [ ] **Step 2: Run integrated verification**
 
 ```bash
 python3 -m unittest coding-agents/test_codex_rules.py coding-agents/test_merge_codex_config.py
 nix-instantiate --parse nixos/shared/packages/developer-tooling.nix >/dev/null
 git diff --check origin/master...HEAD
-```
-
-Expected: `Ran 9 tests ... OK`, the Nix parse exits 0, and `git diff --check` prints nothing.
-
-- [ ] **Step 2: Inspect the exact execution-policy decisions**
-
-Run:
-
-```bash
+codex execpolicy check --rules coding-agents/configs/codex/rules/default.rules -- gh extension exec example
 codex execpolicy check --rules coding-agents/configs/codex/rules/default.rules -- claude -p "Review this design"
-codex execpolicy check --rules coding-agents/configs/codex/rules/default.rules -- claude auth status
 ```
 
-Expected: the first JSON result contains `"decision":"prompt"`; the second has no matched decision.
+Expected: eight tests pass, Nix parsing and diff checks are clean, `gh` resolves
+to `allow`, and `claude -p` resolves to `prompt`.
 
-- [ ] **Step 3: Review the final branch history and changed files**
-
-Run:
+- [ ] **Step 3: Inspect branch scope and preserve primary-checkout changes**
 
 ```bash
 git status --short --branch
@@ -209,23 +222,17 @@ git log --oneline --decorate origin/master..HEAD
 git diff --stat origin/master...HEAD
 ```
 
-Expected: a clean task worktree with only the design, plan, socket config/test, Claude rule/test, and Nix package commits relative to `origin/master`.
+Expected: only the documented task files differ. Do not update or clean the
+primary checkout; its existing `top`, `journalctl`, and untracked files remain
+user-owned state.
 
-- [ ] **Step 4: Fetch and fast-forward the branch if remote master advanced**
-
-Run:
+- [ ] **Step 4: Fetch, rebase, reverify, and push master**
 
 ```bash
 git fetch origin
 git rebase origin/master
-```
-
-Expected: the rebase completes without overwriting the dirty primary checkout. Re-run Step 1 after any replayed commits.
-
-- [ ] **Step 5: Push the verified branch directly to master**
-
-```bash
 git push origin HEAD:master
 ```
 
-Expected: a fast-forward update of `origin/master`. Do not update, reset, or clean the primary checkout; its existing `top`, `journalctl`, and unrelated untracked changes remain user-owned local state.
+Expected: a fast-forward push after the complete verification suite passes on
+the rebased branch.
