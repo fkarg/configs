@@ -14,6 +14,7 @@
 
     # global python
     pkgs.python313Packages.ipython
+    pkgs.python313Packages.pyyaml
     pkgs.python313Packages.uv
     pkgs.python313Packages.setuptools
     pkgs.python313
