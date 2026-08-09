@@ -1,5 +1,5 @@
-# GitHub CLI reads credentials from the host keyring, which is unavailable in
-# the workspace sandbox. Only read-only GitHub operations run without a prompt.
+# Sandboxed GitHub CLI reaches the host keyring through the curated D-Bus socket.
+# Keep these read-only host rules as compatibility fallbacks.
 
 prefix_rule(
     pattern = ["gh", "auth", "status"],
@@ -56,4 +56,12 @@ prefix_rule(
     justification = "Creating pull requests or issues changes remote GitHub state",
     match = ["gh pr create --title Example", "gh issue create --title Example"],
     not_match = ["gh pr view 687"],
+)
+
+prefix_rule(
+    pattern = ["claude", "-p"],
+    decision = "prompt",
+    justification = "Claude print mode needs host credential refresh and runs another agent",
+    match = ["claude -p Review this design"],
+    not_match = ["claude auth status"],
 )

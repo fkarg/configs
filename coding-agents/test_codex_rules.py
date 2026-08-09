@@ -64,6 +64,13 @@ class CodexRulesTests(unittest.TestCase):
             "prompt",
         )
 
+    def test_prompts_for_claude_print_mode_only(self) -> None:
+        self.assertEqual(
+            decision_for("claude", "-p", "Review this design"),
+            "prompt",
+        )
+        self.assertIsNone(decision_for("claude", "auth", "status"))
+
     def test_ansible_symlinks_the_rules_directory(self) -> None:
         tasks = ANSIBLE_TASKS.read_text()
         self.assertIn('src: "{{ coding_agents_source_dir }}/configs/codex/rules"', tasks)
