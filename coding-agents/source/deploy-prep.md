@@ -19,32 +19,28 @@ backend delta, frontend delta, open infrastructure issues, and
 controller/config state. For narrower requests, use the applicable subset.
 Parallelize investigations that do not depend on each other. Give each agent a
 bounded question and the relevant repo path; do not delegate edits or the final
-judgment. You own synthesis, user decisions, and any requested fixes.
+judgment. You own synthesis, user decisions, and any requested fixes — and you
+deliver the final report only after every delegated analysis has returned, or
+with the missing ones explicitly named as unverified.
 
-## Facts that are easy to get wrong
+## Shared model
 
-- **Read the live release contract first.** Inspect `AGENTS.md`,
-  `scripts/release.sh`, and the release/deploy sections of `README.md` in the
-  infrastructure repo. They override facts embedded here.
-- **Candidate is not published release.** App `main` CI creates
-  `vYYYY-NNNNNN` candidate tags. `scripts/release.sh` fast-forwards each app
-  repo's `deploy` branch to its newest candidate and waits for the exact
-  deploy-branch CI run; only that run publishes images. A tag on `main` proves
-  neither promotion nor publication.
-- **Published releases have two useful identities.** The image carries the
-  build tag `YYYY-NNNNNN` and a monotonically increasing release tag
-  `deploy-YYYY-NNN`; `latest` moves on a successful deploy-branch publish.
-  Backend and frontend counters remain independent.
-- **Hosts track `latest` by default** (`env_backend_tag`/`env_frontend_tag` in `ansible/roles/deploy/defaults/main.yml`, overridable per host). "Deploying to X" means "whatever `latest` resolves to at pull time" — a successful deploy-branch publish mid-deploy can flip it under you.
-- **A git release tag does not guarantee a published image.** CI publish can fail after tagging. Always verify GHCR.
-- **db-init is content-addressed** (tag = first 12 characters of the git tree
-  SHA of `services/db-init/`). It is published from backend deploy-branch runs
-  when its content requires it; a sha-looking db-init tag is normal.
-- **A vault key existing does not mean the feature is active.** The chain is vault var → `roles/deploy/defaults/main.yml` mapping → `templates/env.j2` conditional → `.env` (all app services use `env_file: .env`). A `vault_*` key with no `env_*` mapping in defaults or host_vars renders nothing — changes to that provider are inert on that host.
+**Read `docs/release-flow.md` in the infrastructure repo first.** Tag
+identities, the candidate/promoted/published distinction, verification
+recipes, and the delta-classification method live there, shared with
+release-prep. `scripts/release.sh`, the app repos' workflow files, and
+`AGENTS.md` override it. Paste the relevant facts into subagent prompts
+instead of letting each agent rediscover them.
+
+Deploy-specific facts that are easy to get wrong:
+
 - **The deploy exports tracked compose + configs from controller `HEAD`.**
   Inspect the current deploy role before deciding whether any uncommitted file
   ships. Local role/task edits can still change what Ansible executes even when
   the delivered archive is based on `HEAD`.
+- **Hosts track `latest` by default** — "deploying to X" means "whatever
+  `latest` resolves to at pull time", and a deploy-branch publish mid-deploy
+  can flip it under you (details in the doc).
 
 ## Workflow
 
@@ -56,63 +52,34 @@ and deploy notifications/logs over memory. If the attempt timestamp cannot be
 established, ask for it: it is the minimum issue-review cutoff, not an optional
 30-day window.
 
-Fetch app refs and determine separately:
-
-- `origin/deploy`: last commit promoted by `scripts/release.sh`;
-- exact `vYYYY-NNNNNN` and `deploy-YYYY-NNN` tags pointing at it;
-- newest candidate tag on `origin/main`;
-- whether a newer candidate is intended to be released before this deploy; and
-- the deployed-to-target delta. Do not silently equate newest candidate,
-  promoted release, `latest`, and currently running image.
-
-```bash
-git -C backend-core fetch origin --tags -q
-git -C frontend-react fetch origin --tags -q
-git -C backend-core rev-parse origin/deploy
-git -C backend-core tag --points-at origin/deploy
-git -C backend-core tag --merged origin/main \
-  -l 'v[0-9][0-9][0-9][0-9]-[0-9][0-9][0-9][0-9][0-9][0-9]' \
-  --sort=-version:refname | head
-# repeat for frontend; then inspect OLD..TARGET and TARGET..origin/main
-```
-
-Commits and candidate tags after `origin/deploy` are unreleased overhang unless
-the user explicitly intends to run `scripts/release.sh` first.
+Fetch app refs and determine separately (recipes in the doc): `origin/deploy`
+and the exact candidate + deploy tags pointing at it; the newest candidate on
+`origin/main`; whether a newer candidate is intended to be released before
+this deploy; and the deployed-to-target delta. Do not silently equate newest
+candidate, promoted release, `latest`, and currently running image. Commits
+and candidate tags after `origin/deploy` are unreleased overhang unless the
+user explicitly intends to run `scripts/release.sh` first.
 
 ### 2. Verify promotion, CI, and images
 
 For each app, locate the deploy-branch workflow run by the exact promoted or
-candidate commit SHA, using the workflow names/files from `scripts/release.sh`.
-Main-branch CI cannot move `latest`; a deploy-branch publish can.
-
-```bash
-ORG=$(git -C backend-core remote get-url origin | sed -E 's#.*[:/]([^/]+)/[^/]+$#\1#')
-gh run list -R "$ORG/backend-core" --branch deploy --workflow CI --limit 20 \
-  --json databaseId,headSha,status,conclusion,url
-gh api --paginate \
-  "orgs/$ORG/packages/container/backend-core/versions?per_page=100" \
-  --jq '.[] | select(.metadata.container.tags | length > 0) |
-        [.name, (.metadata.container.tags | join(","))] | @tsv'
-# repeat with frontend-react's Build workflow
-```
-
-Verify the intended build tag and `deploy-YYYY-NNN` tag exist on GHCR and
-whether `latest` occurs on the same package-version digest (`.name`). If
-promotion is in flight, wait and recheck. If it failed, stop: rerunning Ansible
-does not publish the image. Never move `deploy`, rerun CI, or run
-`scripts/release.sh` without explicit authorization.
+candidate commit SHA and verify the intended image tags exist on GHCR with
+`latest` on the same digest (recipes in the doc). If promotion is in flight,
+wait and recheck. If it failed, stop: rerunning Ansible does not publish the
+image. Never move `deploy`, rerun CI, or run `scripts/release.sh` without
+explicit authorization.
 
 ### 3. Classify the backend delta
 
-```bash
-git -C backend-core diff --name-status vOLD..vNEW -- migrations/   # any migration?
-git -C backend-core diff vOLD..vNEW -- .env.example                # new env vars?
-```
+Classify deployed→promoted per the doc's method (migrations, env-var wiring,
+provider-scoped inertness — determine which providers are live on the target
+host from its host_vars and vault, and flag dead vault keys you notice).
+Additionally, deploy-specific:
 
-- **Migrations:** read each one. Additive nullable columns = safe, rollback-tolerant. Column drops, type changes, data backfills, index builds on big tables = flag with expected impact.
-- **New env vars:** for each, trace the wiring chain (see Facts). Vars with backend defaults need no infra change; required secrets need vault + defaults + env.j2 together (see AGENTS.md).
-- **Provider-scoped changes:** determine which providers are live on the target host — `ansible/inventory/host_vars/<host>/main.yml` plus `cd ansible && ansible-vault view inventory/host_vars/<host>/vault.yml | grep -oE '^vault_[a-z_]+'` — and mark changes to inactive providers as inert. Flag dead vault keys you notice. Exception: if the delta makes a var required at startup (no backend default), an unwired key becomes a blocker.
-- **Behavioral changes on active subsystems** (OCR, workers, startup/prewarm paths): note as post-deploy watch-items.
+- **Behavioral changes on active subsystems** (OCR, workers, startup/prewarm
+  paths): note as post-deploy watch-items.
+- **Rollback tolerance:** data the new version moves or backfills that the
+  currently-running image cannot read makes rollback lossy — say so.
 
 ### 4. Classify the frontend delta + cross-repo pairing
 
