@@ -4,11 +4,13 @@ from __future__ import annotations
 
 import importlib.util
 import tempfile
+import tomllib
 import unittest
 from pathlib import Path
 
 
 MODULE_PATH = Path(__file__).with_name("merge_codex_config.py")
+SHARED_CONFIG = Path(__file__).parent / "configs" / "codex" / "shared.toml"
 SPEC = importlib.util.spec_from_file_location("merge_codex_config", MODULE_PATH)
 assert SPEC and SPEC.loader
 merge_codex_config = importlib.util.module_from_spec(SPEC)
@@ -16,6 +18,18 @@ SPEC.loader.exec_module(merge_codex_config)
 
 
 class MergeCodexConfigTests(unittest.TestCase):
+    def test_shared_config_allows_the_user_dbus_socket(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            target = Path(temp_dir) / "config.toml"
+
+            merge_codex_config.merge(SHARED_CONFIG, target)
+
+            merged = tomllib.loads(target.read_text())
+            self.assertEqual(
+                merged["features"]["network_proxy"]["unix_sockets"],
+                {"/run/user/1000/bus": "allow"},
+            )
+
     def test_expands_home_relative_writable_roots(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             temp_path = Path(temp_dir)
