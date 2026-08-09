@@ -64,6 +64,7 @@ local menu        = "fuzzel"
 -- instead of systemd user services when they only work under a Hyprland
 -- compositor.
 hl.on("hyprland.start", function()
+    hl.exec_cmd("systemctl --user start hyprland-session.target")
     hl.exec_cmd("mako")
     -- Load the hy3 layout only when its plugin is present in the system
     -- profile, i.e. when booted into jolly's `i2c-hy3` specialisation. Guarded
@@ -100,6 +101,12 @@ hl.on("hyprland.start", function()
     -- hl.exec_cmd("hyprpaper")
     -- hl.exec_cmd("udiskie --tray")
     -- hl.exec_cmd("copyq --start-server")
+end)
+
+hl.on("hyprland.shutdown", function()
+    -- Stop session-bound services before the compositor exits. This must block
+    -- briefly so systemd has time to propagate the target shutdown.
+    os.execute("systemctl --user stop hyprland-session.target && sleep 0.1")
 end)
 
 ---------------------

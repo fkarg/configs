@@ -28,6 +28,17 @@
   security.rtkit.enable = true;
   security.polkit.enable = true;
 
+  # Native Hyprland sessions do not activate graphical-session.target on their
+  # own. xdg-desktop-portal requires it, so expose the compositor lifecycle to
+  # systemd without adopting a full session manager such as UWSM.
+  systemd.user.targets.hyprland-session = {
+    description = "Hyprland session";
+    bindsTo = [ "graphical-session.target" ];
+    wants = [ "graphical-session-pre.target" ];
+    after = [ "graphical-session-pre.target" ];
+    unitConfig.PropagatesStopTo = [ "graphical-session.target" ];
+  };
+
   # dpms is a Lua expression now: under a Lua config `hyprctl dispatch dpms on`
   # no longer parses and the screen simply never blanks or never comes back.
   # The `action` key is mandatory — hl.dsp.dpms("on") (a bare string) leaves
