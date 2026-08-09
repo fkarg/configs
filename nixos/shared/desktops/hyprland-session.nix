@@ -52,11 +52,9 @@
         after_sleep_cmd = hyprctl dispatch 'hl.dsp.dpms({ action = "on" })'
     }
 
-    listener {
-        timeout = 900
-        on-timeout = loginctl lock-session
-    }
-
+    # No idle auto-lock: current consumers are home towers. Locking stays
+    # available manually (Super+A / Super+Shift+L) and on suspend via
+    # before_sleep_cmd.
     listener {
         timeout = 1200
         on-timeout = hyprctl dispatch 'hl.dsp.dpms({ action = "off" })'
