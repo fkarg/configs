@@ -46,6 +46,7 @@
     fava
 
     # agent harnesses
+    bubblewrap
     claude-code
     codex
     gemini-cli
