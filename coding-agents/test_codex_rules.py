@@ -59,12 +59,17 @@ class CodexRulesTests(unittest.TestCase):
             with self.subTest(command=command):
                 self.assertEqual(decision_for(*command), "allow")
 
-    def test_prompts_for_claude_print_mode_only(self) -> None:
+    def test_allows_claude_print_mode_on_the_host(self) -> None:
         self.assertEqual(
             decision_for("claude", "-p", "Review this design"),
-            "prompt",
+            "allow",
         )
         self.assertIsNone(decision_for("claude", "auth", "status"))
+
+    def test_allows_non_activating_nixos_diagnostics_on_the_host(self) -> None:
+        self.assertEqual(decision_for("nixos-option", "services.openssh.enable"), "allow")
+        self.assertEqual(decision_for("nixos-rebuild", "dry-build"), "allow")
+        self.assertIsNone(decision_for("nixos-rebuild", "switch"))
 
     def test_ansible_symlinks_the_rules_directory(self) -> None:
         tasks = ANSIBLE_TASKS.read_text()
