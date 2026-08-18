@@ -37,30 +37,51 @@ scale=$(jq -r '.scale' <<<"$mon")
 lw=$(awk -v w="$mw" -v s="$scale" 'BEGIN{ printf "%d", w / s }')
 lh=$(awk -v h="$mh" -v s="$scale" 'BEGIN{ printf "%d", h / s }')
 
-ws_id=$(hyprctl activeworkspace -j | jq -r '.id')
-
 # Fractional resize of the active window.
 frac_w=$mode
 frac_h=${2:-}
+
+win=$(hyprctl activewindow -j)
+cw=$(jq -r '.size[0]' <<<"$win")
+ch=$(jq -r '.size[1]' <<<"$win")
 
 tw=$(awk -v w="$lw" -v f="$frac_w" 'BEGIN{ printf "%d", w * f }')
 if [ -n "$frac_h" ]; then
   th=$(awk -v h="$lh" -v f="$frac_h" 'BEGIN{ printf "%d", h * f }')
 else
-  th=$(hyprctl activewindow -j | jq -r '.size[1]')
+  th=$ch
 fi
 
-# Lone-tile case: dwindle just snaps the tile back to fill the workspace, so
-# float it first to make the resize visible. Multi-window splits work as is.
-tiled_count=$(hyprctl clients -j \
-  | jq --argjson w "$ws_id" '[.[] | select(.workspace.id == $w and .floating == false)] | length')
-active_floating=$(hyprctl activewindow -j | jq -r '.floating')
-
-if [ "$active_floating" = "false" ] && [ "$tiled_count" -le 1 ]; then
-  hyprctl dispatch 'hl.dsp.window.float({ action = "toggle" })' >/dev/null
-fi
+# Lone-tile case: dwindle snaps the tile straight back to fill the workspace,
+# so the resize is a deliberate no-op. (An earlier version floated the window
+# first to make it visible, gated on the active workspace's tiled count — but
+# with a special workspace open, `hyprctl activeworkspace` reports the regular
+# workspace *underneath*, so scratchpad windows with tiled siblings got floated
+# too, and floats accumulated: a float no longer counts as tiled, so each next
+# window became the "lone tile" and got floated on resize. Float manually with
+# SUPER+V if you want a lone window at fractional width.)
 
 # Under a Lua config hyprctl takes Lua, not the old `dispatcher arg arg` form.
-# window.resize's x/y are absolute logical pixels (applying it twice is a no-op),
-# so this is a direct replacement for the old `resizeactive exact`.
-hyprctl dispatch "hl.dsp.window.resize({ x = $tw, y = $th })" >/dev/null
+if [ "$(jq -r '.floating' <<<"$win")" = "true" ]; then
+  # Floating windows take absolute x/y correctly (applying twice is a no-op).
+  hyprctl dispatch "hl.dsp.window.resize({ x = $tw, y = $th })" >/dev/null
+  exit 0
+fi
+
+# Tiled windows: window.resize treats its delta (absolute mode: target -
+# current) as a displacement of the *grabbed edge*, and a window touching the
+# monitor's right (bottom) edge grabs its left (top) edge — so the absolute
+# form inverts there: a shrink request grows the window and vice versa
+# (verified empirically on 0.55). Compute the delta ourselves and flip the
+# sign for edge-anchored windows; 40px tolerance covers gaps and borders.
+wx=$(jq -r '.at[0]' <<<"$win")
+wy=$(jq -r '.at[1]' <<<"$win")
+mon_x=$(jq -r '.x' <<<"$mon")
+mon_y=$(jq -r '.y' <<<"$mon")
+
+dx=$((tw - cw))
+dy=$((th - ch))
+if [ $((mon_x + lw - wx - cw)) -lt 40 ]; then dx=$((-dx)); fi
+if [ $((mon_y + lh - wy - ch)) -lt 40 ]; then dy=$((-dy)); fi
+
+hyprctl dispatch "hl.dsp.window.resize({ x = $dx, y = $dy, relative = true })" >/dev/null
