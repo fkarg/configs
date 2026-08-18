@@ -31,8 +31,8 @@ zoxide: true
 #   # then switch to jolly via the monitor's OSD and rerun:
 #   m1ddc display <UUID> get input                  # → that's the value below
 # kvm_display_id pins the command to the Philips even if display ordering or
-# the built-in's connection state changes. 15 == 0x0F is a placeholder until
-# verified.
+# the built-in's connection state changes. 15 == 0x0F is jolly's verified
+# DisplayPort-1 input.
 kvm_switch_enabled: true
 kvm_display_id: "0A6C28AE-EE62-41C3-8565-25FEE528B91B"
 # kvm_self_input is *this* host's input on the monitor (caeli = USB-C). When

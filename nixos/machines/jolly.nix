@@ -317,6 +317,26 @@
 
   services.displayManager.gdm.enable = true;
   services.desktopManager.gnome.enable = true;
+  # Select jolly's DisplayPort input before GDM starts. The command is a
+  # single best-effort write: a DDC failure is logged but must not block login.
+  systemd.services.jolly-select-displayport = {
+    description = "Select jolly DisplayPort monitor input";
+    after = [ "systemd-modules-load.service" ];
+    before = [ "display-manager.service" ];
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = true;
+    };
+    script = ''
+      if ! ${pkgs.ddcutil}/bin/ddcutil setvcp 0x60 0x0f; then
+        echo "jolly-select-displayport: failed to select DisplayPort input" >&2
+      fi
+    '';
+  };
+  systemd.services.display-manager = {
+    requires = [ "jolly-select-displayport.service" ];
+    after = [ "jolly-select-displayport.service" ];
+  };
   programs.ssh.startAgent = lib.mkForce false;
   programs.ssh.askPassword = lib.mkForce "${pkgs.seahorse}/libexec/seahorse/ssh-askpass";
 
