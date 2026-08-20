@@ -18,7 +18,8 @@ summary plus blockers, prep steps, and a go/no-go. Do not run
 
 You are the orchestrator. Fan out independent, read-only exploration to
 subagents: backend delta, frontend delta + cross-repo pairing, candidate/CI/
-registry state, env-contract preflight, open infrastructure issues.
+registry state, env-contract preflight, open infrastructure issues, the
+release card.
 Parallelize what doesn't depend on each other; give each agent a bounded
 question and the relevant repo path. You own synthesis and the final
 judgment — and you deliver it only after every delegated analysis has
@@ -101,7 +102,19 @@ blocker, next-deploy prep, or watch-item. App repos: unlike deploy prep, the
 code itself is what's being promoted — check for known regressions filed
 against the shipping range before blessing it.
 
-### 7. Report
+### 7. Release card
+
+In addition to — never instead of — the steps above, delegate reading the
+release cards (infrastructure issues labeled `release`; conventions in
+`docs/release-flow.md`, "Release cards"). Reconcile the next card against the
+cut boundary: open sub-issues are hard cut blockers (`release.sh` refuses to
+cut past them — recommend finish-or-slip per item), and merged changes with
+deploy-time consequences missing from the card's deploy notes are notes to
+add. Update the card's Deploy notes / Changelog sections with what the delta
+analysis found, each note naming applicability and when it binds. Retitling
+and closing stay `release.sh`'s job.
+
+### 8. Report
 
 Risk-ranked: **cut blockers** (preflight refusal, red candidate CI, diverged
 `latest`, blocking issue), **prep before cutting**, **deploy-time prep this
@@ -124,3 +137,5 @@ release up at their next deploy.
   both `latest` tags should normally come from the same cut.
 - Estimating what ships from commit subjects — read the migrations,
   `.env.example` diffs, and flag wiring.
+- Treating the release card as the delta — the card is intent and notes;
+  git is the truth about what ships.

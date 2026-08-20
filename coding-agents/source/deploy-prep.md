@@ -15,8 +15,8 @@ Assess what a deploy of the Kolai infrastructure repo would actually ship to a h
 
 You are the orchestrator. Fan out independent, read-only exploration and
 fact-finding to subagents: for production deploy prep, cover release/CI state,
-backend delta, frontend delta, open infrastructure issues, and
-controller/config state. For narrower requests, use the applicable subset.
+backend delta, frontend delta, open infrastructure issues, release cards for
+the incoming interval, and controller/config state. For narrower requests, use the applicable subset.
 Parallelize investigations that do not depend on each other. Give each agent a
 bounded question and the relevant repo path; do not delegate edits or the final
 judgment. You own synthesis, user decisions, and any requested fixes — and you
@@ -119,7 +119,19 @@ issues were considered. If `gh` authentication/API access fails, retry after
 checking `gh auth status`; if still unavailable, mark issue review unverified
 and do not claim readiness.
 
-### 6. Controller worktree
+### 6. Release cards
+
+In addition to — never instead of — the issue review and delta
+classification, delegate reading the release cards (infrastructure issues
+labeled `release`; conventions in `docs/release-flow.md`, "Release cards")
+covering the host's deployed→target interval. Read every card in the range,
+open or closed: hosts skip releases, and a skipped card's deploy notes still
+bind when jumping over it. Union the applicable notes (filtered by this
+host's providers) into prep steps and watch-items — as claims to verify
+against the classified delta, not a substitute for it. Append post-deploy
+discoveries to the relevant card as dated comments.
+
+### 7. Controller worktree
 
 Inspect `git status`, `HEAD`, the deploy role's staging/export logic, and changes
 since the controller commit used for the last attempt. Distinguish:
@@ -137,7 +149,7 @@ cd ansible && ansible-playbook playbooks/deploy.yml -l <host> --tags config --ch
 
 (Needs SSH reachability of the host and the vault password from `~/.vault_pass`; skip with a note if the host is unreachable.)
 
-### 7. Report
+### 8. Report
 
 Risk-ranked: **blockers** (missing image, failed promotion, unwired required
 secret, destructive migration, blocking issue), **required prep**,
@@ -156,3 +168,5 @@ current deploy role; do not rely on a stale generic rollback claim.
 - "No matching label means the issue is irrelevant" — read all post-attempt
   open issues and broaden into older plausible issues.
 - Estimating risk from commit subjects alone — read migrations and `.env.example` diffs.
+- "The release cards say nothing, so there are no manual steps" — cards are
+  best-effort notes; the delta classification stands on its own.
