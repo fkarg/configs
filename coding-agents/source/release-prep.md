@@ -100,9 +100,11 @@ re-verify.
 
 Infrastructure repo: read open issues created since the last cut, plus older
 ones plausibly connected to release/CI/publish state; classify as cut
-blocker, next-deploy prep, or watch-item. App repos: unlike deploy prep, the
-code itself is what's being promoted — check for known regressions filed
-against the shipping range before blessing it.
+blocker, next-deploy prep, or watch-item. Next-deploy prep bound to a change
+in this cut belongs on the card — hand it to step 7 rather than reporting it
+loose. App repos: unlike deploy prep, the code itself is what's being
+promoted — check for known regressions filed against the shipping range
+before blessing it.
 
 ### 7. Release card
 
@@ -115,6 +117,15 @@ deploy-time consequences missing from the card's deploy notes are notes to
 add. Update the card's Deploy notes / Changelog sections with what the delta
 analysis found, each note naming applicability and when it binds. Retitling
 and closing stay `release.py`'s job.
+
+Fold step 6's next-deploy-prep issues in here: an open infrastructure issue
+staging a deploy note for a change in this cut's delta is the pre-merge form
+of that note, not a second copy — copy its content into the card body, link
+the card from the issue, and close it as superseded. Discriminate, because
+most deployment-flavored issues are not this: work that outlives the deploy —
+backfills, alerting, provisioning bound to no release — stays open and is
+merely linked, and an issue whose note is only part of its content keeps the
+remainder.
 
 ### 8. Report
 
