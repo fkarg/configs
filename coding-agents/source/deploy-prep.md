@@ -28,7 +28,7 @@ with the missing ones explicitly named as unverified.
 **Read `docs/release-flow.md` in the infrastructure repo first.** Tag
 identities, the candidate/promoted/published distinction, verification
 recipes, and the delta-classification method live there, shared with
-release-prep. `scripts/release.sh`, the app repos' workflow files, and
+release-prep. `scripts/release.py`, the app repos' workflow files, and
 `AGENTS.md` override it. Paste the relevant facts into subagent prompts
 instead of letting each agent rediscover them.
 
@@ -58,7 +58,7 @@ and the exact candidate + deploy tags pointing at it; the newest candidate on
 this deploy; and the deployed-to-target delta. Do not silently equate newest
 candidate, promoted release, `latest`, and currently running image. Commits
 and candidate tags after `origin/deploy` are unreleased overhang unless the
-user explicitly intends to run `scripts/release.sh` first.
+user explicitly intends to run `scripts/release.py` first.
 
 ### 2. Verify promotion, CI, and images
 
@@ -66,7 +66,7 @@ For each app, locate the deploy-branch workflow run by the exact promoted or
 candidate commit SHA and verify the intended image tags exist on GHCR with
 `latest` on the same digest (recipes in the doc). If promotion is in flight,
 wait and recheck. If it failed, stop: rerunning Ansible does not publish the
-image. Never move `deploy`, rerun CI, or run `scripts/release.sh` without
+image. Never move `deploy`, rerun CI, or run `scripts/release.py` without
 explicit authorization.
 
 ### 3. Classify the backend delta

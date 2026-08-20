@@ -1,5 +1,5 @@
 ---
-description: Use when preparing, sanity-checking, or risk-assessing cutting a release of the Kolai app repos (scripts/release.sh in the infrastructure repo) — before candidates are promoted to the deploy branches and images published.
+description: Use when preparing, sanity-checking, or risk-assessing cutting a release of the Kolai app repos (scripts/release.py in the infrastructure repo) — before candidates are promoted to the deploy branches and images published.
 mode: primary
 permission:
   bash: allow
@@ -11,10 +11,10 @@ permission:
 
 # Release Prep
 
-Assess what cutting a release (`scripts/release.sh`) would actually promote
+Assess what cutting a release (`scripts/release.py`) would actually promote
 and publish — BEFORE anyone runs it. The deliverable is a per-repo shipping
 summary plus blockers, prep steps, and a go/no-go. Do not run
-`scripts/release.sh` itself unless explicitly asked.
+`scripts/release.py` itself unless explicitly asked.
 
 You are the orchestrator. Fan out independent, read-only exploration to
 subagents: backend delta, frontend delta + cross-repo pairing, candidate/CI/
@@ -30,26 +30,26 @@ returned, or with the missing ones explicitly named as unverified.
 **Read `docs/release-flow.md` in the infrastructure repo first.** Tag
 identities, the candidate/promoted/published distinction, verification
 recipes, and the delta-classification method live there, shared with
-deploy-prep. `scripts/release.sh` and the app repos' workflow files override
+deploy-prep. `scripts/release.py` and the app repos' workflow files override
 it. Paste the relevant facts into subagent prompts instead of letting each
 agent rediscover them.
 
 ## Facts specific to cutting
 
-- `release.sh` always promotes each repo's **newest** candidate on
+- `release.py` always promotes each repo's **newest** candidate on
   `origin/main` — it cannot cut an older one. If the user wants an
   intermediate state, that is a different (manual) operation; flag it.
 - The cut itself changes no host. Hosts pick up the images at their next
   deploy. Most risks therefore bind at deploy time — report them as prep for
-  the next deploy, not as cut blockers. The exception `release.sh` guards
+  the next deploy, not as cut blockers. The exception `release.py` guards
   itself: a backend that declares a required/secret env var
   `ansible/env-contract.yml` does not cover would fail the deploy gate on
   every host, so the preflight refusal is a genuine cut blocker.
 - Both repos are normally cut together and share one `deploy-YY-MM-NNN` tag.
-  Releasing one repo alone (`scripts/release.sh backend-core`) is supported
+  Releasing one repo alone (`scripts/release.py backend-core`) is supported
   but leaves the other repo's `latest` on an older cut — verify the pairing
   tolerates that before recommending it.
-- A candidate already carrying a deploy tag was already cut: `release.sh`
+- A candidate already carrying a deploy tag was already cut: `release.py`
   re-attaches to that build instead of burning a new number. That's a rerun,
   not a new release.
 
@@ -66,16 +66,18 @@ is intended — main CI may still be running or about to tag.
 ### 2. Candidate viability
 
 The main-branch run at each candidate SHA is green; the workflow file at that
-SHA carries the deploy-branch trigger (`release.sh` refuses candidates that
+SHA carries the deploy-branch trigger (`release.py` refuses candidates that
 predate it); no deploy tag sits on the candidate already.
 
-### 3. Env-contract preflight, read-only
+### 3. Preflights, read-only
 
-Run the same check `release.sh` runs (`check_backend_env_contract`) against
-the exact backend candidate tree — it needs a `python3` with PyYAML. Confirm
-the infrastructure checkout is at `origin/main` first: a stale checkout
-validates a contract nobody will deploy. An uncovered required/secret var
-means wiring `ansible/env-contract.yml` before the cut.
+Run `scripts/release.py --check` (needs uv): it runs the release-card gate,
+the env-contract check against the exact backend candidate tree, and the
+frontend-changelog staleness warning without tagging or mutating anything.
+Confirm the infrastructure checkout is at `origin/main` first: a stale
+checkout validates a contract nobody will deploy. An uncovered required/
+secret var means wiring `ansible/env-contract.yml` before the cut; open card
+sub-issues mean finish-or-slip before the cut.
 
 ### 4. Classify both deltas
 
@@ -107,12 +109,12 @@ against the shipping range before blessing it.
 In addition to — never instead of — the steps above, delegate reading the
 release cards (infrastructure issues labeled `release`; conventions in
 `docs/release-flow.md`, "Release cards"). Reconcile the next card against the
-cut boundary: open sub-issues are hard cut blockers (`release.sh` refuses to
+cut boundary: open sub-issues are hard cut blockers (`release.py` refuses to
 cut past them — recommend finish-or-slip per item), and merged changes with
 deploy-time consequences missing from the card's deploy notes are notes to
 add. Update the card's Deploy notes / Changelog sections with what the delta
 analysis found, each note naming applicability and when it binds. Retitling
-and closing stay `release.sh`'s job.
+and closing stay `release.py`'s job.
 
 ### 8. Report
 
@@ -121,7 +123,7 @@ Risk-ranked: **cut blockers** (preflight refusal, red candidate CI, diverged
 cut creates** (named as such: env wiring, Flipt flags, migration windows,
 rollback caveats), **watch-items**. Include the per-repo release pair
 (old → new tags), the deploy tag the cut would mint, evidence links, and
-unresolved facts. End with the exact command (`scripts/release.sh [repo ...]`)
+unresolved facts. End with the exact command (`scripts/release.py [repo ...]`)
 and what happens after it: images publish, `latest` moves, hosts pick the
 release up at their next deploy.
 
