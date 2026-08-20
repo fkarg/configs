@@ -77,7 +77,8 @@ frontend-changelog staleness warning without tagging or mutating anything.
 Confirm the infrastructure checkout is at `origin/main` first: a stale
 checkout validates a contract nobody will deploy. An uncovered required/
 secret var means wiring `ansible/env-contract.yml` before the cut; open card
-sub-issues mean finish-or-slip before the cut.
+blockers (sub-issues, or issues the card is marked blocked by) mean
+finish-or-slip before the cut.
 
 ### 4. Classify both deltas
 
@@ -111,8 +112,9 @@ before blessing it.
 In addition to — never instead of — the steps above, delegate reading the
 release cards (infrastructure issues labeled `release`; conventions in
 `docs/release-flow.md`, "Release cards"). Reconcile the next card against the
-cut boundary: open sub-issues are hard cut blockers (`release.py` refuses to
-cut past them — recommend finish-or-slip per item), and merged changes with
+cut boundary: open blockers — sub-issues and blocked-by dependencies alike —
+are hard cut blockers (`release.py` refuses to cut past them — recommend
+finish-or-slip per item), and merged changes with
 deploy-time consequences missing from the card's deploy notes are notes to
 add. Update the card's Deploy notes / Changelog sections with what the delta
 analysis found, each note naming applicability and when it binds. Retitling
