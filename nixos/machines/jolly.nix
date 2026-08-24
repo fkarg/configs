@@ -364,6 +364,17 @@
     ];
   };
 
+  # AppImages bundle their own libs but still expect an FHS loader, so they
+  # can't run natively here. `binfmt` registers them so `./foo.AppImage` works
+  # directly instead of needing an explicit `appimage-run ./foo.AppImage` — it
+  # unpacks to ~/.cache/appimage-run/<sha256>/ and execs inside a bwrap FHS
+  # sandbox. Note that cache is never pruned; large AppImages that self-update
+  # leave a full copy per version behind.
+  programs.appimage = {
+    enable = true;
+    binfmt = true;
+  };
+
   programs.firefox.enable = true;
   services.printing.enable = true;
   services.gvfs.enable = true;
