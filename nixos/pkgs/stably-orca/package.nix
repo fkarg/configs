@@ -7,8 +7,12 @@
 # runtime layer in the closure, real desktop entry and icons, and a wrapper we
 # control. It also sidesteps the self-updater — electron-updater's in-place
 # rewrite path is AppImage-only, so a deb-derived install can't mutate itself
-# in the read-only store. Version bumps come from ../../shared/programs/
-# stably-orca.nix driving ./update.sh instead.
+# in the read-only store.
+#
+# There is no checked-in version pin: the release to build is read from
+# upstream's feed at evaluation time, so `nixos-rebuild boot` always stages
+# whatever is current with nothing to bump by hand. See the note at `feed`
+# below for what that trades away.
 {
   lib,
   stdenv,
@@ -49,15 +53,57 @@
 }:
 
 let
-  source = lib.importJSON ./source.json;
+  # electron-builder publishes this next to every release: a ~700 byte manifest
+  # at a stable URL, listing the current version and a per-artifact sha512. That
+  # sha512 is base64 of the raw digest, which is byte-for-byte Nix's SRI
+  # encoding, so it can be handed to fetchurl verbatim.
+  #
+  # Only this manifest is fetched impurely (hashless, so re-checked per
+  # tarball-ttl, an hour by default). The 160MB .deb underneath stays an
+  # ordinary fixed-output derivation with a real hash, so it is cached and
+  # substitutable exactly like any other fetchurl.
+  #
+  # The cost of doing it this way: evaluation now depends on GitHub being
+  # reachable, so an outage fails *every* nixos-rebuild on this host, not just
+  # this package. And re-evaluating the same git state later can produce a
+  # different Orca — deliberate here, but it is also why flakes reject this
+  # (pure evaluation forbids a hashless fetch).
+  feed = lib.splitString "\n" (
+    builtins.readFile (
+      builtins.fetchurl "https://github.com/stablyai/orca/releases/latest/download/latest-linux.yml"
+    )
+  );
+
+  version =
+    let
+      line = lib.findFirst (lib.hasPrefix "version: ") null feed;
+    in
+    if line == null then
+      throw "stably-orca: no version field in upstream release feed"
+    else
+      lib.removePrefix "version: " line;
+
+  debFile = "orca-ide_${version}_amd64.deb";
+
+  # In the files list each artifact is a `- url: <name>` line immediately
+  # followed by its `sha512:`. Match the deb's entry specifically — the
+  # top-level sha512 key at the end of the manifest belongs to the AppImage.
+  debHash =
+    let
+      idx = lib.lists.findFirstIndex (lib.hasSuffix "url: ${debFile}") null feed;
+    in
+    if idx == null then
+      throw "stably-orca: ${debFile} not listed in upstream release feed"
+    else
+      "sha512-" + lib.removePrefix "sha512: " (lib.trim (lib.elemAt feed (idx + 1)));
 in
-stdenv.mkDerivation (finalAttrs: {
+stdenv.mkDerivation {
   pname = "stably-orca";
-  version = source.version;
+  inherit version;
 
   src = fetchurl {
-    url = "https://github.com/stablyai/orca/releases/download/v${finalAttrs.version}/orca-ide_${finalAttrs.version}_amd64.deb";
-    hash = source.hash;
+    url = "https://github.com/stablyai/orca/releases/download/v${version}/${debFile}";
+    hash = debHash;
   };
 
   nativeBuildInputs = [
@@ -163,4 +209,4 @@ stdenv.mkDerivation (finalAttrs: {
     mainProgram = "orca-ide";
     sourceProvenance = [ lib.sourceTypes.binaryNativeCode ];
   };
-})
+}
