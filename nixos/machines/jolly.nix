@@ -229,6 +229,20 @@
   hardware.bluetooth.powerOnBoot = true;
   services.blueman.enable = true;
 
+  # Don't let an rfkill soft-block outlive the session that set it.
+  #
+  # systemd-rfkill saves /dev/rfkill state at shutdown and restores it at every
+  # boot. A single stray "Bluetooth off" from the blueman tray therefore becomes
+  # permanent: the block is replayed on each boot and the only cure is running
+  # `rfkill unblock bluetooth` by hand, forever. powerOnBoot does not help —
+  # that powers the adapter, it does not clear an rfkill block.
+  #
+  # Masking the unit drops the persistence, so every boot starts from the
+  # hardware default (unblocked) and a tray toggle only lasts for that session.
+  # This covers wifi too, which has the same stale-block trap.
+  systemd.services.systemd-rfkill.enable = false;
+  systemd.sockets.systemd-rfkill.enable = false;
+
   # Logitech peripheral manager. `enable` only gives ltunify + the udev rules
   # the receiver needs; `enableGraphical` is what installs solaar itself.
   # (There is no services.solaar module in nixpkgs — hardware.logitech is it.)
