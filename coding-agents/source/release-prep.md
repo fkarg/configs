@@ -114,20 +114,30 @@ release cards (infrastructure issues labeled `release`; conventions in
 `docs/release-flow.md`, "Release cards"). Reconcile the next card against the
 cut boundary: open blockers — sub-issues and blocked-by dependencies alike —
 are hard cut blockers (`release.py` refuses to cut past them — recommend
-finish-or-slip per item), and merged changes with
-deploy-time consequences missing from the card's deploy notes are notes to
-add. Update the card's Deploy notes / Changelog sections with what the delta
-analysis found, each note naming applicability and when it binds. Retitling
-and closing stay `release.py`'s job.
+finish-or-slip per item). Retitling and closing stay `release.py`'s job.
 
-Fold step 6's next-deploy-prep issues in here: an open infrastructure issue
-staging a deploy note for a change in this cut's delta is the pre-merge form
-of that note, not a second copy — copy its content into the card body, link
-the card from the issue, and close it as superseded. Discriminate, because
-most deployment-flavored issues are not this: work that outlives the deploy —
-backfills, alerting, provisioning bound to no release — stays open and is
-merely linked, and an issue whose note is only part of its content keeps the
-remainder.
+Collect deploy notes from the shipping PRs — before any tag is pushed. Per
+app repo, resolve the PRs whose commits lie in the exact promoted→candidate
+range via commit→PR association (`gh api
+repos/<org>/<repo>/commits/<sha>/pulls`) — never date or keyword search —
+and copy each non-`None` `## Deploy impact` section into the card's Deploy
+notes with provenance (`repo#PR`, merge SHA), each note naming applicability
+and when it binds. Report coverage: commits in range, PRs resolved,
+unmatched or ambiguous commits, non-`None` sections found. Unmatched
+commits (direct pushes, association failures) are inspected by hand, never
+silently skipped; a revert in the range voids the reverted PR's note — drop
+it and say why. Then reconcile both ways against the classified delta: a
+delta consequence no PR declared is a note to add; a note the delta
+contradicts is flagged — git is the truth. Update the Changelog section
+from the delta analysis as before.
+
+Legacy staging issues (pre-convention): an open infrastructure issue holding
+a deploy note for a change in this cut's delta is the old staged form of the
+note — copy its content into the card body, link the card from the issue,
+and close it as superseded. Discriminate, because most deployment-flavored
+issues are not this: work that outlives the deploy — backfills, alerting,
+provisioning bound to no release — stays open and is merely linked, and an
+issue whose note is only part of its content keeps the remainder.
 
 ### 8. Report
 
@@ -154,3 +164,6 @@ release up at their next deploy.
   `.env.example` diffs, and flag wiring.
 - Treating the release card as the delta — the card is intent and notes;
   git is the truth about what ships.
+- Collecting Deploy impact sections by PR search, titles, or dates —
+  membership comes from the exact commit range; unmatched commits are
+  findings, not noise.

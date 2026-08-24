@@ -38,12 +38,16 @@ Environment / Robustness & ops — one short section each; omit sections where
 the change has no surface at all (always keep Mergeability and Rollback).
 
 ### Deployment notes
-<ordered list of what must happen before/during/after deploy, or "standard deploy">
+<ordered list of what must happen before/during/after deploy, or "standard deploy".
+Where the repo's conventions put deploy notes in the PR body (e.g. a
+"## Deploy impact" section — check AGENTS.md), format this list as ready-to-paste
+content for that section, each note naming applicability and when it binds>
 
 ### Infrastructure issue
-<ONLY deployment/infra-layer work (provisioning, scaling, managed services, secrets,
-quotas, rollout ordering): a ready-to-file title + body with context, required work,
-ordering, and risk-if-skipped. In-repo application follow-ups do NOT go here —
-surface those as plain follow-ups for the orchestrator to route. If none: "No
-infrastructure work required.">
+<ONLY infra-layer work that outlives the deploy itself (provisioning, scaling,
+managed services, secrets, quotas): a ready-to-file title + body with context,
+required work, ordering, and risk-if-skipped. Deploy-bound steps belong in the
+Deployment notes above, not here. In-repo application follow-ups do NOT go
+here — surface those as plain follow-ups for the orchestrator to route. If
+none: "No infrastructure work required.">
 ```

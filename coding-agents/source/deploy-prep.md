@@ -128,10 +128,12 @@ covering the host's deployed→target interval. Read every card in the range,
 open or closed: hosts skip releases, and a skipped card's deploy notes still
 bind when jumping over it. Union the applicable notes (filtered by this
 host's providers) into prep steps and watch-items — as claims to verify
-against the classified delta, not a substitute for it. Append post-deploy
-discoveries to the relevant card as dated comments.
+against the classified delta, not a substitute for it. The card carries the
+cut-time snapshot of the app repos' PR `## Deploy impact` sections — do not
+re-read app-repo PR bodies; they stay editable and are not the record.
+Append post-deploy discoveries to the relevant card as dated comments.
 
-### 7. Controller worktree
+### 7. Controller worktree and infra deploy notes
 
 Inspect `git status`, `HEAD`, the deploy role's staging/export logic, and changes
 since the controller commit used for the last attempt. Distinguish:
@@ -140,6 +142,17 @@ since the controller commit used for the last attempt. Distinguish:
 - local role/playbook edits Ansible will execute;
 - dirty submodule state, which does not itself change prebuilt app images; and
 - unrelated untracked operational files.
+
+Infrastructure changes never pass through a release cut, so their deploy
+notes are read here, not from cards: resolve the infra PRs merged in the
+range *last successfully applied controller revision → target `HEAD`*
+(commit→PR association over the exact range) and union their non-`None`
+`## Deploy impact` sections into prep steps and watch-items. The lower bound
+is the last **successful** apply — a failed or partial attempt does not
+prove its changes landed; when only an attempt timestamp is known, widen
+back to the last verified success. (The attempt timestamp keeps bounding the
+issue review in step 5 — different purpose.) Direct-pushed commits with no
+PR are inspected by hand, not skipped.
 
 Then dry-run the render:
 
@@ -170,3 +183,6 @@ current deploy role; do not rely on a stale generic rollback claim.
 - Estimating risk from commit subjects alone — read migrations and `.env.example` diffs.
 - "The release cards say nothing, so there are no manual steps" — cards are
   best-effort notes; the delta classification stands on its own.
+- "The last attempt covered those infra commits" — a failed or partial apply
+  advances nothing; infra note collection starts from the last verified
+  success.
