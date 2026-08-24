@@ -46,14 +46,13 @@
       })
   ];
 
-  # Default to linuxPackages_latest (7.1.x). We used to pin 7.0, but nixpkgs
-  # EOL-removed it. The out-of-tree MT7927 driver (shared/hardware/mediatek-
-  # mt7927.nix) was rebased onto the 7.1.x mt76 tarball and now compiles against
-  # 6.17–7.1, so latest works again. In-tree mt7925e MT7927 support lands in 7.2
-  # (final ~late Aug 2026); once nixpkgs ships a 7.2 kernel we can drop the
-  # out-of-tree module for wifi entirely (BT still needs the manual firmware blob
-  # until it merges into linux-firmware). The kernel-6-18 specialisation below is
-  # a fallback on the 6.18 LTS line if a latest bump breaks the wifi build.
+  # Default to linuxPackages_latest, now 7.2, which carries MT7927 support
+  # in-tree — mt7925e for wifi, btusb/btmtk for BT. That retired the out-of-tree
+  # driver build entirely; shared/hardware/mediatek-mt7927.nix is down to the one
+  # BT firmware blob linux-firmware still can't redistribute. The kernel-6-18
+  # specialisation below stays as a fallback on the 6.18 LTS line, but note it no
+  # longer has an out-of-tree wifi module to fall back *to*: 6.18 predates in-tree
+  # MT7927, so booting it means no wifi (ethernet only) until you switch back.
   boot.kernelPackages = pkgs.linuxPackages_latest;
   boot.kernelParams = [
     # "fsck.mode=force"
@@ -256,10 +255,14 @@
     ];
   };
 
-  # Fallback kernel on the 6.18 LTS line. Default boot is linuxPackages_latest
-  # (7.1.x); if a nixpkgs bump moves latest past what the out-of-tree MT7927
-  # driver compiles against (e.g. an unported 7.2 mt76), boot this entry to get
-  # wifi back. 6.18 is LTS (EOL ~Dec 2028), so it stays in nixpkgs long-term.
+  # Fallback kernel on the 6.18 LTS line, for recovering from a bad bump to
+  # linuxPackages_latest. 6.18 is LTS (EOL ~Dec 2028), so it stays in nixpkgs
+  # long-term.
+  #
+  # Its role inverted when MT7927 support went in-tree: this entry used to be
+  # how you got wifi *back*, but 6.18.45's mt7925e carries no MT7927 PCI IDs and
+  # there is no longer an out-of-tree module to supply them. Booting it now means
+  # ethernet only — fine for recovery on this box, but don't expect wifi there.
   specialisation.kernel-6-18.configuration = {
     boot.kernelPackages = lib.mkForce pkgs.linuxPackages_6_18;
     boot.loader.grub.configurationName = "Fallback - Linux 6.18 LTS";
