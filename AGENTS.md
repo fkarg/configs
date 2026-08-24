@@ -24,6 +24,8 @@ Personal configuration monorepo driving three loosely-coupled subsystems:
 
 - **Roles describe a clean install, not migrations.** Never add tasks whose only purpose is removing/renaming legacy state that a fresh install wouldn't have (stale symlinks, renamed configs). One-time cleanups are done manually per host.
 
+- **`dotconfig/fish/` is only half-tracked — check `.gitignore` before editing it.** `terminal_dotfiles` symlinks the whole tree to `~/.config/fish`, but then *templates* `config.fish` over it from `roles/terminal_dotfiles/templates/fishconfig.j2`. `config.fish`, `conf.d/`, `completions/` and `fishfile` are all gitignored as fish-generated territory. So editing `dotconfig/fish/config.fish` or dropping a file into `dotconfig/fish/conf.d/` silently accomplishes nothing: the change is untracked, never deploys to other hosts, and gets overwritten on the next run. Login-shell behavior belongs in `fishconfig.j2`; reusable commands go in `dotconfig/fish/functions/`, which *is* tracked.
+
 Validating changes: there are no tests/lint. Use `--check --diff` against a real host, or `./scripts/ansible_smoketest.sh`. Subset by role with `--tags <role>`.
 
 ## NixOS layer
