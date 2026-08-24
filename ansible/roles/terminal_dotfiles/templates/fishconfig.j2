@@ -29,6 +29,41 @@ if status --is-interactive
   echo "Succeed, with no wasted motion. What is your ONE Thing right now?"
 end
 
+# Warn at login when the background system upgrade is failing.
+#
+# system.autoUpgrade runs with operation = "boot", so a broken build stages
+# nothing and the running desktop is completely unaffected. The failure is
+# invisible until you happen to notice the kernel never moved — that is how
+# jolly sat on a stale generation from 2026-08-05 to 2026-08-24.
+#
+# nixos/shared/policy/upgrade-notify.nix fires a desktop toast at failure time;
+# this is the backstop for failures with no session up to receive it (the timer
+# is Persistent=true, so catch-up runs can land before the desktop is ready).
+#
+# Guarded on systemctl so it stays inert on macOS and non-systemd hosts;
+# is-failed is also non-zero on hosts that simply have no nixos-upgrade unit.
+if status --is-interactive; and command -q systemctl
+  if systemctl is-failed --quiet nixos-upgrade.service
+    set -l detail ""
+    set -l when (systemctl show nixos-upgrade.service -p ExecMainExitTimestamp --value 2>/dev/null)
+    if test -n "$when"
+      set -l failed_at (date -d "$when" +%s 2>/dev/null)
+      if test -n "$failed_at"
+        set -l secs (math (date +%s) - $failed_at)
+        if test $secs -ge 86400
+          set detail " ("(math -s0 $secs / 86400)"d ago)"
+        else
+          set detail " ("(math -s0 $secs / 3600)"h ago)"
+        end
+      end
+    end
+    set_color --bold red
+    echo "⚠ nixos-upgrade is failing$detail — no new generation is being staged."
+    set_color normal
+    echo "  journalctl -u nixos-upgrade -e"
+  end
+end
+
 
 
 # fish_add_path -P is idempotent, so nested shells don't re-prepend these.

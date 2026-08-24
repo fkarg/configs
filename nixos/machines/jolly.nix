@@ -8,6 +8,7 @@
     ../pars.nix
     ../shared/desktops/hyprland-session.nix
     ../shared/hardware/mediatek-mt7927.nix
+    ../shared/policy/upgrade-notify.nix
     ../shared/programs/steam-defaults.nix
   ];
 
