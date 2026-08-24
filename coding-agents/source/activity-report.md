@@ -1,5 +1,5 @@
 ---
-description: Activity report. Use when summarizing what you did over a stated timeframe across the Epistree repos (infrastructure, frontend-react, backend-core) — issues, PRs, commits, reviews given, and in-flight local work — to prepare for a recurring team sync, standup or status update, or to answer "what have I been working on".
+description: Activity report. Use when summarizing what you did over a stated timeframe across the Epistree repos (infrastructure, frontend-react, backend-core) — issues, PRs, commits, reviews given, and in-flight local work — plus what notable work other authors landed around you, to prepare for a recurring team sync, standup or status update, or to answer "what have I been working on" / "what did I miss".
 mode: primary
 permission:
   bash: allow
@@ -9,7 +9,7 @@ permission:
 
 # Activity Report
 
-Report what the user did across `~/Coding/{infrastructure,frontend-react,backend-core}` in a stated timeframe, and turn it into a handful of bullets they can actually say out loud in a team sync. Read-only against everything that matters: never commit, push, or comment on an issue or PR, and never write inside the repos. Scratch files under `/tmp` are fine; the report itself goes to chat.
+Report what the user did across `~/Coding/{infrastructure,frontend-react,backend-core}` in a stated timeframe, and turn it into a handful of bullets they can actually say out loud in a team sync. Cover **his own work first**, then **what other authors landed around him** — layered: the changes that touch his work, then a compact roll-up of everything else the team shipped. Read-only against everything that matters: never commit, push, or comment on an issue or PR, and never write inside the repos. Scratch files under `/tmp` are fine; the report itself goes to chat.
 
 ## Input
 
@@ -37,11 +37,20 @@ If no timeframe was given, ask. Do not guess one.
 - **For the PR repos, merged PRs land on `main` with the merge**, so `git log origin/main --since` re-lists what the PR pass already found. There, use it to catch direct pushes and confirm merges, not as a primary source.
 - **Use commit date, not author date** (`%cd`, `--since` already filters on commit date). Commits authored days earlier land later — "when did it ship" is the commit date, and the gap is itself worth mentioning when it is large.
 
+### Specific to other authors' work
+
+- **`author.login` on a PR is the human who drove it, even when every commit inside is bot-authored.** The same rule that makes Copilot/Claude commits *his* work makes them a colleague's work in their PRs. Attribute at PR level; never attribute a colleague's PR to `Copilot` or `github-actions[bot]` because the commit author says so.
+- **Query others' PRs by `--merged-at`, not `--updated`.** The whole `--updated` churn problem above exists to be worked around for his own PRs because they need open/closed state too; for other people's work only "what landed" matters, and `--merged-at ">=$SINCE"` answers it directly with no post-filtering.
+- **Bots do author real PRs too** (`dependabot[bot]`, `renovate[bot]`, `github-actions[bot]`). Those are not team activity — collapse them to a count in the roll-up, and only surface one individually if it broke something or bumped a dependency he pinned.
+- **A colleague's PR title tells you nothing about whether it affects him.** Relevance comes from the files it touched and from cross-references to his PRs/issues, not from the wording. See the affects-him screen in step 1b.
+- **"Reverted" and "fixed forward" are the highest-value findings in the whole section** and are easy to miss: a colleague rolling back or patching his change reads like ordinary team activity in a PR list. Always search others' PRs and commit subjects for his PR/issue numbers.
+- **Do not evaluate colleagues.** This section reports what changed and what it means for his work. No quality judgements, no "X should have", no ranking people by output.
+
 ## Workflow
 
 ### 1. Fan out — one subagent per repo, in parallel
 
-Three repos, no shared state: dispatch all three in a single message (any read-capable general subagent — `explore` / `general-purpose`). Give each one the repo name, the absolute window, the three author identities, and the query set below. Ask for terse structured findings, not prose, and tell it to report what it found without editorialising or ranking.
+Three repos, no shared state: dispatch all three in a single message (any read-capable general subagent — `explore` / `general-purpose`). Give each one the repo name, the absolute window, the three author identities, and the query sets in **both** 1 and 1b — his own work first, then other authors', because the second half's relevance screen reuses the file list the first half produces. Ask for terse structured findings, not prose, and tell it to report what it found without editorialising or ranking.
 
 ```bash
 R=backend-core; SINCE=<absolute date>
@@ -75,6 +84,48 @@ To tell genuine direct-to-main pushes from commits that arrived via a merge, ask
 ```bash
 gh api repos/Epistree/$R/commits/$SHA/pulls --jq 'length'   # 0 => direct push
 ```
+
+### 1b. Same subagent, second pass: what other authors landed
+
+The same per-repo subagent continues into this — it has already fetched the repo and knows which PRs and files are his, which is exactly what the relevance screen below needs. Do not spawn a separate pass for it.
+
+```bash
+# Everything that merged in the window, whoever drove it, minus his own
+gh search prs --repo Epistree/$R --merged --merged-at ">=$SINCE" --limit 200 \
+  --json number,title,author,url,closedAt \
+  --jq '[.[] | select(.author.login != "fkarg")]'
+
+# Open PRs where he is the requested reviewer — the mirror of "reviews given"
+gh search prs --repo Epistree/$R --review-requested fkarg --state open --limit 100 \
+  --json number,title,author,url,createdAt
+
+# Follow-ups and rollbacks aimed at his work
+git -C ~/Coding/$R log origin/main --since="$SINCE" --format='%h %an %s' \
+  --regexp-ignore-case --grep='revert' --grep='reland' --grep='hotfix'
+# ...plus grep the merged-PR titles above for the numbers of his own PRs and issues
+```
+
+For `infrastructure`, the `origin/main` log from step 1 is again the primary source — re-read it grouped by `%an` instead of filtered to him, and apply the same `commits/$SHA/pulls` check before calling something a direct push.
+
+**The affects-him screen.** Two independent signals; a PR qualifies on either.
+
+1. *File overlap.* Build his file set once from the PRs and commits step 1 already found, then intersect each colleague PR against it:
+   ```bash
+   { for N in <his merged PR numbers>; do
+       gh api repos/Epistree/$R/pulls/$N/files --jq '.[].filename'
+     done
+     git -C ~/Coding/$R log origin/main --since="$SINCE" \
+       --author=f.karg10@gmail.com --author=9039899+fkarg@users.noreply.github.com \
+       --author=hello@kolai.eu --name-only --format=
+   } | sort -u > /tmp/mine-$R.txt
+
+   gh api repos/Epistree/$R/pulls/$M/files --jq '.[].filename' | sort -u \
+     | comm -12 - /tmp/mine-$R.txt
+   ```
+   One API call per PR on both sides. If the window is big enough to make that hundreds of calls, drop to signal 2 alone and **say in the report that you did** — do not silently sample.
+2. *Category.* Independent of overlap, these always qualify: schema migrations, OpenAPI / shared-type / API-contract files, auth and tenant-isolation code, CI and deploy manifests, and `AGENTS.md` / lint / format config (a convention change binds his next PR). So does anything reverting or patching his work, no matter which files it touched.
+
+Report the qualifying ones with the overlapping paths or the category that caught them, and everything else as a flat list of `number, title, author` for the main thread to roll up. Do not decide relevance from titles.
 
 ### 2. Local, un-synced work (this machine only)
 
@@ -121,15 +172,33 @@ Merge the three reports. Deduplicate: an issue, its PR, and its commits are **on
 
 **Expect volume.** A fortnight can be ~30 merged PRs in `backend-core` alone. Enumerating them is not a report — collapse into 4–8 themes (e.g. "search quality, now benchmark-backed", "tenant-isolation fixes", "CI cost"), and inside each name only the items a colleague would ask about. Two things always survive summarisation and must be called out individually: **security/isolation fixes** and **incidents that were fixed** (a deploy that was broken, a leak that was closed) — those are the sentences colleagues actually need.
 
+For the other-authors half, the two layers get very different treatment:
+
+- **Affects-him layer — one line each, and the line is the consequence, not the change.** "`/v1/search` now requires `tenant_id`; the frontend gate in #790 calls it without one" beats "added tenant scoping to search". Where a colleague's change conflicts with something of his that is still in flight (from step 2), say so explicitly — that is the single most useful output of this whole section.
+- **Roll-up layer — grouped by person or by area, one line per group, no PR numbers.** Bot PRs collapse to a bare count. Pick person-grouping when the team works in owned areas and area-grouping when they cross over; do not do both.
+
+Anything a colleague did that closes or supersedes his own in-flight work must move it out of "In flight" — do not report a branch as pending when someone else already landed it.
+
 ## Report format
 
 Lead with **Window** (absolute dates) and **Scope** (the three repos, this machine).
+
+His own work:
 
 - **Shipped** — merged PRs, grouped by outcome, each one line: what it does now that it did not before. Link `Epistree/repo#N`.
 - **In flight** — open PRs and local branches, each with its actual state: awaiting review, blocked on X, WIP.
 - **Unblocked others** — reviews given, issues triaged or answered for colleagues.
 - **Local-only on this machine** — dirty worktrees, unpushed branches, running agent sessions, stale worktrees. Prefix with the caveat that this does not cover his other machines.
-- **For the sync** — 4–6 bullets in spoken register. Outcome, not mechanism; no PR numbers unless a colleague needs to look one up. Close with blockers/asks and what he is picking up next.
+
+Then everyone else's, layered:
+
+- **Landed around you** — the affects-him changes, one line each, phrased as the consequence for his work. Link `Epistree/repo#N` and name the author. Lead the section with rollbacks/patches of his work and with anything that breaks or obsoletes something still in flight.
+- **Waiting on you** — open PRs with a pending review request on him, oldest first. Short; if none, say none.
+- **Also shipped** — the roll-up. One line per person or per area, plus a bare count for bot PRs. No PR numbers. Skip entirely if the window is quiet.
+
+Close with:
+
+- **For the sync** — 4–6 bullets in spoken register. Outcome, not mechanism; no PR numbers unless a colleague needs to look one up. These are still about **his** work — pull in an other-authors item only when he needs to raise it (a conflict, a question for its author, a blocker it created). Close with blockers/asks and what he is picking up next.
 
 ## Red flags
 
@@ -137,4 +206,8 @@ Lead with **Window** (absolute dates) and **Scope** (the three repos, this machi
 - Reading `--updated` as "worked on it" — check `merged-at` / `closed` before claiming something shipped.
 - Reporting PR titles verbatim as the sync bullets. Colleagues want the effect, not the changelog.
 - Presenting this machine's worktree state as the complete picture of in-flight work.
+- Judging relevance of a colleague's change from its title instead of its files. Titles are written for their author's context, not his.
+- Letting "Also shipped" grow into a per-PR enumeration of the team's fortnight. It is a roll-up; if it is longer than the affects-him section, it is wrong.
+- Attributing a colleague's PR to `Copilot` or a bot because the commits inside are bot-authored — the same mistake as undercounting his own work, pointed the other way.
+- Grading colleagues' work, or turning the roll-up into a productivity comparison. Report what changed, not who did more.
 - Writing, committing, or commenting anything. This skill only reads.
