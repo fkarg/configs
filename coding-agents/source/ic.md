@@ -40,7 +40,15 @@ For every non-trivial task, also dispatch a **separate web-research subagent** b
 
 Synthesize in-thread into a tight mental model: what the area does (entrypoints, `file:line`), the data flow the change touches, the **invariants that must stay true**, and where the change lands. This seeds the plan and, later, the architectural map.
 
-## 3. Design — independent counter-proposal at real forks
+## 3. Challenge the request — outcomes before solutions
+
+Before forming your own design, separate the issue's **user-visible outcomes** from its stated diagnosis and requested implementation. Test whether the premise is supported by the evidence, and whether the same outcomes could be achieved more simply, with a smaller footprint, or by changing a less intrusive layer. Do not treat an issue's proposed solution as a requirement unless it is explicitly one.
+
+For every non-trivial task, start a **blind cross-model premise check** while the final local understanding is still being assembled. This is deliberately early: it keeps the brief independent of your own preferred answer and lets the check run in parallel rather than delaying design. Shell out to a CLI from a *different model family* than your own (you're Claude-family → `codex exec`; GPT-family → `claude -p`; check `command -v` first; none available or quota exhausted → note it and fall back to a fresh-context subagent). Give it the issue and established facts, but **not** your candidate solution. Ask it to: challenge the issue's premise; identify the smallest credible ways to achieve the user-visible outcomes; name what evidence or constraints would rule each out; and recommend nothing beyond the facts supplied.
+
+Bring the result forward explicitly: retain the issue's requested approach only when it survives this check, or state why a simpler alternative does not meet the real requirement. For genuinely local, mechanical work, state in one line why this phase was skipped.
+
+## 4. Design — independent counter-proposal at real forks
 
 Decide whether the task has a **real design fork**: architecture or data-model choices, a new abstraction, a migration or destructive op, known tradeoffs in the obvious approach, or an expected footprint beyond a few files. If it doesn't, name the approach in a sentence and move on.
 
@@ -48,30 +56,29 @@ If it does, get an **independent second design before committing to your own**:
 
 - **Web-research synthesis.** Start from the step-2 research brief: state which externally-established options are applicable here, which are not, and why. If it did not uncover enough credible evidence to inform the fork, dispatch a targeted follow-up web-research subagent rather than filling the gap from memory.
 
-- **Preferred — cross-model, blind.** Shell out to a CLI from a *different model family* than your own (you're Claude-family → `codex exec`; GPT-family → `claude -p`; check `command -v` first; none available or quota exhausted → note it and fall back). Give it the issue and the mental model but **not** your preferred approach. Ask for: its approach, the strongest argument against the most obvious approach, and anything it would refuse to build here.
-- **Fallback — same-model, fresh context.** A subagent with the same blind brief.
+- **Cross-model premise-check synthesis.** Start from step 3's already-running blind brief. If it did not address this specific fork, send one targeted follow-up before settling on an approach: ask for its approach, the strongest argument against the most obvious approach, and anything it would refuse to build here. Keep your preferred approach out of the brief. If no cross-model counterpart is available, use a same-model, fresh-context subagent with the same blind brief.
 
 In parallel, hand the candidate approaches to `simplicity-reviewer` (plan mode): is the simplest approach that meets *this* requirement on the table?
 
 Present a **decision table** to the user: one row per approach — the shape in a line, what it keeps simple, what it complicates, which invariants it leans on. Highlight where the independent design *disagrees* with yours: the divergences are the decision points, not noise to reconcile away. State your recommendation only **after** the table. Change your position on new evidence or arguments, not on pushback alone.
 
-## 4. Plan — with a change budget
+## 5. Plan — with a change budget
 
 Present one plan for sign-off: approach (2–5 sentences), files to change, decisions already made vs. decision points left open, test strategy — and a **change budget**: the files you expect to touch, the behavioral surface you expect to change, and what is explicitly out of scope. The budget is a tripwire, not a quota: pause and escalate when implementation wants to *expand* the shape — a new area, a new abstraction, a wider behavioral surface than planned — not for mechanical fallout the plan already implies.
 
 **Wait for user sign-off.** For trivial tasks, describe what you'll do and proceed.
 
-## 5. Implement — in-thread
+## 6. Implement — in-thread
 
 Write the code yourself. Do not delegate writing the diff — you hold the mental model and the plan; the work stays coherent with one author. Specialists stay available for advice.
 
 - Follow the plan, preserve the invariants, write behavior-driven tests alongside the code.
 - Run the repo's documented checks and tests (its AGENTS.md/README names them) until green.
-- Note plan deviations briefly; budget violations escalate (step 4).
+- Note plan deviations briefly; budget violations escalate (step 5).
 
 **Post-green simplicity pass (always):** hand the diff to `simplicity-reviewer`. Its 🔴 findings are not advisory — apply each one, or carry the disagreement to the user verbatim at the next checkpoint. Restructuring is cheap now and expensive after review. Re-run checks back to green.
 
-## 6. Review — fresh-context fleet + cross-model
+## 7. Review — fresh-context fleet + cross-model
 
 Stage everything, then diff against the branch-off point, not the moving tip of the default branch (otherwise later commits on it show up inverted):
 
@@ -93,7 +100,7 @@ git diff $(git merge-base <default> HEAD) | codex exec "Fresh-eyes review of the
 
 Synthesize in-thread: dedupe, kill false positives, tag cross-model findings `[codex]`/`[claude]`. Then: 🔴 → fix and re-run the affected reviewer; 🟡 → fix if quick, note if not; 🟢 → fix the easy ones.
 
-## 7. Deliverables & checkpoint
+## 8. Deliverables & checkpoint
 
 Write both in-thread — they go to the checkpoint and into the PR body:
 
@@ -103,9 +110,9 @@ Write both in-thread — they go to the checkpoint and into the PR body:
 
 Then delegate to `production-readiness` with the same diff and worktree path. Route its follow-ups per the target repo's AGENTS.md; filing an issue in another repo is outward-facing — confirm with the user first.
 
-Don't present any of this to the user yet — mid-workflow output gets buried under the reasoning and tool calls that follow. Proceed directly to shipping; everything surfaces in the PR body and the final report (step 8). Only stop here if an unresolved 🔴 finding or a tripped change budget is still open — those go to the user before shipping.
+Don't present any of this to the user yet — mid-workflow output gets buried under the reasoning and tool calls that follow. Proceed directly to shipping; everything surfaces in the PR body and the final report (step 9). Only stop here if an unresolved 🔴 finding or a tripped change budget is still open — those go to the user before shipping.
 
-## 8. Ship
+## 9. Ship
 
 1. `git add -A`, then delegate to the `commit` agent (`<module>: <summary>` style; mention `Closes #<n>`).
 2. `git push -u origin HEAD`, then `gh pr create --base <default>` — the PR body carries the architectural map and reading guide.
