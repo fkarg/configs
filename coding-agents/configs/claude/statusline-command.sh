@@ -2,20 +2,65 @@
 # Claude Code status line — fish-style colors, segments separated by ` | `.
 #
 # Layout (left→right):
-#   cwd | branch | model[effort] | tokens↑/↓ | +N/-N | 5h NN% left<pace> reset | 7d NN% left<pace> <ahead Nh / Nh available>
+#   cwd | branch | model[effort] | tokens↑/↓ | +N/-N | 5h NN% left<pace> reset | 7d NN% left<pace> <diff> | <Model> NN% left<pace> <diff>
+#
+# The trailing segment is the per-model weekly window (e.g. "Fable") — a limit
+# that binds independently of, and often before, the all-models 7d one.
 #
 # Width-adaptive: COLUMNS is re-read every render (tracks live terminal resizes).
 # `model`, the 5h limit, and the git-root cwd are NEVER dropped. As width
 # shrinks, segments are sacrificed in this order:
-#   7d-diff → LOC → tokens → "left" text → branch → trim cwd (toward git root) → 7d → effort
+#   7d-diff → model-diff → LOC → tokens → "left" text → branch
+#     → trim cwd (toward git root) → 7d → per-model weekly → effort
+# (the per-model weekly outranks the all-models 7d — it's the tighter constraint)
 #
-# Pacing glyph shows burn vs. equidistant pacing of the 5h / 7d limits: how far
+# Pacing glyph shows burn vs. equidistant pacing of each limit window: how far
 # the % used is ahead of (▲, too fast) or behind (▼, headroom) the steady line
-# you'd be on if you spent the window evenly. The "5h/7d NN% left" text stays
-# blue; only the glyph is colored. The 7d segment also carries a time
+# you'd be on if you spent the window evenly. The "<label> NN% left" text stays
+# blue; only the glyph is colored. Both weekly segments also carry a time
 # differential ("ahead Nh" = burning that many hours faster than the steady
 # line, "Nh available" = that much headroom) — same deviation expressed as
 # wall-clock hours over the week. LOC resets on /clear (statusline-loc-reset.sh).
+
+# --- per-model weekly cache --------------------------------------------------
+# The statusline payload only carries five_hour/seven_day; model-scoped weekly
+# windows live solely in claude.ai's private usage endpoint (the one /usage
+# calls). We cache its body and refresh lazily: a render that finds the cache
+# older than the TTL touches it — which closes the TTL window for every other
+# concurrently-rendering session — then forks one detached fetch and goes on to
+# render from whatever the cache already held. A render therefore never waits on
+# the network, and a failed fetch just leaves the previous body in place until
+# the next expiry. Undocumented endpoint: treat its absence as normal.
+USAGE_CACHE="$HOME/.claude/statusline-usage.json"
+USAGE_TTL_MIN=3
+
+if [ "${1-}" = "--refresh-usage" ]; then
+  cred="$HOME/.claude/.credentials.json"
+  [ -r "$cred" ] || exit 0
+  IFS=$'\t' read -r tok exp < <(
+    jq -r '[.claudeAiOauth.accessToken // "", .claudeAiOauth.expiresAt // 0] | @tsv' "$cred" 2>/dev/null
+  )
+  # Claude Code owns the token lifecycle — never refresh it here (racing its
+  # rotation can burn the refresh token). Just sit out an expired window.
+  [ -n "$tok" ] && [ "$exp" -gt "$(( $(date +%s) * 1000 ))" ] 2>/dev/null || exit 0
+  resp=$(curl -sS --max-time 5 \
+    -H "Authorization: Bearer $tok" \
+    -H "Content-Type: application/json" \
+    -H "anthropic-beta: oauth-2025-04-20" \
+    https://api.anthropic.com/api/oauth/usage 2>/dev/null) || exit 0
+  # Only overwrite on a well-formed body, so a 429/5xx page can't poison the cache.
+  jq -e 'has("limits")' <<<"$resp" >/dev/null 2>&1 || exit 0
+  tmp="$USAGE_CACHE.$$"
+  printf '%s' "$resp" > "$tmp" 2>/dev/null && mv -f "$tmp" "$USAGE_CACHE" 2>/dev/null
+  rm -f "$tmp" 2>/dev/null
+  exit 0
+fi
+
+if [ -z "$(find "$USAGE_CACHE" -mmin "-$USAGE_TTL_MIN" 2>/dev/null)" ]; then
+  touch "$USAGE_CACHE" 2>/dev/null
+  ( bash "$0" --refresh-usage >/dev/null 2>&1 & )
+fi
+
 input=$(cat)
 
 # UTF-8 locale so ${#str} counts characters (glyphs, arrows, …), not bytes —
@@ -198,9 +243,30 @@ pace_diff() {  # $1 used% $2 resets_at $3 window-length(s)
   printf '%s\t%s' "$txt" "$(printf "${C_DIM}%s${C_RESET}" "$txt")"
 }
 
+# Per-model weekly window out of the cached usage body: the first `weekly_scoped`
+# limit that names a model. Deliberately not keyed on "Fable" — the label is
+# whatever the server calls the bucket, so a rename (or a second model growing
+# its own window) needs no change here. `resets_at` is ISO 8601 rather than the
+# epoch ints the statusline payload uses, so normalize it to epoch; on any parse
+# miss fall back to the 7d reset, which is the same weekly boundary.
+mw_name=""; mw_pct=""; mw_reset=""
+if [ -s "$USAGE_CACHE" ]; then
+  IFS=$'\t' read -r mw_name mw_pct mw_reset < <(
+    jq -r 'first(.limits[]? | select(.kind == "weekly_scoped" and (.scope.model.display_name // "") != ""))
+           | [ .scope.model.display_name,
+               (.percent // ""),
+               ((.resets_at // "") | sub("\\.[0-9]+"; "") | sub("\\+00:00$"; "Z")
+                                   | (try fromdateiso8601 catch "")) ]
+           | @tsv' "$USAGE_CACHE" 2>/dev/null
+  )
+fi
+[ -n "$mw_reset" ] || mw_reset="$rl7_reset"
+
 IFS=$'\t' read -r p5_pL p5_cL p5_pS p5_cS < <(pace_seg "5h" "$rl5_pct" "$rl5_reset" 18000 1)
 IFS=$'\t' read -r p7_pL p7_cL p7_pS p7_cS < <(pace_seg "7d" "$rl7_pct" "$rl7_reset" 604800 0)
+IFS=$'\t' read -r pm_pL pm_cL pm_pS pm_cS < <(pace_seg "$mw_name" "$mw_pct" "$mw_reset" 604800 0)
 IFS=$'\t' read -r d7_plain d7_col < <(pace_diff "$rl7_pct" "$rl7_reset" 604800)
+IFS=$'\t' read -r dm_plain dm_col < <(pace_diff "$mw_pct" "$mw_reset" 604800)
 
 # --- render at current degradation state ------------------------------------
 SEP=' | '
@@ -251,6 +317,15 @@ render() {  # $1 = plain|color
     if [ "$mode" = plain ]; then parts+=("$seg7p"); else parts+=("$seg7c"); fi
   fi
 
+  if [ "$show_mw" = 1 ] && [ -n "$pm_pL" ]; then
+    local segmp segmc
+    if [ "$show_left" = 1 ]; then segmp="$pm_pL"; segmc="$pm_cL"; else segmp="$pm_pS"; segmc="$pm_cS"; fi
+    if [ "$show_mwdiff" = 1 ] && [ -n "$dm_plain" ]; then
+      segmp="$segmp $dm_plain"; segmc="$segmc $dm_col"
+    fi
+    if [ "$mode" = plain ]; then parts+=("$segmp"); else parts+=("$segmc"); fi
+  fi
+
   local out="" i
   for i in "${!parts[@]}"; do
     if [ "$i" -eq 0 ]; then out="${parts[$i]}"; else out="$out$SEP${parts[$i]}"; fi
@@ -261,21 +336,24 @@ plain_len() { local s; s=$(render plain); echo "${#s}"; }
 
 # Sacrifice ladder: drop one item at a time until the line fits COLUMNS.
 COLS=${COLUMNS:-80}
-actions=(7ddiff loc tokens left branch)
+actions=(7ddiff mwdiff loc tokens left branch)
 for ((i=1; i<${#cwd_forms[@]}; i++)); do actions+=(cwd); done   # trim cwd, step by step
-actions+=(7d effort)
+actions+=(7d mw effort)                                         # 7d goes before the per-model weekly
 
-show_7ddiff=1 show_loc=1 show_tokens=1 show_left=1 show_branch=1 show_7d=1 show_effort=1 cwd_idx=0
+show_7ddiff=1 show_mwdiff=1 show_loc=1 show_tokens=1 show_left=1 show_branch=1 \
+  show_7d=1 show_mw=1 show_effort=1 cwd_idx=0
 ai=0
 while [ "$(plain_len)" -gt "$COLS" ] && [ "$ai" -lt "${#actions[@]}" ]; do
   case "${actions[$ai]}" in
     7ddiff) show_7ddiff=0 ;;
+    mwdiff) show_mwdiff=0 ;;
     loc)    show_loc=0 ;;
     tokens) show_tokens=0 ;;
     left)   show_left=0 ;;
     branch) show_branch=0 ;;
     cwd)    cwd_idx=$((cwd_idx + 1)) ;;
     7d)     show_7d=0 ;;
+    mw)     show_mw=0 ;;
     effort) show_effort=0 ;;
   esac
   ai=$((ai + 1))
