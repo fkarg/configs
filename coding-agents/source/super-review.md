@@ -28,6 +28,8 @@ Pull the intent from the linked issue/PR description, or ask the user for one li
 
 Dispatch in parallel: `explore` to map the touched area (one per distinct subsystem) and `understanding-prs-for-approval` on the diff for approval-grade comprehension (load-bearing invariants, cross-module call-chains, per-invariant test coverage).
 
+When the change depends on an external API, evolving framework behavior, security guidance, a technical standard, or an architectural pattern whose suitability is in question, also dispatch a web-research subagent. It must seek official technical docs, standards, maintainers, and reputable independent technical sources—not SEO listicles, content farms, or agentic-system-generated material—and return cited findings that could change the review's judgment. Omit it only when the review is wholly local and the external context cannot affect a finding.
+
 Synthesize in-thread: what the area does (`file:line`), the data flow the change touches, and the **invariants that must stay true** — these feed the fleet.
 
 ## 3. Review — fleet + cross-model

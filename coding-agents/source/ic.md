@@ -34,6 +34,8 @@ If the worktree already exists, ask whether to resume or start fresh.
 
 Fan out read-only exploration in parallel before changing anything — scaled to the task: a small fix might need a single `explore` agent or none. `explore` agents map the touched area (one per distinct subsystem); stack specialists (`frontend-expert`, `fastapi-expert`, `devops-expert`) advise where their stack is involved. They advise; they never produce the diff. Read the most critical files yourself too — don't outsource all understanding.
 
+For every non-trivial task, also dispatch a **separate web-research subagent** before forming the plan. Give it the problem and the local mental model, then explicitly ask it to search for current official docs, standards, comparable production implementations, established patterns, and known failure modes or rejected alternatives. It returns a short, cited brief that distinguishes facts from recommendations; use it to challenge local assumptions, not as decorative background. Source priority is official technical docs / standards / maintainers, then reputable independent technical sources. Reject SEO listicles, content-farm pages, and agentic-system-generated material as evidence; they may only lead you to a primary source to verify. Skip this only for genuinely local, mechanical work where outside knowledge cannot affect the solution.
+
 **Scope against the remote, not the local checkout.** Before concluding that something is unimplemented, missing, or still broken, confirm it on `origin/<default>` (`git show origin/<default>:<path>`, `gh pr list --state merged --search …`) — a local file read only proves what this checkout has, and it may be weeks behind.
 
 Synthesize in-thread into a tight mental model: what the area does (entrypoints, `file:line`), the data flow the change touches, the **invariants that must stay true**, and where the change lands. This seeds the plan and, later, the architectural map.
@@ -43,6 +45,8 @@ Synthesize in-thread into a tight mental model: what the area does (entrypoints,
 Decide whether the task has a **real design fork**: architecture or data-model choices, a new abstraction, a migration or destructive op, known tradeoffs in the obvious approach, or an expected footprint beyond a few files. If it doesn't, name the approach in a sentence and move on.
 
 If it does, get an **independent second design before committing to your own**:
+
+- **Web-research synthesis.** Start from the step-2 research brief: state which externally-established options are applicable here, which are not, and why. If it did not uncover enough credible evidence to inform the fork, dispatch a targeted follow-up web-research subagent rather than filling the gap from memory.
 
 - **Preferred — cross-model, blind.** Shell out to a CLI from a *different model family* than your own (you're Claude-family → `codex exec`; GPT-family → `claude -p`; check `command -v` first; none available or quota exhausted → note it and fall back). Give it the issue and the mental model but **not** your preferred approach. Ask for: its approach, the strongest argument against the most obvious approach, and anything it would refuse to build here.
 - **Fallback — same-model, fresh context.** A subagent with the same blind brief.
