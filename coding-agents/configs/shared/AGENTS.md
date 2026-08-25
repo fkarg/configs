@@ -16,6 +16,16 @@
 - Cross-model calls for arbitrary-length tasks such as reviews or design analysis run until they return. Do not impose or invent monetary, token, turn, or wall-clock limits, and do not interrupt them merely because they are silent; non-interactive harnesses may emit nothing until completion. Only apply a limit when the user or an existing instruction explicitly specifies one.
 - Search the web before stating anything verifiable or staleness-sensitive rather than trusting training knowledge to be current or complete: factual/legal claims (statutory/§-references, eligibility windows, deadlines, current figures, official-process rules), library/API/tooling specifics (current versions, signatures, config, docs, breaking changes), recent news/events, and anything that may have changed since training. Cite sources. Explaining concepts/structure from knowledge is fine; pin down the specifics with a search. When unsure whether a search would help, do it.
 
+## Secrets
+
+- Don't read secret material. `.env*`, `*.pem`/`*.key`/`id_*`, `~/.ssh/`, `~/.aws/credentials`, `.netrc`, `secrets.*`, ansible-vault / sops / age files, token and session caches: their *contents* are off-limits by default — via `cat`/`head`, an editor read, a `grep -r` whose output would carry the values, or a command that expands them into its output.
+- Existence, shape and key names are almost always what you actually need, and none of them require the values: `test -f .env`, `ls -l`, `grep -c`, `grep -oE '^[A-Z_][A-Z0-9_]*=' .env` for the key list, `sops -d f | grep -oE '^[a-z_]+:'` for a vault's structure. Decrypting is fine when the plaintext is filtered down to names before it reaches your context; dumping the decrypted file is not.
+- "Is it set" and "is it correct" are different questions and neither needs the value: `[ -n "$VAR" ]`, a length, a `sha256sum | cut -c1-8` fingerprint, or the tool's own auth check (`gh auth status`, `aws sts get-caller-identity`) answer them.
+- When a command needs a secret, let it consume the value itself — env var referenced unexpanded, `--password-file`, `--env-file`, a piped file — rather than reading the value in order to paste it into an argument.
+- Never move a secret outward: not into chat output, a commit, a log, a file you write, a subagent prompt, a cross-model CLI call (`codex exec`, `claude -p`), or a web request. Transcripts sync and persist across machines and CLIs; a secret that enters your context becomes a secret on disk in several places you don't control.
+- If a value genuinely has to be read, ask first — name the file, the one key you need, and why. Read that key, not the whole file.
+- If a secret lands in your context anyway, say so plainly rather than quietly continuing; I may need to rotate it.
+
 ## Memory and durable knowledge
 
 - This machine is one of three I work on, and any given repository is one of many. Machine-local agent memory (per-project memory dirs) does not travel between them. If something is worth remembering long-term, put it where it syncs instead: repo-specific knowledge in that repository's AGENTS.md, cross-repo preferences here in the global AGENTS.md. Both are living documents — edit them as understanding evolves, don't treat them as append-only.
