@@ -336,6 +336,7 @@
 
   services.displayManager.gdm.enable = true;
   services.desktopManager.gnome.enable = true;
+  security.pam.services.gdm-password.enableGnomeKeyring = true;
   # Select jolly's DisplayPort input before GDM starts. The command is a
   # single best-effort write: a DDC failure is logged but must not block login.
   systemd.services.jolly-select-displayport = {
