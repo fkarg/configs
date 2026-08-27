@@ -1,0 +1,28 @@
+---
+- name: List Claude Code plugin marketplaces
+  command: claude plugin marketplace list --json
+  register: ca_claude_marketplaces
+  changed_when: false
+  check_mode: false
+
+- name: Register the official OpenAI Codex plugin marketplace
+  command: >-
+    claude plugin marketplace add openai/codex-plugin-cc --scope user
+  changed_when: true
+  when:
+    - not ansible_check_mode
+    - "'openai-codex' not in ca_claude_marketplaces.stdout"
+
+- name: List installed Claude Code plugins
+  command: claude plugin list --json
+  register: ca_claude_plugins
+  changed_when: false
+  check_mode: false
+
+- name: Install the official OpenAI Codex plugin
+  command: >-
+    claude plugin install codex@openai-codex --scope user --yes
+  changed_when: true
+  when:
+    - not ansible_check_mode
+    - "'codex@openai-codex' not in ca_claude_plugins.stdout"

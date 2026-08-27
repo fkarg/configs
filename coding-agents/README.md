@@ -40,6 +40,29 @@ Use `codex-account use personal` or `codex-account use business` to switch.
 Restart the Codex CLI / IDE session after switching so the process reloads the
 new credentials.
 
+## GPT-5.6 in Claude Code (`claudex`)
+
+On `caeli` and `jolly`, the `coding_agents` role installs a pinned CLIProxyAPI
+release and the `claudex` launcher. `claudex` keeps the normal Claude Code
+harness but routes its model tiers through a loopback-only proxy:
+
+- Opus -> GPT-5.6 Sol
+- Sonnet -> GPT-5.6 Terra
+- Haiku -> GPT-5.6 Luna
+
+Each host needs its own one-time Codex OAuth login:
+
+```sh
+claudex --login
+claudex
+```
+
+The OAuth state and generated local proxy key stay under
+`~/.config/cliproxyapi/` and are never synced. Plain `claude` and `codex` remain
+unchanged. CLIProxyAPI is a third-party compatibility layer, so a Claude Code or
+Codex protocol change may require bumping the pinned proxy release and rerunning
+the role.
+
 ## Global tool settings (`configs/`)
 
 Each tool's global config splits into two layers:

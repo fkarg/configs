@@ -1,0 +1,97 @@
+#!/bin/sh
+# Run GPT-5.6 through the Claude Code harness via a local CLIProxyAPI process.
+
+set -eu
+
+config_dir="$HOME/.config/cliproxyapi"
+config_path="$config_dir/config.yaml"
+key_path="$config_dir/client-key"
+version_path="$config_dir/version"
+proxy_bin="$HOME/.local/bin/cliproxyapi"
+state_dir="$HOME/.local/state/cliproxyapi"
+log_path="$state_dir/proxy.log"
+pid_path="$state_dir/proxy.pid"
+running_version_path="$state_dir/running-version"
+base_url="http://127.0.0.1:8317"
+
+fail() {
+    printf 'claudex: %s\n' "$*" >&2
+    exit 1
+}
+
+[ -x "$proxy_bin" ] || fail "CLIProxyAPI is missing; run the coding_agents Ansible role"
+[ -f "$config_path" ] || fail "proxy config is missing; run the coding_agents Ansible role"
+[ -s "$key_path" ] || fail "proxy client key is missing; run the coding_agents Ansible role"
+[ -s "$version_path" ] || fail "proxy version marker is missing; run the coding_agents Ansible role"
+command -v claude >/dev/null 2>&1 || fail "claude is not installed or not on PATH"
+command -v curl >/dev/null 2>&1 || fail "curl is not installed or not on PATH"
+
+if [ "${1:-}" = "--login" ]; then
+    shift
+    exec "$proxy_bin" -config "$config_path" -codex-device-login "$@"
+fi
+
+IFS= read -r proxy_key < "$key_path"
+[ -n "$proxy_key" ] || fail "proxy client key is empty; rerun the coding_agents Ansible role"
+IFS= read -r desired_version < "$version_path"
+[ -n "$desired_version" ] || fail "proxy version marker is empty; rerun the coding_agents Ansible role"
+
+proxy_alive() {
+    curl -fsS \
+        -H "Authorization: Bearer $proxy_key" \
+        "$base_url/v1/models" >/dev/null 2>&1
+}
+
+if proxy_alive; then
+    running_version=""
+    if [ -r "$running_version_path" ]; then
+        IFS= read -r running_version < "$running_version_path"
+    fi
+    [ "$running_version" = "$desired_version" ] ||
+        fail "an unmanaged or outdated proxy owns port 8317; stop it and rerun Claudex"
+else
+    mkdir -p "$state_dir"
+    nohup "$proxy_bin" -config "$config_path" \
+        </dev/null >>"$log_path" 2>&1 &
+    started_pid=$!
+
+    attempts=0
+    until proxy_alive; do
+        attempts=$((attempts + 1))
+        if [ "$attempts" -ge 10 ]; then
+            fail "CLIProxyAPI did not become ready; inspect $log_path"
+        fi
+        sleep 1
+    done
+
+    if kill -0 "$started_pid" 2>/dev/null; then
+        printf '%s\n' "$started_pid" >"$pid_path.tmp.$$"
+        mv "$pid_path.tmp.$$" "$pid_path"
+        printf '%s\n' "$desired_version" >"$running_version_path.tmp.$$"
+        mv "$running_version_path.tmp.$$" "$running_version_path"
+    fi
+fi
+
+if ! curl -fsS \
+    -H "Authorization: Bearer $proxy_key" \
+    "$base_url/v1/models" 2>/dev/null | grep -q 'gpt-5\.6-sol'; then
+    fail "GPT-5.6 Sol is unavailable; run 'claudex --login' on this host"
+fi
+
+export ANTHROPIC_BASE_URL="$base_url"
+export ANTHROPIC_AUTH_TOKEN="$proxy_key"
+export ANTHROPIC_MODEL="claude-opus-4-8"
+export ANTHROPIC_DEFAULT_OPUS_MODEL="claude-opus-4-8"
+export ANTHROPIC_DEFAULT_SONNET_MODEL="claude-sonnet-5"
+export ANTHROPIC_DEFAULT_HAIKU_MODEL="claude-haiku-4-5"
+export _CLAUDE_CODE_ASSUME_FIRST_PARTY_BASE_URL=1
+export CLAUDE_CODE_AUTO_COMPACT_WINDOW=200000
+export MAX_MCP_OUTPUT_TOKENS=25000
+
+# API-token auth does not honor settings.json's defaultMode. Spell out the
+# existing shared default here; later user arguments can still override it.
+exec claude \
+    --model claude-opus-4-8 \
+    --effort high \
+    --permission-mode auto \
+    "$@"

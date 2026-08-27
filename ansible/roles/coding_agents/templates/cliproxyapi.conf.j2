@@ -1,0 +1,41 @@
+host: "127.0.0.1"
+port: 8317
+
+remote-management:
+  allow-remote: false
+  secret-key: ""
+  disable-control-panel: true
+
+auth-dir: "{{ home_dir }}/.config/cliproxyapi/auth"
+api-keys:
+  - "{{ ca_claudex_proxy_key }}"
+
+debug: false
+logging-to-file: false
+usage-statistics-enabled: false
+disable-image-generation: chat
+
+# Claude Code trims parts of its harness for unknown model IDs. Present real
+# Claude IDs to the client, then force them to the GPT-5.6 Codex OAuth channel.
+oauth-model-alias:
+  codex:
+    - name: "gpt-5.6-sol"
+      alias: "claude-opus-4-8"
+      fork: true
+      force-mapping: true
+    - name: "gpt-5.6-terra"
+      alias: "claude-sonnet-5"
+      fork: true
+      force-mapping: true
+    - name: "gpt-5.6-terra"
+      alias: "claude-sonnet-4-6"
+      fork: true
+      force-mapping: true
+    - name: "gpt-5.6-luna"
+      alias: "claude-haiku-4-5"
+      fork: true
+      force-mapping: true
+    - name: "gpt-5.6-luna"
+      alias: "claude-haiku-4-5-20251001"
+      fork: true
+      force-mapping: true

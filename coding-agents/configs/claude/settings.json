@@ -113,6 +113,7 @@
     "command": "bash ~/.claude/statusline-command.sh"
   },
   "enabledPlugins": {
+    "codex@openai-codex": true,
     "code-review@claude-plugins-official": true,
     "superpowers@claude-plugins-official": true,
     "frontend-design@claude-plugins-official": true,
@@ -123,6 +124,14 @@
     "safety-net@safety-net-dev": true,
     "pyright-lsp@claude-plugins-official": false,
     "rust-analyzer-lsp@claude-plugins-official": true
+  },
+  "extraKnownMarketplaces": {
+    "openai-codex": {
+      "source": {
+        "source": "github",
+        "repo": "openai/codex-plugin-cc"
+      }
+    }
   },
   "feedbackSurveyRate": 0,
   "spinnerTipsEnabled": false,

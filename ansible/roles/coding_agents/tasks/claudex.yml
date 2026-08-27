@@ -1,0 +1,146 @@
+---
+- name: Select the Claudex release for this host
+  set_fact:
+    ca_claudex_release: >-
+      {{ ca_claudex_releases[
+           ansible_facts['system'] ~ '-' ~ ansible_facts['architecture']
+         ] | default({}) }}
+
+- name: Verify this host supports Claudex
+  assert:
+    that:
+      - ca_claudex_release | length > 0
+    fail_msg: >-
+      Claudex has no pinned CLIProxyAPI build for
+      {{ ansible_facts['system'] }}-{{ ansible_facts['architecture'] }}.
+
+- name: Set Claudex release paths
+  set_fact:
+    ca_claudex_archive_name: >-
+      CLIProxyAPI_{{ ca_claudex_version }}_{{ ca_claudex_release.suffix }}.tar.gz
+    ca_claudex_install_dir: >-
+      {{ home_dir }}/.local/lib/cliproxyapi/{{ ca_claudex_version }}
+    ca_claudex_config_dir: "{{ home_dir }}/.config/cliproxyapi"
+    ca_claudex_state_dir: "{{ home_dir }}/.local/state/cliproxyapi"
+
+- name: Create Claudex installation and state directories
+  file:
+    path: "{{ ca_claudex_dir.path }}"
+    state: directory
+    mode: "{{ ca_claudex_dir.mode }}"
+  loop:
+    - { path: "{{ home_dir }}/.cache/cliproxyapi", mode: "0755" }
+    - { path: "{{ ca_claudex_install_dir }}", mode: "0755" }
+    - { path: "{{ ca_claudex_config_dir }}", mode: "0700" }
+    - { path: "{{ ca_claudex_config_dir }}/auth", mode: "0700" }
+    - { path: "{{ ca_claudex_state_dir }}", mode: "0700" }
+  loop_control:
+    loop_var: ca_claudex_dir
+    label: "{{ ca_claudex_dir.path }}"
+
+- name: Stop an outdated Claudex proxy
+  shell: |
+    running_version_file="{{ ca_claudex_state_dir }}/running-version"
+    pid_file="{{ ca_claudex_state_dir }}/proxy.pid"
+    [ -r "$running_version_file" ] || exit 0
+    [ "$(tr -d '[:space:]' < "$running_version_file")" != "{{ ca_claudex_version }}" ] || exit 0
+
+    if [ -r "$pid_file" ]; then
+      pid=$(tr -dc '0-9' < "$pid_file")
+      if [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null; then
+        command=$(ps -p "$pid" -o command= 2>/dev/null || true)
+        case "$command" in
+          *"{{ home_dir }}/.local/bin/cliproxyapi"*) kill "$pid" ;;
+        esac
+      fi
+    fi
+    rm -f "$pid_file" "$running_version_file"
+    printf 'stopped outdated Claudex proxy\n'
+  args:
+    executable: /bin/sh
+  register: ca_claudex_proxy_upgrade
+  changed_when: "'stopped outdated' in ca_claudex_proxy_upgrade.stdout"
+  when: not ansible_check_mode
+
+- name: Record the installed CLIProxyAPI version
+  copy:
+    content: "{{ ca_claudex_version }}\n"
+    dest: "{{ ca_claudex_config_dir }}/version"
+    mode: "0644"
+
+- name: Download the pinned CLIProxyAPI release
+  get_url:
+    url: "https://github.com/router-for-me/CLIProxyAPI/releases/download/v{{ ca_claudex_version }}/{{ ca_claudex_archive_name }}"
+    dest: "{{ home_dir }}/.cache/cliproxyapi/{{ ca_claudex_archive_name }}"
+    checksum: "sha256:{{ ca_claudex_release.sha256 }}"
+    mode: "0644"
+  when: not ansible_check_mode
+
+- name: Extract the pinned CLIProxyAPI release
+  command:
+    argv:
+      - tar
+      - -xzf
+      - "{{ home_dir }}/.cache/cliproxyapi/{{ ca_claudex_archive_name }}"
+      - -C
+      - "{{ ca_claudex_install_dir }}"
+    creates: "{{ ca_claudex_install_dir }}/cli-proxy-api"
+  when: not ansible_check_mode
+
+- name: Make CLIProxyAPI executable
+  file:
+    path: "{{ ca_claudex_install_dir }}/cli-proxy-api"
+    state: file
+    mode: "0755"
+  when: not ansible_check_mode
+
+- name: Link the pinned CLIProxyAPI executable
+  file:
+    src: "{{ ca_claudex_install_dir }}/cli-proxy-api"
+    dest: "~/.local/bin/cliproxyapi"
+    state: link
+    force: true
+
+- name: Check for an existing Claudex proxy key
+  stat:
+    path: "{{ ca_claudex_config_dir }}/client-key"
+  register: ca_claudex_proxy_key_path
+  no_log: true
+
+- name: Generate the per-host Claudex proxy key
+  command:
+    argv:
+      - /bin/sh
+      - -c
+      - 'umask 077; openssl rand -hex 32 > "$1"'
+      - claudex-keygen
+      - "{{ ca_claudex_config_dir }}/client-key"
+    creates: "{{ ca_claudex_config_dir }}/client-key"
+  when: not ansible_check_mode
+  no_log: true
+
+- name: Read the per-host Claudex proxy key
+  slurp:
+    src: "{{ ca_claudex_config_dir }}/client-key"
+  register: ca_claudex_proxy_key_file
+  when: not ansible_check_mode or ca_claudex_proxy_key_path.stat.exists
+  no_log: true
+
+- name: Render the local CLIProxyAPI configuration
+  template:
+    src: cliproxyapi.conf.j2
+    dest: "{{ ca_claudex_config_dir }}/config.yaml"
+    mode: "0600"
+  vars:
+    ca_claudex_proxy_key: >-
+      {{ ca_claudex_proxy_key_file.content
+         | default('Y2hlY2stbW9kZS1wbGFjZWhvbGRlcg==')
+         | b64decode | trim }}
+  no_log: true
+
+- name: Install Claudex launcher
+  file:
+    src: "{{ repo_root }}/scripts/claudex"
+    dest: "~/.local/bin/claudex"
+    state: link
+    force: true

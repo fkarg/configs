@@ -1,6 +1,16 @@
 ---
 coding_agents_source_dir: "{{ repo_root }}/coding-agents"
 
+claudex_enabled: false
+ca_claudex_version: "7.2.143"
+ca_claudex_releases:
+  Darwin-arm64:
+    suffix: darwin_aarch64
+    sha256: ee3c7c0ddab05d6f348dbcce92bc2b1f6dfada76aa4abf40d12254edd3fd5e6e
+  Linux-x86_64:
+    suffix: linux_amd64
+    sha256: 9154f460a5684ae82d74f3643d7b3f9c8961659d33058458c9edc044f5f761ba
+
 # Claude Code plugin skills to also expose to Codex (which uses the same
 # SKILL.md format). Each entry is a glob under $HOME pointing at a plugin's
 # skills directory; the version path is wildcarded and the newest match wins.
