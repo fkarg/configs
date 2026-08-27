@@ -112,7 +112,14 @@ printf '\n'
                 "first_party=1",
                 "compact=200000",
                 "args=<--model><claude-opus-4-8><--effort><high>"
-                "<--permission-mode><auto><--permission-mode><plan>",
+                "<--permission-mode><auto><--append-system-prompt>"
+                "<Claudex compatibility notice: Claude model names are routing "
+                "aliases, not your identity. claude-opus-4-8 routes to OpenAI "
+                "GPT-5.6 Sol; claude-sonnet-5 and claude-sonnet-4-6 route to "
+                "OpenAI GPT-5.6 Terra; claude-haiku-4-5 and "
+                "claude-haiku-4-5-20251001 route to OpenAI GPT-5.6 Luna. "
+                "Identify yourself as the routed OpenAI GPT-5.6 tier, never as "
+                "Claude or Opus/Sonnet/Haiku.><--permission-mode><plan>",
             ],
         )
 

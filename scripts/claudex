@@ -88,10 +88,13 @@ export _CLAUDE_CODE_ASSUME_FIRST_PARTY_BASE_URL=1
 export CLAUDE_CODE_AUTO_COMPACT_WINDOW=200000
 export MAX_MCP_OUTPUT_TOKENS=25000
 
+identity_notice="Claudex compatibility notice: Claude model names are routing aliases, not your identity. claude-opus-4-8 routes to OpenAI GPT-5.6 Sol; claude-sonnet-5 and claude-sonnet-4-6 route to OpenAI GPT-5.6 Terra; claude-haiku-4-5 and claude-haiku-4-5-20251001 route to OpenAI GPT-5.6 Luna. Identify yourself as the routed OpenAI GPT-5.6 tier, never as Claude or Opus/Sonnet/Haiku."
+
 # API-token auth does not honor settings.json's defaultMode. Spell out the
 # existing shared default here; later user arguments can still override it.
 exec claude \
     --model claude-opus-4-8 \
     --effort high \
     --permission-mode auto \
+    --append-system-prompt "$identity_notice" \
     "$@"
