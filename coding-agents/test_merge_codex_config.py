@@ -28,6 +28,9 @@ class MergeCodexConfigTests(unittest.TestCase):
             self.assertEqual(merged["approval_policy"], "on-request")
             self.assertEqual(merged["approvals_reviewer"], "auto_review")
             self.assertEqual(merged["sandbox_mode"], "workspace-write")
+            self.assertEqual(
+                merged["agents"]["max_concurrent_threads_per_session"], 16
+            )
 
     def test_expands_home_relative_writable_roots(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:

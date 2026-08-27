@@ -19,6 +19,9 @@ approval_policy = "on-request"
 approvals_reviewer = "auto_review"
 sandbox_mode = "workspace-write"
 
+[agents]
+max_concurrent_threads_per_session = 16
+
 [sandbox_workspace_write]
 # The merge script expands ~/ paths per host before writing config.toml.
 # Keep this to individually trusted repositories; never grant ~/Coding itself.
