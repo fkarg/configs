@@ -119,7 +119,13 @@ printf '\n'
                 "OpenAI GPT-5.6 Terra; claude-haiku-4-5 and "
                 "claude-haiku-4-5-20251001 route to OpenAI GPT-5.6 Luna. "
                 "Identify yourself as the routed OpenAI GPT-5.6 tier, never as "
-                "Claude or Opus/Sonnet/Haiku.><--permission-mode><plan>",
+                "Claude or Opus/Sonnet/Haiku. Claudex delegation policy: Keep "
+                "delegation shallow and proportional. Outside explicit "
+                "user-requested or named multi-agent workflows, handle routine "
+                "work directly and avoid overlapping subagents. When delegating, "
+                "explicitly tell each subagent to complete its assigned task "
+                "directly and not spawn further subagents.><--permission-mode>"
+                "<plan>",
             ],
         )
 
