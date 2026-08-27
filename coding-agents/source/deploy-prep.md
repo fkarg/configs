@@ -143,16 +143,12 @@ since the controller commit used for the last attempt. Distinguish:
 - dirty submodule state, which does not itself change prebuilt app images; and
 - unrelated untracked operational files.
 
-Infrastructure changes never pass through a release cut, so their deploy
-notes are read here, not from cards: resolve the infra PRs merged in the
-range *last successfully applied controller revision → target `HEAD`*
-(commit→PR association over the exact range) and union their non-`None`
-`## Deploy impact` sections into prep steps and watch-items. The lower bound
-is the last **successful** apply — a failed or partial attempt does not
-prove its changes landed; when only an attempt timestamp is known, widen
-back to the last verified success. (The attempt timestamp keeps bounding the
-issue review in step 5 — different purpose.) Direct-pushed commits with no
-PR are inspected by hand, not skipped.
+For release-aligned infrastructure context, inspect commit subjects made
+between the commit dates of the outgoing app release and incoming candidate,
+including PR merges and direct pushes. Summarize them compactly and inspect a
+diff only when its subject plausibly affects the target host or release. Do
+not derive prep steps or watch-items from generic PR `Deploy impact` sections
+or copied release-card text.
 
 Then dry-run the render:
 
