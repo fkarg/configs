@@ -224,6 +224,7 @@ class ClaudexProvisioningTests(unittest.TestCase):
         self.assertNotIn("claude plugin", CLAUDEX_TASKS.read_text())
         self.assertIn("claude plugin marketplace add", plugin_tasks)
         self.assertIn("claude plugin install codex@openai-codex", plugin_tasks)
+        self.assertNotIn("--yes", plugin_tasks)
 
     def test_check_mode_reuses_an_existing_proxy_key(self) -> None:
         tasks = CLAUDEX_TASKS.read_text()
