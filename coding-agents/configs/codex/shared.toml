@@ -39,9 +39,35 @@ writable_roots = [
 network_access = true
 
 [features]
-# Add a domain here only when a routine command needs it. Keep this allowlist
-# narrow; `network_access` without the proxy would permit arbitrary egress.
-network_proxy = { enabled = true, domains = { "api.github.com" = "allow", "api.anthropic.com" = "allow" } }
+# Common developer endpoints. Keep this explicit: `network_access` without the
+# proxy would permit arbitrary egress.
+[features.network_proxy]
+enabled = true
+
+[features.network_proxy.domains]
+"api.anthropic.com" = "allow"
+"api.github.com" = "allow"
+"api.openai.com" = "allow"
+"auth.docker.io" = "allow"
+"codeload.github.com" = "allow"
+"crates.io" = "allow"
+"deb.debian.org" = "allow"
+"files.pythonhosted.org" = "allow"
+"github-releases.githubusercontent.com" = "allow"
+"github.com" = "allow"
+"golang.org" = "allow"
+"index.crates.io" = "allow"
+"objects.githubusercontent.com" = "allow"
+"proxy.golang.org" = "allow"
+"pypi.org" = "allow"
+"raw.githubusercontent.com" = "allow"
+"registry-1.docker.io" = "allow"
+"registry.npmjs.org" = "allow"
+"releases.hashicorp.com" = "allow"
+"security.debian.org" = "allow"
+"ssh.github.com" = "allow"
+"static.crates.io" = "allow"
+"sum.golang.org" = "allow"
 
 [tui]
 status_line = ["model-with-reasoning", "current-dir", "git-branch", "branch-changes", "run-state", "context-used", "five-hour-limit", "weekly-limit", "used-tokens", "total-input-tokens", "total-output-tokens", "task-progress"]

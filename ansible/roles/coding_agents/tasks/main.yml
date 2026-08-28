@@ -167,7 +167,7 @@
 # curated subset (configs/codex/shared.toml) onto the codex-owned local file.
 - name: Merge curated codex settings into the local codex config
   command:
-    cmd: python3 merge_codex_config.py
+    cmd: "{{ ansible_facts['python']['executable'] }} merge_codex_config.py"
     chdir: "{{ coding_agents_source_dir }}"
   register: ca_codex_merge
   changed_when: "'changed:' in ca_codex_merge.stdout"
