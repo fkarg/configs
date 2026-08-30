@@ -1,4 +1,4 @@
-{ lib, pkgs, ... }:
+{ config, lib, pkgs, ... }:
 
 {
   # Shared baseline for Hyprland/Wayland hosts.
@@ -38,6 +38,23 @@
     after = [ "graphical-session-pre.target" ];
     unitConfig.PropagatesStopTo = [ "graphical-session.target" ];
   };
+
+  # pam_gnome_keyring (security.pam.services.<dm>.enableGnomeKeyring) starts
+  # `gnome-keyring-daemon --login` at login and unlocks the login keyring, but
+  # that daemon only sleeps until a second `--start` invocation hands it over to
+  # the session; unconnected it gives up after a few minutes and exits. GNOME
+  # does the handover from /etc/xdg/autostart, which Hyprland never runs — so
+  # the unlocked daemon dies and whatever asks for a secret later D-Bus-activates
+  # a fresh, locked one that prompts for the password.
+  systemd.user.services.gnome-keyring-secrets =
+    lib.mkIf config.services.gnome.gnome-keyring.enable {
+      description = "Hand the PAM-unlocked keyring daemon to the session";
+      wantedBy = [ "hyprland-session.target" ];
+      serviceConfig = {
+        Type = "oneshot";
+        ExecStart = "${config.security.wrapperDir}/gnome-keyring-daemon --start --components=secrets";
+      };
+    };
 
   # dpms is a Lua expression now: under a Lua config `hyprctl dispatch dpms on`
   # no longer parses and the screen simply never blanks or never comes back.
