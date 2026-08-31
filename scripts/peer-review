@@ -52,11 +52,18 @@ esac
 # means GPT answers despite the Claude harness. Match only that endpoint: an
 # arbitrary local Anthropic relay is still Claude, and treating it as GPT
 # would route the peer back to the caller's own family.
+#
+# Codex is GPT regardless of harness. Detect it via the per-session vars it
+# actually exports into a spawned shell -- CODEX_SESSION_ID / CODEX_THREAD_ID.
+# CODEX_HOME and CODEX_SANDBOX are NOT set in that shell, so keying on them
+# made every Codex session fall through to "claude" and pick Codex as its own
+# peer. CODEX_HOME may also be exported by a user shell that merely configures
+# Codex, which would misreport a Claude session as GPT; ignore it either way.
 claudex_endpoint="127.0.0.1:8317"
 
 if printf '%s' "${ANTHROPIC_BASE_URL:-}" | grep -qF "$claudex_endpoint"; then
     detected="gpt"
-elif [ -n "${CODEX_SANDBOX:-}${CODEX_HOME:-}" ]; then
+elif [ -n "${CODEX_SESSION_ID:-}${CODEX_THREAD_ID:-}" ]; then
     detected="gpt"
 else
     detected="claude"

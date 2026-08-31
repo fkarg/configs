@@ -45,6 +45,10 @@ network_access = true
 enabled = true
 
 [features.network_proxy.domains]
+# Codex's own feature-flag endpoint. Not a developer endpoint, but the CLI
+# calls it during normal operation and the proxy denial surfaces as a mid-run
+# choke rather than a clean skip.
+"ab.chatgpt.com" = "allow"
 "api.anthropic.com" = "allow"
 "api.github.com" = "allow"
 "api.openai.com" = "allow"

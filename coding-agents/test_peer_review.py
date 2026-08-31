@@ -113,9 +113,21 @@ class PeerReviewTests(unittest.TestCase):
         self.assertIn("base=unset", lines)
 
     def test_codex_session_routes_to_claude(self) -> None:
+        """Regression: Codex calling Codex.
+
+        A Codex-spawned shell exports CODEX_SESSION_ID / CODEX_THREAD_ID but
+        NOT CODEX_HOME or CODEX_SANDBOX, so keying on the latter made every
+        Codex session detect as Claude and select Codex as its own peer.
+        """
+        for var in ("CODEX_SESSION_ID", "CODEX_THREAD_ID"):
+            with self.subTest(env=var):
+                proc, _, _ = self.run_launcher(["brief"], {var: "abc123"})
+                self.assertEqual(json.loads(proc.stdout)["peer_cli"], "claude")
+
+    def test_codex_home_alone_does_not_imply_a_codex_session(self) -> None:
+        """A shell that merely configures Codex is still Claude-served."""
         proc, _, _ = self.run_launcher(["brief"], {"CODEX_HOME": "/x/.codex"})
-        payload = json.loads(proc.stdout)
-        self.assertEqual(payload["peer_cli"], "claude")
+        self.assertEqual(json.loads(proc.stdout)["peer_cli"], "codex")
 
     def test_explicit_from_overrides_detection(self) -> None:
         proc, _, _ = self.run_launcher(
