@@ -31,6 +31,7 @@ class MergeCodexConfigTests(unittest.TestCase):
             self.assertEqual(
                 merged["agents"]["max_concurrent_threads_per_session"], 16
             )
+            self.assertTrue(merged["features"]["network_proxy"]["allow_local_binding"])
 
     def test_expands_home_relative_writable_roots(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:

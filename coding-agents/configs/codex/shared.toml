@@ -43,6 +43,7 @@ network_access = true
 # proxy would permit arbitrary egress.
 [features.network_proxy]
 enabled = true
+allow_local_binding = true
 
 [features.network_proxy.domains]
 # Codex's own feature-flag endpoint. Not a developer endpoint, but the CLI
