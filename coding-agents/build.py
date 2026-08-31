@@ -65,6 +65,7 @@ class Permissions:
     edit: str = "allow"       # "allow" | "ask" | "deny"
     bash: str = "allow"
     webfetch: str = "allow"
+    task: str = "deny"
 
 
 @dataclass
@@ -149,8 +150,6 @@ def load_agent(path: Path) -> Agent:
         if key not in known_top_keys:
             warnings.append(f"unknown frontmatter key '{key}' (ignored — not translated to any tool)")
 
-    # `task` controls whether the agent can spawn other subagents in opencode;
-    # there's no clean cross-tool equivalent, so we accept it as known but skip translation.
     known_perm_keys = {"edit", "bash", "webfetch", "task"}
     for key in perm_raw:
         if key not in known_perm_keys:
@@ -173,6 +172,7 @@ def load_agent(path: Path) -> Agent:
         edit=perm_raw.get("edit", "allow") if isinstance(perm_raw.get("edit"), str) else "allow",
         bash=coalesce_bash(perm_raw.get("bash", "allow")),
         webfetch=perm_raw.get("webfetch", "allow") if isinstance(perm_raw.get("webfetch"), str) else "allow",
+        task=coalesce_bash(perm_raw.get("task", "deny")),
     )
 
     return Agent(
@@ -187,7 +187,12 @@ def load_agent(path: Path) -> Agent:
 
 def claude_tools_for(perms: Permissions) -> list[str] | None:
     """Return an explicit allowlist when any deny is present; else None (inherit all)."""
-    if perms.edit == "allow" and perms.bash == "allow" and perms.webfetch == "allow":
+    if (
+        perms.edit == "allow"
+        and perms.bash == "allow"
+        and perms.webfetch == "allow"
+        and perms.task == "allow"
+    ):
         return None
 
     allowed = list(CLAUDE_DEFAULT_TOOLS)
@@ -197,6 +202,8 @@ def claude_tools_for(perms: Permissions) -> list[str] | None:
         allowed = [t for t in allowed if t not in CLAUDE_BASH_TOOLS]
     if perms.webfetch == "deny":
         allowed = [t for t in allowed if t not in CLAUDE_WEB_TOOLS]
+    if perms.task != "allow":
+        allowed = [t for t in allowed if t != "Agent"]
     return allowed
 
 
