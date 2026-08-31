@@ -139,7 +139,26 @@ issues are not this: work that outlives the deploy — backfills, alerting,
 provisioning bound to no release — stays open and is merely linked, and an
 issue whose note is only part of its content keeps the remainder.
 
-### 8. Report
+### 8. Cross-model gate — before the cut recommendation
+
+Facts established, recommendation not yet written. Run one peer check while it
+can still change the answer:
+
+```bash
+peer-review --mode premise --cd <infra-repo> "Cutting <repos> at <candidate tags>. \
+Established: <preflight results, candidate CI, latest-vs-candidate divergence, delta classification, publish-path health, open blocking issues>. \
+Name the failure mode this evidence does not rule out."
+```
+
+Aim it at what a cut can get wrong that a checklist misses: version identity
+across the repo pair, a publish path that is green but stale, deploy-time work
+this cut silently creates, ordering between the two repos. Do not hand it your
+cut/hold verdict.
+
+Fold the result into the report as its own line, naming the model that answered.
+An empty `attempted_falsifications` means the peer left its conclusion untested — say so.
+
+### 9. Report
 
 Risk-ranked: **cut blockers** (preflight refusal, red candidate CI, diverged
 `latest`, blocking issue), **prep before cutting**, **deploy-time prep this

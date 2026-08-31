@@ -158,7 +158,29 @@ cd ansible && ansible-playbook playbooks/deploy.yml -l <host> --tags config --ch
 
 (Needs SSH reachability of the host and the vault password from `~/.vault_pass`; skip with a note if the host is unreachable.)
 
-### 8. Report
+### 8. Cross-model gate — before go/no-go, after the facts are in
+
+The facts are established and the recommendation is not yet written: this is the
+one point where a second opinion can still change the answer cheaply.
+
+```bash
+peer-review --mode premise --cd <infra-repo> "Deploying <release pair> to <host>. \
+Established: <migrations, image/tag evidence, secret wiring, controller delta, open blocking issues>. \
+Rollback behavior read from the current deploy role: <summary>. \
+Name the failure mode this evidence does not rule out."
+```
+
+Ask specifically for what a facts-only reader would still worry about:
+overlooked rollback path, version-identity mismatch, ordering between migration
+and image cutover, a provider that is configured but not active. Do **not** hand
+it your go/no-go verdict — it should reason from the evidence, not rate your
+conclusion.
+
+Fold the result into the report as its own line, naming the model that answered.
+If `attempted_falsifications` is empty, the peer left its conclusion untested —
+report that rather than counting it as a clean pass.
+
+### 9. Report
 
 Risk-ranked: **blockers** (missing image, failed promotion, unwired required
 secret, destructive migration, blocking issue), **required prep**,

@@ -57,6 +57,20 @@ Concrete, cheap checks they can run to confirm your claims rather than trust the
 ### 7. Residual risks
 Deferrals, latent issues not reachable on today's paths but one refactor away, and **tests that skip in CI** (so a green run proves less than it appears).
 
+### 8. Cross-model gate — conditional, not routine
+Run one peer check **only when approval rests on something you could not verify**: a step-1 judgment call, an invariant with a ⚠/✗ in the Test column, or a consequential deferral. If every load-bearing invariant is pinned by a test you read, skip this and say so in one line — a peer adds nothing over evidence you already have.
+
+When it does apply, aim it at the specific unverified thing rather than the PR as a whole:
+
+```bash
+git diff <base>...<head> | peer-review --mode diff-review --cd <worktree> \
+  "Approval rests on this unverified claim: <the judgment call or untested invariant>. \
+Established and already verified: <invariants pinned by tests you read>. \
+Attack that one claim; ignore what is already pinned."
+```
+
+Report the verdict, the model that answered, and — for each finding — whether it changed your approval position, added a check the human should run, or was rejected as a false positive and why. A peer that "could not refute" the claim only helps if its `attempted_falsifications` names what it tried; an empty list leaves its conclusion untested, so the claim is still unverified and section 1 must say so.
+
 ## Finding test coverage (the Test column)
 
 For every invariant and every risky call-chain, find whether a test pins it:

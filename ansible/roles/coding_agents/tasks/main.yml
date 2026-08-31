@@ -161,6 +161,17 @@
   when: claudex_enabled | bool
   tags: [claudex]
 
+# Cross-model peer checks route on the *serving* model, not the harness: under
+# Claudex the Claude Code harness is served by GPT, so a harness-keyed rule
+# sends GPT to Codex and gets GPT reviewing GPT. peer-review resolves this in
+# one place for every agent that asks for a second opinion.
+- name: Install the peer-review cross-model launcher
+  file:
+    src: "{{ repo_root }}/scripts/peer-review"
+    dest: "~/.local/bin/peer-review"
+    state: link
+    force: true
+
 # Codex is the exception: it atomically rewrites ~/.codex/config.toml (which would
 # clobber a symlink) and commingles host state (trusted [projects.*], oss_provider,
 # nux counters, auth) with prefs. So rather than symlink it, overlay just the

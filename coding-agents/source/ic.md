@@ -44,9 +44,17 @@ Synthesize in-thread into a tight mental model: what the area does (entrypoints,
 
 Before forming your own design, separate the issue's **user-visible outcomes** from its stated diagnosis and requested implementation. Test whether the premise is supported by the evidence, and whether the same outcomes could be achieved more simply, with a smaller footprint, or by changing a less intrusive layer. Do not treat an issue's proposed solution as a requirement unless it is explicitly one.
 
-For every non-trivial task, start a **blind cross-model premise check** while the final local understanding is still being assembled. This is deliberately early: it keeps the brief independent of your own preferred answer and lets the check run in parallel rather than delaying design. Shell out to a CLI from a *different model family* than your own (you're Claude-family → `codex exec`; GPT-family → `claude -p`; check `command -v` first; none available or quota exhausted → note it and fall back to a fresh-context subagent). Give it the issue and established facts, but **not** your candidate solution. Ask it to: challenge the issue's premise; identify the smallest credible ways to achieve the user-visible outcomes; name what evidence or constraints would rule each out; and recommend nothing beyond the facts supplied.
+For every non-trivial task, run a **blind cross-model premise check** while the final local understanding is still being assembled. This is deliberately early: it keeps the brief independent of your own preferred answer. Give it the issue and the established facts, but **not** your candidate solution:
 
-Bring the result forward explicitly: retain the issue's requested approach only when it survives this check, or state why a simpler alternative does not meet the real requirement. For genuinely local, mechanical work, state in one line why this phase was skipped.
+```
+peer-review --mode premise --cd <worktree> "Issue: <text>. Established facts: <facts>. Outcomes the user actually needs: <list>."
+```
+
+`peer-review` selects a peer from a genuinely different *serving* family (a Claudex session is GPT wearing the Claude harness — never route on harness name), runs it read-only, and returns validated JSON. If it reports no peer CLI, fall back to a fresh-context subagent with the same blind brief and say so.
+
+**When the issue is a bug report whose cause is not yet established, run `--mode diagnosis` instead** — competing causal explanations ranked, plus the single cheap observation that would falsify the leading one. Fixing a misdiagnosis correctly is the most expensive failure available to you, and this is the point where it is cheapest to catch. Get the falsifying observation *before* you design.
+
+Bring the result forward explicitly: retain the issue's requested approach only when it survives this check, or state why a simpler alternative does not meet the real requirement. Report the peer's `verdict` and which model produced it. If `attempted_falsifications` is empty, the peer did not test its conclusion — report it as untested rather than counting it as passed. For genuinely local, mechanical work, state in one line why this phase was skipped.
 
 ## 4. Design — independent counter-proposal at real forks
 
@@ -56,7 +64,7 @@ If it does, get an **independent second design before committing to your own**:
 
 - **Web-research synthesis.** Start from the step-2 research brief: state which externally-established options are applicable here, which are not, and why. If it did not uncover enough credible evidence to inform the fork, dispatch a targeted follow-up web-research subagent rather than filling the gap from memory.
 
-- **Cross-model premise-check synthesis.** Start from step 3's already-running blind brief. If it did not address this specific fork, send one targeted follow-up before settling on an approach: ask for its approach, the strongest argument against the most obvious approach, and anything it would refuse to build here. Keep your preferred approach out of the brief. If no cross-model counterpart is available, use a same-model, fresh-context subagent with the same blind brief.
+- **Cross-model premise-check synthesis.** Start from step 3's result. If it did not address this specific fork, send one targeted follow-up before settling on an approach — `peer-review --mode design` — asking for its approach, the strongest argument against the most obvious approach, and anything it would refuse to build here. Keep your preferred approach out of the brief. If no peer CLI is available, use a same-model, fresh-context subagent with the same blind brief.
 
 In parallel, hand the candidate approaches to `simplicity-reviewer` (plan mode): is the simplest approach that meets *this* requirement on the table?
 
@@ -92,13 +100,20 @@ Dispatch fresh-context reviewers **in parallel** — they haven't seen this conv
 - When the change matches their trigger: `security-reviewer`, `test-quality-reviewer` (pass it the step-2 invariants), `performance-reviewer`, `consistency-reviewer`.
 - `simplicity-reviewer` again if the change budget tripped or new abstractions appeared since its post-green pass — and always when no cross-model counterpart is available (it's the same-model fallback for the minimalist pass below).
 
-**Cross-model pass (whenever a counterpart is available):** hand the same diff to a different-model-family CLI (selection as in step 3) with an explicitly *minimalist* brief — a different model has different blind spots, and LLM reviewers are verbosity-biased unless told otherwise. Pipe the diff on stdin; the counterpart's sandbox may not be able to read files or run commands:
+**Cross-model pass — run it in the same parallel wave as the reviewers, not after:**
 
 ```
-git diff $(git merge-base <default> HEAD) | codex exec "Fresh-eyes review of the diff on stdin. Intent: <one line>. Two jobs: (1) correctness findings; (2) a minimalist pass — name every hunk that could be smaller or simpler with no tradeoff. Report 🔴 must-fix / 🟡 should / 🟢 nit with file:line. No praise, no diff echo. Single-shot: do not spawn your own agents."
+git diff $(git merge-base <default> HEAD) | peer-review --mode diff-review --cd <worktree> \
+  "Intent: <one line>. Invariants this must preserve: <list>. Tests run and their result: <summary>. Known non-goals: <list>."
 ```
 
-Synthesize in-thread: dedupe, kill false positives, tag cross-model findings `[codex]`/`[claude]`. Then: 🔴 → fix and re-run the affected reviewer; 🟡 → fix if quick, note if not; 🟢 → fix the easy ones.
+Give the peer the invariants and test evidence, not just the diff — a peer reviewing a naked diff can only guess at what the change was supposed to preserve.
+
+**One peer call per gate, and the gates are yours alone.** You make at most three across the whole task — the step-3 premise/diagnosis check, the step-4 design follow-up when a real fork exists, and this one — each at a distinct decision point on different evidence. The specialist reviewers do **not** make their own: fanning the same diff out to seven peers produces correlated findings, duplicates cost, and moves synthesis out of the one place that can see everything.
+
+Synthesize in-thread: dedupe, kill false positives, tag cross-model findings with the model that produced them. Then: 🔴 → fix and re-run the affected reviewer; 🟡 → fix if quick, note if not; 🟢 → fix the easy ones.
+
+For each peer finding record the outcome — changed the decision, added a verification, unique defect, rejected as false positive (with reason), or no impact. A peer that "could not refute" the change is only evidence if its `attempted_falsifications` names what it tried; an empty list means an untested conclusion, not a pass.
 
 ## 8. Deliverables & checkpoint
 

@@ -39,13 +39,20 @@ Dispatch fresh-context reviewers in parallel, each with the intent, the diff, an
 - Always, for non-trivial changes: `reviewer`, `simplicity-reviewer`, `murphyjitsu-reviewer`.
 - When the change matches their trigger: `security-reviewer`, `test-quality-reviewer` (pass it the step-2 invariants), `performance-reviewer`, `consistency-reviewer`.
 
-**Cross-model pass (whenever a counterpart is available):** hand the same diff to a CLI from a *different model family* than your own (Claude-family → `codex exec`; GPT-family → `claude -p`; check `command -v`; none available or quota exhausted → skip with a one-line note — the same-model fleet above, `simplicity-reviewer` included, is then the only adversarial pass, so don't thin it) with an explicitly *minimalist* brief — a different model has different blind spots, and LLM reviewers are verbosity-biased unless told otherwise. Pipe the diff on stdin; the counterpart's sandbox may not be able to read files or run commands:
+**Cross-model pass — dispatch it in the same wave as the fleet above:**
 
 ```
-git diff $(git merge-base <default> HEAD) | codex exec "Fresh-eyes review of the diff on stdin. Intent: <one line>. Two jobs: (1) correctness findings; (2) a minimalist pass — name every hunk that could be smaller or simpler with no tradeoff. Report 🔴 must-fix / 🟡 should / 🟢 nit with file:line. No praise, no diff echo. Single-shot: do not spawn your own agents."
+git diff $(git merge-base <default> HEAD) | peer-review --mode diff-review --cd <worktree> \
+  "Intent: <one line>. Invariants this must preserve: <list from step 2>. Tests run and their result: <summary>. Known non-goals: <list>."
 ```
 
-Synthesize in-thread: dedupe, kill false positives, tag cross-model findings `[codex]`/`[claude]`, rank 🔴/🟡/🟢. `simplicity-reviewer` 🔴 findings are not advisory — they go to the checkpoint as their own block, not folded into nits.
+Hand it the step-2 invariants and the test evidence, not a naked diff — otherwise the peer has to guess what the change was meant to preserve, and guesses come back as noise. `peer-review` picks a peer from a genuinely different *serving* family and returns validated JSON; it reports which model actually answered, which is the thing worth recording. If it reports no peer CLI, skip with a one-line note — the same-model fleet, `simplicity-reviewer` included, is then the only adversarial pass, so don't thin it.
+
+This is one call at the orchestrator level. The specialist reviewers do **not** make their own peer calls: N peers over overlapping evidence produce correlated findings and move synthesis out of the one place that can see all of it.
+
+Synthesize in-thread: dedupe, kill false positives, tag cross-model findings with the model that produced them, rank 🔴/🟡/🟢. `simplicity-reviewer` 🔴 findings are not advisory — they go to the checkpoint as their own block, not folded into nits.
+
+Record each peer finding's outcome: changed the decision, added a verification, unique defect, rejected as false positive (with reason), or no impact. "Could not refute" counts as evidence only when `attempted_falsifications` names the attacks tried — an empty list means the peer left its conclusion untested.
 
 ## 4. Production readiness
 

@@ -1,0 +1,189 @@
+#!/bin/sh
+# Ask a peer model from a *different serving family* to attack a claim.
+#
+# The routing decision that matters is the serving model, not the harness:
+# `claudex` runs GPT-5.6 inside the Claude Code harness, so a session that
+# routes on harness name alone can send GPT to `codex exec` and get GPT
+# reviewing GPT while reporting it as a cross-model check.
+#
+# Usage:
+#   peer-review [--mode MODE] [--cd DIR] [--from FAMILY] [--model M] BRIEF
+#   git diff ... | peer-review --mode diff-review --cd "$PWD" "Intent: ..."
+#
+# MODE is premise | diagnosis | design | diff-review (default: premise).
+# Material piped on stdin is appended to the brief. Emits one JSON object:
+#   {"peer_cli": ..., "peer_model": ..., "peer_family": ..., "result": {...}}
+
+set -eu
+
+mode="premise"
+workdir=""
+from_family=""
+peer_model=""
+
+fail() {
+    printf 'peer-review: %s\n' "$*" >&2
+    exit 1
+}
+
+while [ $# -gt 0 ]; do
+    case "$1" in
+        --mode) mode="${2:?--mode needs a value}"; shift 2 ;;
+        --cd) workdir="${2:?--cd needs a value}"; shift 2 ;;
+        --from) from_family="${2:?--from needs a value}"; shift 2 ;;
+        --model) peer_model="${2:?--model needs a value}"; shift 2 ;;
+        --) shift; break ;;
+        -*) fail "unknown option: $1" ;;
+        *) break ;;
+    esac
+done
+
+[ $# -ge 1 ] || fail "a brief is required"
+brief="$*"
+
+case "$mode" in
+    premise|diagnosis|design|diff-review) ;;
+    *) fail "unknown mode: $mode (want premise|diagnosis|design|diff-review)" ;;
+esac
+
+# --- serving family detection -------------------------------------------
+# Detect what is actually serving this session. claudex points the Anthropic
+# SDK at its own CLIProxyAPI on a fixed loopback port, so that exact endpoint
+# means GPT answers despite the Claude harness. Match only that endpoint: an
+# arbitrary local Anthropic relay is still Claude, and treating it as GPT
+# would route the peer back to the caller's own family.
+claudex_endpoint="127.0.0.1:8317"
+
+if printf '%s' "${ANTHROPIC_BASE_URL:-}" | grep -qF "$claudex_endpoint"; then
+    detected="gpt"
+elif [ -n "${CODEX_SANDBOX:-}${CODEX_HOME:-}" ]; then
+    detected="gpt"
+else
+    detected="claude"
+fi
+
+# The override is the escape hatch for when detection is wrong; it declares
+# the caller's OWN family. It cannot be verified, so a disagreement with
+# detection is surfaced in the result rather than silently trusted.
+[ -n "$from_family" ] || from_family="${PEER_REVIEW_FROM:-$detected}"
+
+case "$from_family" in
+    claude) peer_cli="codex" ;;
+    gpt) peer_cli="claude" ;;
+    *) fail "unknown family: $from_family (want claude|gpt)" ;;
+esac
+
+command -v "$peer_cli" >/dev/null 2>&1 ||
+    fail "peer CLI '$peer_cli' is not installed; skip the pass and say so"
+
+# --- brief ---------------------------------------------------------------
+case "$mode" in
+    premise)
+        task="Challenge the premise of what follows. Identify the smallest credible ways to achieve the stated user-visible outcomes, and name what evidence or constraint would rule each one out. You have NOT been shown a candidate solution; do not invent one to agree with." ;;
+    diagnosis)
+        task="Produce competing causal explanations for the observed symptoms below, ranked by likelihood. For the leading explanation, name the single observation that would falsify it and how to obtain that observation cheaply. Do not propose a fix." ;;
+    design)
+        task="Produce an independent design for the problem below, then state where it differs from the obvious approach and what each difference costs." ;;
+    diff-review)
+        task="Fresh-eyes review of the diff supplied below. Two jobs: (1) correctness findings; (2) a minimalist pass -- name every hunk that could be smaller or simpler with no tradeoff. Use file:line. No praise, no diff echo." ;;
+esac
+
+discipline="Recommend nothing beyond the facts supplied. Do not spawn subagents. Populate attempted_falsifications with what you actually tried in order to break your own conclusions -- an empty list is read as 'did not test', not as 'nothing to find'. Put anything you could not check into unverified."
+
+material_file=$(mktemp) || fail "cannot create temp file"
+schema_file=$(mktemp) || fail "cannot create temp file"
+result_file=$(mktemp) || fail "cannot create temp file"
+trap 'rm -f "$material_file" "$schema_file" "$result_file"' EXIT INT TERM
+
+[ -t 0 ] || cat >"$material_file"
+
+cat >"$schema_file" <<'SCHEMA'
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["verdict", "findings", "counterproposal", "attempted_falsifications", "unverified"],
+  "properties": {
+    "verdict": {"type": "string", "enum": ["supports", "challenges", "insufficient_evidence"]},
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["severity", "claim", "evidence", "next_check"],
+        "properties": {
+          "severity": {"type": "string", "enum": ["must", "should", "nit"]},
+          "claim": {"type": "string"},
+          "evidence": {"type": "string"},
+          "next_check": {"type": "string"}
+        }
+      }
+    },
+    "counterproposal": {"type": "string"},
+    "attempted_falsifications": {"type": "array", "items": {"type": "string"}},
+    "unverified": {"type": "array", "items": {"type": "string"}}
+  }
+}
+SCHEMA
+
+prompt="$task
+
+$brief
+
+$discipline"
+
+# --- run the peer, foreground, read-only, stdin closed -------------------
+if [ "$peer_cli" = "codex" ]; then
+    set -- exec --sandbox read-only --ephemeral \
+        --output-schema "$schema_file" -o "$result_file"
+    [ -n "$workdir" ] && set -- "$@" --cd "$workdir"
+    [ -n "$peer_model" ] && set -- "$@" -m "$peer_model"
+    codex "$@" "$prompt" <"$material_file" >/dev/null 2>&1 ||
+        fail "codex exec failed; rerun without -o to see its output"
+else
+    # A peer running through claudex would be GPT again. Force real Anthropic.
+    unset ANTHROPIC_BASE_URL ANTHROPIC_AUTH_TOKEN ANTHROPIC_MODEL
+    unset ANTHROPIC_DEFAULT_OPUS_MODEL ANTHROPIC_DEFAULT_SONNET_MODEL
+    unset ANTHROPIC_DEFAULT_HAIKU_MODEL _CLAUDE_CODE_ASSUME_FIRST_PARTY_BASE_URL
+    set -- -p --json-schema "$schema_file" --output-format json
+    [ -n "$workdir" ] && set -- "$@" --add-dir "$workdir"
+    [ -n "$peer_model" ] && set -- "$@" --model "$peer_model"
+    claude "$@" "$prompt" <"$material_file" >"$result_file" 2>/dev/null ||
+        fail "claude -p failed; rerun without --output-format to see its output"
+fi
+
+PEER_CLI="$peer_cli" PEER_FAMILY="$from_family" PEER_MODEL="$peer_model" \
+PEER_DETECTED="$detected" \
+    python3 - "$result_file" <<'PY'
+import json, os, sys
+
+raw = open(sys.argv[1]).read().strip()
+if not raw:
+    sys.exit("peer-review: peer returned nothing")
+
+payload = json.loads(raw)
+# `claude --output-format json` wraps the structured answer; codex -o does not.
+if isinstance(payload, dict) and "result" in payload and "verdict" not in payload:
+    model = payload.get("modelUsage") or {}
+    reported = next(iter(model), None) or payload.get("model")
+    result = payload["result"]
+    if isinstance(result, str):
+        result = json.loads(result)
+else:
+    reported, result = None, payload
+
+caller, detected = os.environ["PEER_FAMILY"], os.environ["PEER_DETECTED"]
+out = {
+    "peer_cli": os.environ["PEER_CLI"],
+    "peer_family": "gpt" if caller == "claude" else "claude",
+    "peer_model": os.environ["PEER_MODEL"] or reported or "cli default",
+    "caller_family": caller,
+    "result": result,
+}
+if caller != detected:
+    out["routing_warning"] = (
+        f"caller declared '{caller}' but detection says '{detected}'; "
+        "if the declaration is wrong this peer is the caller's own family"
+    )
+json.dump(out, sys.stdout, indent=2)
+print()
+PY
