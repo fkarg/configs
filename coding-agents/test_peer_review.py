@@ -23,12 +23,15 @@ ROLE_TASKS = (
     REPO / "ansible" / "roles" / "coding_agents" / "tasks" / "main.yml"
 )
 
-# A peer stub records how it was invoked, then emits a schema-shaped answer.
-PEER_STUB = """
+ANSWER = (
+    '{"verdict":"challenges","findings":[],"counterproposal":"c",'
+    '"attempted_falsifications":["tried x"],"unverified":[]}'
+)
+
+# Codex writes the bare answer to the file named by -o.
+CODEX_STUB = f"""
 printf '%s\\n' "$@" >"$RECORD_FILE"
-printf 'base=%s\\n' "${ANTHROPIC_BASE_URL:-unset}" >>"$RECORD_FILE"
-payload='{"verdict":"challenges","findings":[],"counterproposal":"c",'
-payload="$payload"'"attempted_falsifications":["tried x"],"unverified":[]}'
+printf 'base=%s\\n' "${{ANTHROPIC_BASE_URL:-unset}}" >>"$RECORD_FILE"
 out=""
 prev=""
 for arg in "$@"; do
@@ -37,11 +40,31 @@ for arg in "$@"; do
     esac
     prev="$arg"
 done
-if [ -n "$out" ]; then
-    printf '%s' "$payload" >"$out"
-else
-    printf '%s' "$payload"
-fi
+printf '%s' '{ANSWER}' >"$out"
+"""
+
+# `claude -p --output-format json` emits the whole event stream as an ARRAY,
+# and rejects a --json-schema that is a path rather than inline JSON. Both
+# behaviours are reproduced here: asserting against a codex-shaped stub is
+# what let a broken claude invocation ship.
+CLAUDE_STUB = f"""
+printf '%s\\n' "$@" >"$RECORD_FILE"
+printf 'base=%s\\n' "${{ANTHROPIC_BASE_URL:-unset}}" >>"$RECORD_FILE"
+prev=""
+for arg in "$@"; do
+    case "$prev" in
+        --json-schema)
+            case "$arg" in
+                /*) printf 'Error: --json-schema is not valid JSON\\n' >&2
+                    exit 1 ;;
+            esac ;;
+    esac
+    prev="$arg"
+done
+printf '%s' '[{{"type":"system","subtype":"init"}},'
+printf '%s' '{{"type":"result","subtype":"success","is_error":false,'
+printf '%s' '"modelUsage":{{"claude-fable-5":{{"costUSD":0.1}}}},'
+printf '%s' '"result":"{{}}","structured_output":{ANSWER}}}]'
 """
 
 
@@ -63,8 +86,8 @@ class PeerReviewTests(unittest.TestCase):
             bin_dir.mkdir()
             record = tmpdir / "record"
 
-            for peer in ("codex", "claude"):
-                write_executable(bin_dir / peer, PEER_STUB)
+            write_executable(bin_dir / "codex", CODEX_STUB)
+            write_executable(bin_dir / "claude", CLAUDE_STUB)
 
             # Prepend the stubs to the real PATH: this host is NixOS, so
             # /usr/bin carries no coreutils and a synthetic PATH loses grep.
@@ -181,6 +204,67 @@ class PeerReviewTests(unittest.TestCase):
         proc, _, _ = self.run_launcher(["brief"], {})
         result = json.loads(proc.stdout)["result"]
         self.assertEqual(result["attempted_falsifications"], ["tried x"])
+
+    def test_claude_peer_gets_the_schema_inline_not_as_a_path(self) -> None:
+        """Regression: a path made claude exit 1 on every peer call."""
+        proc, lines, _ = self.run_launcher(["--from", "gpt", "brief"], {})
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        # The record is one line per argv entry and the schema spans lines,
+        # so check where the inline JSON starts rather than reassembling it.
+        schema_arg = lines[lines.index("--json-schema") + 1]
+        self.assertNotEqual(schema_arg[:1], "/", "schema passed as a path")
+        self.assertEqual(schema_arg.strip(), "{")
+        self.assertIn("attempted_falsifications", "\n".join(lines))
+
+    def test_claude_event_array_is_unwrapped(self) -> None:
+        """claude --output-format json returns events, not one object."""
+        proc, _, _ = self.run_launcher(["--from", "gpt", "brief"], {})
+        payload = json.loads(proc.stdout)
+        self.assertEqual(payload["result"]["verdict"], "challenges")
+        self.assertEqual(payload["peer_model"], "claude-fable-5")
+
+    def test_claude_peer_cannot_edit(self) -> None:
+        _, lines, _ = self.run_launcher(["--from", "gpt", "brief"], {})
+        self.assertIn("--disallowed-tools", lines)
+        # The stub records the env probe after argv; drop that trailing line.
+        denied = lines[lines.index("--disallowed-tools") + 1:-1]
+        self.assertEqual(denied, ["Edit", "Write", "NotebookEdit"])
+
+    def test_disallowed_tools_stays_last_so_it_swallows_nothing(self) -> None:
+        """It is variadic: anything after it is eaten as a tool name.
+
+        That is why the prompt goes on stdin rather than as a positional.
+        """
+        _, lines, _ = self.run_launcher(
+            ["--from", "gpt", "--model", "m", "--cd", "/tmp", "brief"], {}
+        )
+        tail = lines[lines.index("--disallowed-tools"):]
+        self.assertEqual(tail, ["--disallowed-tools", "Edit", "Write",
+                                "NotebookEdit", "base=unset"])
+
+    def test_peer_stderr_is_surfaced_on_failure(self) -> None:
+        """An opaque failure is how the broken --json-schema flag survived."""
+        with tempfile.TemporaryDirectory() as tmp:
+            tmpdir = Path(tmp)
+            bin_dir = tmpdir / "bin"
+            bin_dir.mkdir()
+            write_executable(
+                bin_dir / "codex",
+                'printf \'quota exhausted, try later\\n\' >&2\nexit 1\n',
+            )
+            proc = subprocess.run(
+                [str(LAUNCHER), "brief"],
+                capture_output=True,
+                text=True,
+                env={
+                    "PATH": f"{bin_dir}:{os.environ['PATH']}",
+                    "HOME": str(tmpdir),
+                },
+                stdin=subprocess.DEVNULL,
+                timeout=60,
+            )
+        self.assertEqual(proc.returncode, 1)
+        self.assertIn("quota exhausted", proc.stderr)
 
     def test_rejects_unknown_mode(self) -> None:
         proc, _, _ = self.run_launcher(["--mode", "bogus", "brief"], {})

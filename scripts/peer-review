@@ -139,23 +139,49 @@ $brief
 $discipline"
 
 # --- run the peer, foreground, read-only, stdin closed -------------------
+# Keep the peer's stderr: swallowing it turns every failure into an opaque
+# "peer failed", which is how a broken flag survived unnoticed.
+err_file=$(mktemp) || fail "cannot create temp file"
+combined_file=$(mktemp) || fail "cannot create temp file"
+trap 'rm -f "$material_file" "$schema_file" "$result_file" "$err_file" \
+    "$combined_file"' EXIT INT TERM
+
+peer_failed() {
+    printf 'peer-review: %s\n' "$1" >&2
+    printf -- '--- %s stderr ---\n' "$peer_cli" >&2
+    tail -n 20 "$err_file" >&2
+    exit 1
+}
+
 if [ "$peer_cli" = "codex" ]; then
+    # codex --output-schema takes a FILE.
     set -- exec --sandbox read-only --ephemeral \
         --output-schema "$schema_file" -o "$result_file"
     [ -n "$workdir" ] && set -- "$@" --cd "$workdir"
     [ -n "$peer_model" ] && set -- "$@" -m "$peer_model"
-    codex "$@" "$prompt" <"$material_file" >/dev/null 2>&1 ||
-        fail "codex exec failed; rerun without -o to see its output"
+    codex "$@" "$prompt" <"$material_file" >/dev/null 2>"$err_file" ||
+        peer_failed "codex exec failed"
 else
     # A peer running through claudex would be GPT again. Force real Anthropic.
+    # Leave ANTHROPIC_API_KEY alone: without it the CLI falls back to the
+    # keychain/OAuth session, which is how this host normally authenticates.
     unset ANTHROPIC_BASE_URL ANTHROPIC_AUTH_TOKEN ANTHROPIC_MODEL
     unset ANTHROPIC_DEFAULT_OPUS_MODEL ANTHROPIC_DEFAULT_SONNET_MODEL
     unset ANTHROPIC_DEFAULT_HAIKU_MODEL _CLAUDE_CODE_ASSUME_FIRST_PARTY_BASE_URL
-    set -- -p --json-schema "$schema_file" --output-format json
+    # claude --json-schema takes the schema INLINE, not a path -- handing it a
+    # filename fails with "not valid JSON: Unrecognized token '/'".
+    # The prompt goes on stdin, not as a positional: --disallowed-tools is
+    # variadic and would otherwise swallow the prompt as another tool name.
+    # --strict-mcp-config keeps unrelated session MCP servers out of a
+    # one-shot call; the peer reviews, so it must not edit.
+    { printf '%s\n' "$prompt"; cat "$material_file"; } >"$combined_file"
+    set -- -p --json-schema "$(cat "$schema_file")" --output-format json \
+        --strict-mcp-config
     [ -n "$workdir" ] && set -- "$@" --add-dir "$workdir"
     [ -n "$peer_model" ] && set -- "$@" --model "$peer_model"
-    claude "$@" "$prompt" <"$material_file" >"$result_file" 2>/dev/null ||
-        fail "claude -p failed; rerun without --output-format to see its output"
+    set -- "$@" --disallowed-tools "Edit" "Write" "NotebookEdit"
+    claude "$@" <"$combined_file" >"$result_file" 2>"$err_file" ||
+        peer_failed "claude -p failed"
 fi
 
 PEER_CLI="$peer_cli" PEER_FAMILY="$from_family" PEER_MODEL="$peer_model" \
@@ -168,13 +194,28 @@ if not raw:
     sys.exit("peer-review: peer returned nothing")
 
 payload = json.loads(raw)
-# `claude --output-format json` wraps the structured answer; codex -o does not.
-if isinstance(payload, dict) and "result" in payload and "verdict" not in payload:
-    model = payload.get("modelUsage") or {}
-    reported = next(iter(model), None) or payload.get("model")
-    result = payload["result"]
-    if isinstance(result, str):
-        result = json.loads(result)
+
+# codex -o writes the bare answer. `claude --output-format json` emits the
+# whole event stream -- an ARRAY whose final result event carries the answer.
+if isinstance(payload, list):
+    payload = next(
+        (e for e in reversed(payload)
+         if isinstance(e, dict) and e.get("type") == "result"),
+        None,
+    )
+    if payload is None:
+        sys.exit("peer-review: peer emitted no result event")
+
+if isinstance(payload, dict) and "verdict" not in payload:
+    if payload.get("is_error"):
+        sys.exit(f"peer-review: peer reported an error: {payload.get('result')}")
+    reported = next(iter(payload.get("modelUsage") or {}), None)
+    # structured_output is the schema-validated object; `result` is its string.
+    result = payload.get("structured_output")
+    if result is None:
+        result = payload.get("result")
+        if isinstance(result, str):
+            result = json.loads(result)
 else:
     reported, result = None, payload
 
