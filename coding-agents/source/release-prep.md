@@ -83,11 +83,11 @@ finish-or-slip before the cut.
 ### 4. Classify both deltas
 
 Over promoted→candidate, per the doc's method: migrations, env-var wiring,
-provider-scoped inertness, cross-repo pairing of co-developed features. Note
-new feature flags and their defaults (fail-closed surfaces stay dark until
-provisioned), and rollback tolerance: data the new version moves or backfills
-that the previous image cannot read makes rolling back the *next* deploy
-lossy — say so.
+provider-scoped inertness, cross-repo pairing, feature flags, API surface,
+rollback tolerance. Cut-specific scoping: name which environments each affected
+flag is provisioned in, so a gap is visible before the cut rather than at
+deploy time. The rollback note is handed forward to the card, not acted on
+here — it binds on the deploy that ships this release.
 
 ### 5. Publish-path health
 
