@@ -28,7 +28,11 @@ fi
 {% else %}
 SELECTED=$TARGET
 {% endif %}
-$M1DDC $DISPLAY_ARG set input "$SELECTED"
+# Deliberately not gated on m1ddc's exit status: the switch tears down the very
+# USB-C DDC link the command rides on, so m1ddc can report failure for a switch
+# that physically happened. Under `set -e` that aborted the script before the
+# sleep below — silently, since nothing here is on a terminal.
+$M1DDC $DISPLAY_ARG set input "$SELECTED" || true
 
 if [ "${1:-}" = "sleep" ]; then
   /usr/bin/pmset sleepnow
