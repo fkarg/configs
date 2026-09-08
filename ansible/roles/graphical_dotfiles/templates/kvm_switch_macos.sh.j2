@@ -35,5 +35,12 @@ SELECTED=$TARGET
 $M1DDC $DISPLAY_ARG set input "$SELECTED" || true
 
 if [ "${1:-}" = "sleep" ]; then
+  # Let the hand-over settle first. The monitor releasing its USB hub fires a
+  # USB-C plug event on this host (visible in `pmset -g log` as wake reason
+  # USB-C_plug), and that cancels a sleep requested in the same moment.
+  # Karabiner forcibly terminates a running shell_command when the next one is
+  # invoked, so this window is interruptible -- harmless, because by then the
+  # keyboard has already followed the monitor to the other host.
+  sleep 2
   /usr/bin/pmset sleepnow
 fi
