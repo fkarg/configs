@@ -153,6 +153,7 @@ peer_failed() {
     exit 1
 }
 
+peer_status=0
 if [ "$peer_cli" = "codex" ]; then
     # codex --output-schema takes a FILE.
     set -- exec --sandbox read-only --ephemeral \
@@ -175,17 +176,24 @@ else
     # --strict-mcp-config keeps unrelated session MCP servers out of a
     # one-shot call; the peer reviews, so it must not edit.
     { printf '%s\n' "$prompt"; cat "$material_file"; } >"$combined_file"
-    set -- -p --json-schema "$(cat "$schema_file")" --output-format json \
+    # Keep peer availability independent of the interactive model's quota.
+    set -- -p --model "${peer_model:-claude-opus-5}" \
+        --json-schema "$(cat "$schema_file")" --output-format json \
         --strict-mcp-config
     [ -n "$workdir" ] && set -- "$@" --add-dir "$workdir"
-    [ -n "$peer_model" ] && set -- "$@" --model "$peer_model"
     set -- "$@" --disallowed-tools "Edit" "Write" "NotebookEdit"
     claude "$@" <"$combined_file" >"$result_file" 2>"$err_file" ||
-        peer_failed "claude -p failed"
+        peer_status=$?
+    # Claude reports API errors as JSON on stdout, often with empty stderr.
+    # Keep parsing that result even when the process exits nonzero.
+    if [ "$peer_status" -ne 0 ]; then
+        printf 'peer-review: claude -p failed (exit %s)\n' "$peer_status" >&2
+        tail -n 20 "$err_file" >&2
+    fi
 fi
 
 PEER_CLI="$peer_cli" PEER_FAMILY="$from_family" PEER_MODEL="$peer_model" \
-PEER_DETECTED="$detected" \
+PEER_DETECTED="$detected" PEER_STATUS="$peer_status" \
     python3 - "$result_file" <<'PY'
 import json, os, sys
 
@@ -208,7 +216,11 @@ if isinstance(payload, list):
 
 if isinstance(payload, dict) and "verdict" not in payload:
     if payload.get("is_error"):
-        sys.exit(f"peer-review: peer reported an error: {payload.get('result')}")
+        details = payload.get("errors") or [payload.get("result") or "no error details"]
+        sys.exit(
+            f"peer-review: peer reported an error ({payload.get('subtype', 'unknown')}): "
+            + "; ".join(details)
+        )
     reported = next(iter(payload.get("modelUsage") or {}), None)
     # structured_output is the schema-validated object; `result` is its string.
     result = payload.get("structured_output")
@@ -218,6 +230,9 @@ if isinstance(payload, dict) and "verdict" not in payload:
             result = json.loads(result)
 else:
     reported, result = None, payload
+
+if os.environ["PEER_STATUS"] != "0":
+    sys.exit("peer-review: peer exited unsuccessfully; discarding its result")
 
 caller, detected = os.environ["PEER_FAMILY"], os.environ["PEER_DETECTED"]
 out = {

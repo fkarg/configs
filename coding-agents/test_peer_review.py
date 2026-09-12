@@ -78,7 +78,8 @@ class PeerReviewTests(unittest.TestCase):
         self.assertTrue(os.access(LAUNCHER, os.X_OK))
 
     def run_launcher(
-        self, args: list[str], env_overrides: dict[str, str]
+        self, args: list[str], env_overrides: dict[str, str],
+        *, claude_stub: str = CLAUDE_STUB,
     ) -> tuple[subprocess.CompletedProcess[str], list[str], Path]:
         with tempfile.TemporaryDirectory() as tmp:
             tmpdir = Path(tmp)
@@ -87,7 +88,7 @@ class PeerReviewTests(unittest.TestCase):
             record = tmpdir / "record"
 
             write_executable(bin_dir / "codex", CODEX_STUB)
-            write_executable(bin_dir / "claude", CLAUDE_STUB)
+            write_executable(bin_dir / "claude", claude_stub)
 
             # Prepend the stubs to the real PATH: this host is NixOS, so
             # /usr/bin carries no coreutils and a synthetic PATH loses grep.
@@ -215,6 +216,60 @@ class PeerReviewTests(unittest.TestCase):
         self.assertNotEqual(schema_arg[:1], "/", "schema passed as a path")
         self.assertEqual(schema_arg.strip(), "{")
         self.assertIn("attempted_falsifications", "\n".join(lines))
+
+    def test_claude_peer_defaults_to_opus_5(self) -> None:
+        _, lines, _ = self.run_launcher(["--from", "gpt", "brief"], {})
+        self.assertIn("--model", lines)
+        self.assertEqual(lines[lines.index("--model") + 1], "claude-opus-5")
+
+    def test_claude_peer_model_override_is_preserved(self) -> None:
+        _, lines, _ = self.run_launcher(
+            ["--from", "gpt", "--model", "claude-sonnet-5", "brief"], {}
+        )
+        self.assertEqual(lines.count("--model"), 1)
+        self.assertEqual(lines[lines.index("--model") + 1], "claude-sonnet-5")
+
+    def test_claude_stdout_error_is_surfaced_on_nonzero_exit(self) -> None:
+        """Real quota failures exit 1 with JSON on stdout and empty stderr.
+
+        Previously the launcher deleted that JSON before parsing it, leaving
+        only 'claude -p failed' and an empty stderr heading.
+        """
+        event = {
+            "type": "result", "subtype": "success", "is_error": True,
+            "api_error_status": 429, "result": "Synthetic model quota exhausted",
+        }
+        for payload in (event, [{"type": "system"}, event]):
+            with self.subTest(event_array=isinstance(payload, list)):
+                proc, _, _ = self.run_launcher(
+                    ["--from", "gpt", "brief"], {},
+                    claude_stub=f"printf '%s' '{json.dumps(payload)}'\nexit 1\n",
+                )
+                self.assertEqual(proc.returncode, 1)
+                self.assertEqual(proc.stdout, "")
+                self.assertIn("Synthetic model quota exhausted", proc.stderr)
+
+    def test_claude_structured_error_details_are_surfaced(self) -> None:
+        event = {
+            "type": "result", "is_error": True,
+            "subtype": "error_max_structured_output_retries",
+            "errors": ["Synthetic schema validation failure"],
+        }
+        proc, _, _ = self.run_launcher(
+            ["--from", "gpt", "brief"], {},
+            claude_stub=f"printf '%s' '{json.dumps(event)}'\nexit 1\n",
+        )
+        self.assertEqual(proc.returncode, 1)
+        self.assertIn("error_max_structured_output_retries", proc.stderr)
+        self.assertIn("Synthetic schema validation failure", proc.stderr)
+
+    def test_claude_nonzero_exit_cannot_be_reported_as_success(self) -> None:
+        proc, _, _ = self.run_launcher(
+            ["--from", "gpt", "brief"], {},
+            claude_stub=CLAUDE_STUB + "\nexit 1\n",
+        )
+        self.assertEqual(proc.returncode, 1)
+        self.assertEqual(proc.stdout, "")
 
     def test_claude_event_array_is_unwrapped(self) -> None:
         """claude --output-format json returns events, not one object."""
