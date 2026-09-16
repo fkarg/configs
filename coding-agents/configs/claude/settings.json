@@ -5,6 +5,7 @@
   },
   "permissions": {
     "allow": [
+      "WebFetch",
       "Bash(uv run python:*)",
       "Bash(uv run pyrefly:*)",
       "Bash(git log:*)",
