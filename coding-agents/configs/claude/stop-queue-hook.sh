@@ -45,6 +45,13 @@ tail -n +2 "$queue" > "$queue.tmp" 2>/dev/null && mv "$queue.tmp" "$queue"
 # Skip blank lines: let Claude stop, drain the rest on the next turn-end.
 [ -n "$next" ] || exit 0
 
+# Adrafinil's Stop release runs before this hook. Re-acquire only when we block
+# that stop, so its assertion spans the queued follow-up until its real Stop.
+adrafinil=/Applications/Adrafinil.app/Contents/Helpers/adrafinil
+if [ -x "$adrafinil" ]; then
+  printf '%s' "$input" | "$adrafinil" acquire --tool claude-code >/dev/null 2>&1 || true
+fi
+
 # Claude Code delivers `reason` framed as generic "Stop hook feedback", which
 # reads like a system/tooling nag. Prepend a preamble so the model treats the
 # line as what it is: a follow-up the user deliberately queued, equivalent to a
