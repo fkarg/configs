@@ -31,14 +31,25 @@
 # render from whatever the cache already held. A render therefore never waits on
 # the network, and a failed fetch just leaves the previous body in place until
 # the next expiry. Undocumented endpoint: treat its absence as normal.
+# (The statusline payload will not grow these: its documented rate_limits are
+# five_hour / seven_day / spend_limit only.)
 USAGE_CACHE="$HOME/.claude/statusline-usage.json"
 USAGE_TTL_MIN=3
 
+# Where the OAuth blob lives is platform-dependent: a file on Linux, the login
+# Keychain (service "Claude Code-credentials") on macOS. Emits the JSON on
+# stdout so it can be piped straight into jq — the token never lands in a
+# variable of ours beyond the one curl consumes.
+read_creds() {
+  local f="$HOME/.claude/.credentials.json"
+  if [ -r "$f" ]; then cat "$f"; return; fi
+  command -v security >/dev/null 2>&1 || return 1
+  security find-generic-password -s "Claude Code-credentials" -w 2>/dev/null
+}
+
 if [ "${1-}" = "--refresh-usage" ]; then
-  cred="$HOME/.claude/.credentials.json"
-  [ -r "$cred" ] || exit 0
   IFS=$'\t' read -r tok exp < <(
-    jq -r '[.claudeAiOauth.accessToken // "", .claudeAiOauth.expiresAt // 0] | @tsv' "$cred" 2>/dev/null
+    read_creds | jq -r '[.claudeAiOauth.accessToken // "", .claudeAiOauth.expiresAt // 0] | @tsv' 2>/dev/null
   )
   # Claude Code owns the token lifecycle — never refresh it here (racing its
   # rotation can burn the refresh token). Just sit out an expired window.
