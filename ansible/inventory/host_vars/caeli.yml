@@ -112,7 +112,6 @@ brew_packages_common:
   - tokei
   # programming languages & runtimes
   - ghc
-  - llvm
   - node@24
   - oven-sh/bun/bun
   - pnpm
@@ -174,7 +173,6 @@ brew_casks_common:
   - adrafinil
   - amethyst
   - caffeine
-  - hammerspoon
   - karabiner-elements
   # openlogi: local-first Logi Options+ replacement (HID++ devices).
   - openlogi
@@ -204,7 +202,6 @@ brew_casks_common:
   - proton-pass
   - protonvpn
   # microsoft office
-  - microsoft-auto-update
   - microsoft-excel
   - microsoft-outlook
   - microsoft-powerpoint
@@ -221,7 +218,6 @@ brew_casks_common:
   - comfy
   - copilot-cli
   - ollama-app
-  - t3-code
   # containers & virtualization
   - docker-desktop
   - utm
