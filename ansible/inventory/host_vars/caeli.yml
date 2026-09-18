@@ -19,6 +19,7 @@ cowfile: llama
 direnv: true
 zoxide: true
 claudex_enabled: true
+adrafinil_enabled: true
 
 # Monitor KVM (Philips 49B2U5900CH): Ctrl+Shift+F12 sends a DDC input-switch
 # from this host to the *other* machine on the shared monitor. Ctrl+Shift+F11
@@ -111,6 +112,7 @@ brew_packages_common:
   - tokei
   # programming languages & runtimes
   - ghc
+  - llvm
   - node@24
   - oven-sh/bun/bun
   - pnpm
@@ -169,8 +171,10 @@ brew_packages_extra: []
 
 brew_casks_common:
   # window management & system tweaks
+  - adrafinil
   - amethyst
   - caffeine
+  - hammerspoon
   - karabiner-elements
   # openlogi: local-first Logi Options+ replacement (HID++ devices).
   - openlogi
@@ -200,11 +204,13 @@ brew_casks_common:
   - proton-pass
   - protonvpn
   # microsoft office
+  - microsoft-auto-update
   - microsoft-excel
   - microsoft-outlook
   - microsoft-powerpoint
   - microsoft-word
   # productivity & documents
+  - anki
   - libreoffice
   - mark-text
   - obsidian
@@ -212,9 +218,10 @@ brew_casks_common:
   # AI / coding agents
   - claude-code@latest
   - codex
-  - comfyui
+  - comfy
   - copilot-cli
   - ollama-app
+  - t3-code
   # containers & virtualization
   - docker-desktop
   - utm

@@ -1,6 +1,9 @@
 ---
 coding_agents_source_dir: "{{ repo_root }}/coding-agents"
 
+adrafinil_enabled: false
+adrafinil_command: "{{ home_dir }}/.local/bin/adrafinil"
+
 claudex_enabled: false
 ca_claudex_version: "7.2.143"
 ca_claudex_releases:

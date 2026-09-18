@@ -76,7 +76,7 @@ Each tool's global config splits into two layers:
 
 | Tool     | Tracked (curated)        | Synced to                          | Mechanism               | Local-only (untracked)                            |
 | -------- | ------------------------ | ---------------------------------- | ----------------------- | ------------------------------------------------- |
-| Claude   | `claude/settings.json`   | `~/.claude/settings.json`          | symlink                 | `~/.claude/settings.local.json`                   |
+| Claude   | `claude/settings.json`   | `~/.claude/settings.json`          | merge                   | installer-owned hooks and local settings           |
 | OpenCode | `opencode/opencode.json`, `opencode/tui.json`, `opencode/plugins/` | `~/.config/opencode/` | symlink | env-var secrets |
 | Copilot  | `copilot/settings.json`  | `~/.copilot/settings.json`         | symlink                 | `~/.copilot/config.json` (trustedFolders, login)  |
 | Codex    | `codex/shared.toml`, `codex/rules/` | `~/.codex/config.toml`, `~/.codex/rules/` | merge + directory symlink | the rest of `~/.codex/config.toml` |

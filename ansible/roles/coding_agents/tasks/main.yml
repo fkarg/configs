@@ -109,7 +109,6 @@
     state: link
     force: true
   loop:
-    - { src: "claude/settings.json",         dest: "~/.claude/settings.json" }
     - { src: "claude/statusline-command.sh", dest: "~/.claude/statusline-command.sh" }
     - { src: "claude/agents-md-hook.sh",     dest: "~/.claude/agents-md-hook.sh" }
     - { src: "claude/agents-md-diff-hook.sh", dest: "~/.claude/agents-md-diff-hook.sh" }
@@ -136,6 +135,36 @@
     - { src: "shared/AGENTS.md",             dest: "~/.config/opencode/AGENTS.md" }
   loop_control:
     label: "{{ item.dest }}"
+
+# Claude settings mix shared preferences with local installer state. Keep the
+# curated source authoritative without letting an installer edit it through a
+# symlink. Adrafinil's marked hooks remain only on hosts where it is enabled.
+- name: Stat legacy Claude settings symlink
+  stat:
+    path: "~/.claude/settings.json"
+  register: ca_claude_settings
+
+- name: Remove legacy Claude settings symlink
+  file:
+    path: "~/.claude/settings.json"
+    state: absent
+  when: ca_claude_settings.stat.islnk | default(false)
+
+- name: Merge curated Claude settings into the local Claude config
+  command:
+    cmd: >-
+      {{ ansible_facts['python']['executable'] }} merge_claude_settings.py
+      {% if adrafinil_enabled | bool %}--preserve-adrafinil-hooks{% endif %}
+  args:
+    chdir: "{{ coding_agents_source_dir }}"
+  register: ca_claude_merge
+  changed_when: ca_claude_merge.stdout.startswith('changed:')
+
+- name: Install Adrafinil's recognised Claude hooks
+  command:
+    cmd: "{{ adrafinil_command }} install-hooks --tool claude-code"
+  when: adrafinil_enabled | bool
+  changed_when: false
 
 - name: Check whether Claude Code is installed
   command: /bin/sh -c 'command -v claude'

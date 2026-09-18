@@ -47,8 +47,7 @@ tail -n +2 "$queue" > "$queue.tmp" 2>/dev/null && mv "$queue.tmp" "$queue"
 
 # Adrafinil's Stop release runs before this hook. Re-acquire only when we block
 # that stop, so its assertion spans the queued follow-up until its real Stop.
-adrafinil=/Applications/Adrafinil.app/Contents/Helpers/adrafinil
-if [ -x "$adrafinil" ]; then
+if adrafinil="$(command -v adrafinil 2>/dev/null)"; then
   printf '%s' "$input" | "$adrafinil" acquire --tool claude-code >/dev/null 2>&1 || true
 fi
 
