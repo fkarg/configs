@@ -197,8 +197,16 @@ class PeerReviewTests(unittest.TestCase):
         # rather than its contents, which the end-to-end result already proves.
         self.assertTrue(schema_path)
 
+    def test_codex_peer_defaults_to_gpt_6_sol(self) -> None:
+        proc, lines, _ = self.run_launcher(["--from", "claude", "brief"], {})
+        self.assertIn("-m", lines)
+        self.assertEqual(lines[lines.index("-m") + 1], "gpt-6-sol")
+        self.assertEqual(json.loads(proc.stdout)["peer_model"], "gpt-6-sol")
+
     def test_result_reports_which_model_answered(self) -> None:
-        proc, _, _ = self.run_launcher(["--model", "gpt-5.6-sol", "brief"], {})
+        proc, lines, _ = self.run_launcher(["--model", "gpt-5.6-sol", "brief"], {})
+        self.assertEqual(lines.count("-m"), 1)
+        self.assertEqual(lines[lines.index("-m") + 1], "gpt-5.6-sol")
         self.assertEqual(json.loads(proc.stdout)["peer_model"], "gpt-5.6-sol")
 
     def test_falsification_field_survives_to_the_caller(self) -> None:
