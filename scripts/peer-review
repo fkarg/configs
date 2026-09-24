@@ -177,7 +177,7 @@ else
     # one-shot call; the peer reviews, so it must not edit.
     { printf '%s\n' "$prompt"; cat "$material_file"; } >"$combined_file"
     # Keep peer availability independent of the interactive model's quota.
-    set -- -p --model "${peer_model:-claude-opus-5}" \
+    set -- -p --model "${peer_model:-claude-opus-5-5}" \
         --json-schema "$(cat "$schema_file")" --output-format json \
         --strict-mcp-config
     [ -n "$workdir" ] && set -- "$@" --add-dir "$workdir"

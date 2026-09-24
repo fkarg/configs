@@ -217,10 +217,10 @@ class PeerReviewTests(unittest.TestCase):
         self.assertEqual(schema_arg.strip(), "{")
         self.assertIn("attempted_falsifications", "\n".join(lines))
 
-    def test_claude_peer_defaults_to_opus_5(self) -> None:
+    def test_claude_peer_defaults_to_opus_5_5(self) -> None:
         _, lines, _ = self.run_launcher(["--from", "gpt", "brief"], {})
         self.assertIn("--model", lines)
-        self.assertEqual(lines[lines.index("--model") + 1], "claude-opus-5")
+        self.assertEqual(lines[lines.index("--model") + 1], "claude-opus-5-5")
 
     def test_claude_peer_model_override_is_preserved(self) -> None:
         _, lines, _ = self.run_launcher(
