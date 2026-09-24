@@ -66,6 +66,7 @@ allow_local_binding = true
 "proxy.golang.org" = "allow"
 "pypi.org" = "allow"
 "raw.githubusercontent.com" = "allow"
+"release-assets.githubusercontent.com" = "allow"
 "registry-1.docker.io" = "allow"
 "registry.npmjs.org" = "allow"
 "releases.hashicorp.com" = "allow"
