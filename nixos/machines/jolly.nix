@@ -56,6 +56,7 @@
   # longer has an out-of-tree wifi module to fall back *to*: 6.18 predates in-tree
   # MT7927, so booting it means no wifi (ethernet only) until you switch back.
   boot.kernelPackages = pkgs.linuxPackages_latest;
+  boot.extraModulePackages = [ config.boot.kernelPackages.hid-tmff2 ];
   boot.kernelParams = [
     # "fsck.mode=force"
     # "fsck.repair=yes"
@@ -250,6 +251,10 @@
   hardware.logitech.wireless.enable = true;
   hardware.logitech.wireless.enableGraphical = true;
 
+  # T300RS force feedback and wheel settings. The bundled hid-tminit handles
+  # initialization before hid-tmff-new binds the operational wheel.
+  services.udev.packages = [ pkgs.oversteer ];
+
   specialisation.manual-unlock.configuration = {
     boot.loader.grub.configurationName = "Manual unlock";
     boot.initrd.systemd.services.copy-luks-keyfile = {
@@ -418,9 +423,10 @@
   # enabled outputs"). That cross-GPU dmabuf path (EGL_BAD_MATCH on import) left
   # individual workspaces stuck at a degraded framebuffer resolution and made
   # newly-spawned windows flash-and-vanish. One GPU = none of that.
-  boot.blacklistedKernelModules = [ "nouveau" "amdgpu" ];
+  boot.blacklistedKernelModules = [ "nouveau" "amdgpu" "hid-thrustmaster" ];
 
   environment.systemPackages = with pkgs; [
+    oversteer
     pciutils
     usbutils
     mesa-demos
