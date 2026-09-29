@@ -15,6 +15,7 @@
 # (e.g. the old model pin) without leaving stale values on other hosts.
 unmanage = ["model", "model_reasoning_effort"]
 personality = "pragmatic"
+web_search = "live"
 approval_policy = "on-request"
 approvals_reviewer = "auto_review"
 sandbox_mode = "workspace-write"
