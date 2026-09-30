@@ -8,6 +8,15 @@
   # paths pulled into this desktop configuration.
   nixpkgs.overlays = [
     (final: prev: {
+      # Mosh's bundled standard-selection macro forces C++17, but the current
+      # Protobuf/Abseil headers require C++20. Keep the default CXXFLAGS intact.
+      mosh = prev.mosh.overrideAttrs (old: {
+        postPatch = old.postPatch + ''
+          substituteInPlace configure.ac \
+            --replace-fail 'AX_CXX_COMPILE_STDCXX([17])' 'CXX="$CXX -std=gnu++20"'
+        '';
+      });
+
       vscode = prev.vscode.overrideAttrs (old: {
         nativeBuildInputs = (old.nativeBuildInputs or [ ]) ++ [ final.jq.bin ];
       });
