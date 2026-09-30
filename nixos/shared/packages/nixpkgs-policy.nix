@@ -34,6 +34,22 @@
           old.postInstall;
       });
 
+      # Zotero 10.0.2 targets ESR140, but nixpkgs supplies ESR153. Backport the
+      # upstream compatibility changes until nixpkgs updates Zotero itself.
+      zotero = (prev.zotero.override {
+        # The reader is built separately inside Zotero's package expression.
+        buildNpmPackage = args: prev.buildNpmPackage (
+          if builtins.isAttrs args && args.pname == "zotero-pdf-reader" then
+            args // { patches = args.patches ++ [ ./patches/zotero-reader-esr153.patch ]; }
+          else args
+        );
+      }).overrideAttrs (old: {
+        patches = old.patches ++ [
+          ./patches/zotero-esr153.patch
+          ./patches/zotero-storage-init.patch
+        ];
+      });
+
       vscode = prev.vscode.overrideAttrs (old: {
         nativeBuildInputs = (old.nativeBuildInputs or [ ]) ++ [ final.jq.bin ];
       });

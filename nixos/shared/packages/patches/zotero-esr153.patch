@@ -1,0 +1,2914 @@
+Zotero 10.0.2 compatibility with Firefox ESR153.
+
+Backported from the following upstream commits, in order:
+https://github.com/zotero/zotero/commit/242bbccda5669638169b5baa18c154d1f50f4bed
+https://github.com/zotero/zotero/commit/408179ad090205d69acebe611dd7f44530ce6477 fx153: Anchor the actor-removal patterns in ActorManagerParent
+https://github.com/zotero/zotero/commit/06848ce17f269e96c8249287971a30293f9f7742 fx153: Update about:addons patches for the ES module split
+https://github.com/zotero/zotero/commit/d701c43862b6375e2b16812152b40e09fa8b637d fx153: Restore autocomplete popup sizing from the anchor element
+https://github.com/zotero/zotero/commit/c192127ab13e253a580af59651fd3b799c51d727 fx153: Take over <search-textbox>, removed from Firefox
+https://github.com/zotero/zotero/commit/b7232f130f0e87877bd2cc7e80b3574103a2a7bf fx153: Don't remove the Pocket actor, removed from Firefox
+https://github.com/zotero/zotero/commit/14b43c9559a76600c15cfce2b4536f1f3e8ee98c fx153: Disable Firefox's baseline CSP for chrome: documents
+https://github.com/zotero/zotero/commit/1c005c7e2147db19ebb578d2799d1a5903f59e39 fx153: Re-enable chrome: DTD loading
+https://github.com/zotero/zotero/commit/3bb3b4f2c9ff8da62b8681360e6921bf9eb9f057 fx153: Move off the removed synchronous nsILoginManager methods
+https://github.com/zotero/zotero/commit/5ea624338440a7a5f1994b4c2f96a1fb8fb97248 fx153: ownerGlobal -> documentGlobal
+https://github.com/zotero/zotero/commit/bca6537e6def3e8bf42758e7b3daf3f3d50c80aa fx153: Allow eval() in the parent process
+https://github.com/zotero/zotero/commit/eac3838f00094c7cff050aecaf09f936a2c8f582 fx153: Use ChromeUtils.predictRemoteTypeForURI() in HiddenBrowser
+https://github.com/zotero/zotero/commit/bcd8ad20ec1a484d715a2e447eed6b0ca779d276 fx153: Use command events for checkbox changes
+https://github.com/zotero/zotero/commit/f245f5c2b26dbf5c313073e4c9a3040b5a2cf807 fx153: Set XUL checked/disabled as boolean attributes
+https://github.com/zotero/zotero/commit/567cc2d43abe04815a40a32f592d5dedab4be64e fx153: Set XUL hidden/collapsed as boolean attributes
+https://github.com/zotero/zotero/commit/6fbe5e4135eb836c36ee18daa5fcf5ac8ac5e0c2 fx153: Match XUL boolean attributes in selectors without a value
+https://github.com/zotero/zotero/commit/a32dd2b95928183491c29da0c755a06820e75271 fx153: Don't freeze built-ins in the translation sandbox
+https://github.com/zotero/zotero/commit/01b7d0667ce2af87d5781a02021b7b28a4b1d01c fx153: Move to nsIPKCS11Token for the NSS key database
+https://github.com/zotero/zotero/commit/45e38322e17fef6b2b977aff17641aaaf8c3eb63 fx153: Keep backup-constants.mjs
+https://github.com/zotero/zotero/commit/78d21617af252d79daac8e4baa4930be1895eb1b fx153: Hide the about:addons sidebar
+https://github.com/zotero/zotero/commit/503bb03aec5cf663c327cc3e049834bced6da243 fx153: Hide the native clear button in search fields
+https://github.com/zotero/zotero/commit/030cd3dc5e758a73f2591460f62dd3b4e6511ad7 fx153: Drop the hover background on native search clear buttons
+https://github.com/zotero/zotero/commit/35a70117b00729f41b5647a1634185c93e8dfda3 fx153: Restore the toolbarbutton dropmarker
+https://github.com/zotero/zotero/commit/b5ceb6fa650c91c7059fe69ecd32117044182725 fx153: Don't assign oncommand attribute strings to .oncommand
+https://github.com/zotero/zotero/commit/300305a9fb89b237d2f7bd6057a70fb4b32bedb7 fx153: Set menu icons via --menuitem-icon for in-content menus
+https://github.com/zotero/zotero/commit/adc5648d296479911c69384d74ac6fcbb4f640d8 fx153: Restore pass-through clicks on toolbarbutton dropmarkers
+https://github.com/zotero/zotero/commit/aaeb9c6c9a021b110d1cd009ab9581a369b3471c fx153: Don't bundle unused Firefox runtime files
+https://github.com/zotero/zotero/commit/09249bfb7307b181b6eb0eaa12c0a90f53f289dc fx153: Interface should load with nsIID instead of string (#6008)
+https://github.com/zotero/zotero/commit/f53d4b5eca8ecb24be622212f0880a69da245ead fx153: Fix update window getting stuck on "Looking for changes"
+
+Adaptations for the 10.0.2 release branch:
+- Preserve its credential fallback flow while awaiting the ESR153 login APIs.
+- Adapt the HiddenBrowser hunk to the existing comment/context.
+- Keep macOS/Windows runtime packaging and WebGPU defaults unchanged; set Linux Gecko to 153.3.0esr.
+- Require Gecko 153 in application.ini.
+- Add a saved-snapshot rendering regression test for the reader iframe migration.
+
+diff --git a/app/assets/application.ini b/app/assets/application.ini
+--- a/app/assets/application.ini
++++ b/app/assets/application.ini
+@@ -7,8 +7,8 @@
+ ID=zotero@zotero.org
+ 
+ [Gecko]
+-MinVersion=140.0
+-MaxVersion=140.99.*
++MinVersion=153.0
++MaxVersion=153.99.*
+ 
+ [XRE]
+ EnableExtensionManager=1
+diff --git a/app/build.sh b/app/build.sh
+--- a/app/build.sh
++++ b/app/build.sh
+@@ -312,7 +312,6 @@
+ rm actors/AboutLogins{Parent,Child}.sys.mjs
+ rm actors/AboutMessagePreview{Parent,Child}.sys.mjs
+ rm actors/AboutNewTab{Parent,Child}.sys.mjs
+-rm actors/AboutPocket{Parent,Child}.sys.mjs
+ rm actors/AboutPrivateBrowsing{Parent,Child}.sys.mjs
+ rm actors/AboutProtections{Parent,Child}.sys.mjs
+ rm actors/AboutReader{Parent,Child}.sys.mjs
+@@ -351,6 +350,9 @@
+ 	content/browser/parent/ext-browser.js
+ 	# For spellchecking
+ 	content/browser/built_in_addons.json
++	# Statically imported by BackupService, which SelectableProfileService pulls in when it's
++	# instantiated as a command-line handler at startup
++	content/browser/backup/backup-constants.mjs
+ )
+ if [ $BUILD_WIN == 1 ]; then
+ 	# Windows window controls
+@@ -1125,7 +1127,7 @@
+ 		mkdir "$APPDIR"
+ 		
+ 		# Merge relevant assets from Firefox
+-		cp -r "$runtime_path/"!(application.ini|browser|defaults|devtools-files|crashreporter|crashreporter.ini|firefox|pingsender|precomplete|removed-files|run-mozilla.sh|update-settings.ini|updater|updater.ini) "$APPDIR"
++		cp -r "$runtime_path/"!(application.ini|browser|crashhelper|crashreporter|crashreporter.ini|defaults|devtools-files|firefox|pingsender|precomplete|removed-files|run-mozilla.sh|update-settings.ini|updater|updater.ini) "$APPDIR"
+ 		
+ 		# Use our own launcher that calls the original Firefox executable with -app
+ 		mv "$APPDIR"/firefox-bin "$APPDIR"/zotero-bin
+diff --git a/app/config.sh b/app/config.sh
+--- a/app/config.sh
++++ b/app/config.sh
+@@ -2,7 +2,7 @@
+ 
+ # Version of Gecko to build with
+ GECKO_VERSION_MAC="140.15.0esr"
+-GECKO_VERSION_LINUX="140.15.0esr"
++GECKO_VERSION_LINUX="153.3.0esr"
+ GECKO_VERSION_WIN="140.15.0esr"
+ RUST_VERSION=1.86.0
+ 
+diff --git a/app/scripts/fetch_xulrunner b/app/scripts/fetch_xulrunner
+--- a/app/scripts/fetch_xulrunner
++++ b/app/scripts/fetch_xulrunner
+@@ -192,15 +192,17 @@
+ 	
+ 	file="modules/ActorManagerParent.sys.mjs"
+ 	# Remove deleted actors
+-	remove_between 'AboutTranslations: \{' '^  },' $file
+-	remove_between 'CookieBanner: \{' '^  },' $file
+-	remove_between 'PictureInPictureLauncher: \{' '^  },' $file
+-	remove_between 'PictureInPictureToggle: \{' '^  },' $file
+-	remove_between 'PictureInPicture: \{' '^  },' $file
+-	remove_between 'Thumbnails: \{' '^  },' $file
+-	remove_between 'Translations: \{' '^  },' $file
+-	remove_between 'TranslationsEngine: \{' '^  },' $file
+-	remove_between 'AudioPlayback: \{' '^  },' $file
++	# Entries in the JSWINDOWACTORS/JSPROCESSACTORS literals:
++	remove_between '^  AudioPlayback: \{' '^  },' $file
++	remove_between '^  CookieBanner: \{' '^  },' $file
++	remove_between '^  Thumbnails: \{' '^  },' $file
++	remove_between '^  Translations: \{' '^  },' $file
++	remove_between '^  TranslationsEngine: \{' '^  },' $file
++	# Entries added conditionally after the literals:
++	remove_between '^  JSWINDOWACTORS\.AboutTranslations = \{' '^  \};' $file
++	remove_between '^  JSWINDOWACTORS\.PictureInPictureLauncher = \{' '^  \};' $file
++	remove_between '^  JSWINDOWACTORS\.PictureInPictureToggle = \{' '^  \};' $file
++	remove_between '^  JSWINDOWACTORS\.PictureInPicture = \{' '^  \};' $file
+ 	# Do not trigger LoginManager event that logs an error on autocomplete submission
+ 	remove_line 'DOMInputPasswordAdded: \{\},' $file
+ 	
+@@ -384,8 +386,12 @@
+ 	
+ 	file="chrome/toolkit/content/mozapps/extensions/aboutaddons.css"
+ 	echo >> $file
+-	# Hide search bar, Themes and Plugins tabs, and sidebar footer
+-	echo '.main-search, button[name="theme"], button[name="plugin"], sidebar-footer { display: none; }' >> $file
++	# Hide the search bar and the whole sidebar, since we only ever show plugins and the main pane
++	# is already headed "Manage Your Plugins"
++	echo '.main-search, #sidebar { display: none; }' >> $file
++	# Center the content in the window now that it isn't offset by the sidebar
++	echo '#full { grid-template-columns: 1fr; }' >> $file
++	echo '#content { max-width: calc(var(--page-main-content-width) + var(--main-margin-start)); margin-inline: auto; }' >> $file
+ 	echo '.main-heading { margin-top: 2em; }' >> $file
+ 	# Hide Details/Permissions tabs in addon details so we only show details
+ 	echo 'addon-details > button-group { display: none !important; }' >> $file
+@@ -401,46 +407,46 @@
+ 	echo '.addon-detail-row-homepage .text-link { cursor: pointer; color: LinkText; }' >> $file
+ 	echo '.addon-detail-row-homepage .text-link:hover { text-decoration: underline; }' >> $file
+ 	
+-	file="chrome/toolkit/content/mozapps/extensions/aboutaddons.js"
++	file="chrome/toolkit/content/mozapps/extensions/aboutaddons-utils.mjs"
+ 	# Hide unsigned-addon warning
+-	replace_line 'if \(!isCorrectlySigned\(addon\)\) \{' 'if (!isCorrectlySigned(addon)) {return {};' $file
++	replace_line 'export function isUnsignedWarningMessageDisabled\(\) \{' \
++		'export function isUnsignedWarningMessageDisabled() {if (true) return true;' $file
++	# Use our own localized string for blocked plugin notification
++	replace_line 'details-notification-hard-blocked-\$\{typeSuffix\}' 'plugins-blocked-plugin' $file
++	# Hide Recommendations tab in sidebar and recommendations in main pane
++	replace_line 'function isDiscoverEnabled\(\) \{' 'function isDiscoverEnabled() {return false;' $file
++
++	file="chrome/toolkit/content/mozapps/extensions/components/addon-details.mjs"
+ 	# Hide Private Browsing setting in addon details
+ 	replace_line 'pbRow\.' '\/\/pbRow.' $file
+ 	replace_line 'let isAllowed = await isAllowedInPrivateBrowsing' '\/\/let isAllowed = await isAllowedInPrivateBrowsing' $file
++	# Open plugin links in external browser
++	replace_line 'let homepageURL = homepageRow.querySelector\(\"a\"\);' 'let homepageURL = homepageRow.querySelector(\"\.text-link\");' $file
++	replace_line 'homepageURL.href = addon.homepageURL;' 'homepageURL.setAttribute("href", addon.homepageURL);' $file
++	replace_line '<a target="_blank" dir="ltr"><\/a>' \
++		'<label target="_blank" class="text-link" dir="ltr"><\/label>' $file
++
++	file="chrome/toolkit/content/mozapps/extensions/components/addon-card.mjs"
+ 	# Use our own strings for the removal prompt
+-	replace_line 'let \{ BrowserAddonUI \} = windowRoot.ownerGlobal;' '' $file
++	replace_line 'let \{ BrowserAddonUI \} = windowRoot.window;' '' $file
+ 	replace_line 'await BrowserAddonUI.promptRemoveExtension' 'promptRemoveExtension' $file
+-	
++
+ 	# Customize empty-list message
+ 	replace_line 'createEmptyListMessage\(\) {' 'createEmptyListMessage() {
+         var p = document.createElement("p");
+         p.id = "empty-list-message";
+-        return p;' $file
+-	# Swap in include.js, which we need for Zotero.getString(), for abuse-reports.js, which we don't need
+-	
+-	# Open plugin links in external browser
+-	replace_line 'let homepageURL = homepageRow.querySelector\(\"a\"\);' 'let homepageURL = homepageRow.querySelector(\"\.text-link\");' $file
+-	replace_line 'homepageURL.href = addon.homepageURL;' 'homepageURL.setAttribute("href", addon.homepageURL);' $file
+-	replace_line '<a target="_blank" dir="ltr"><\/a>' \
+-		'<label target="_blank" class="text-link" dir="ltr"><\/label>' \
+-		chrome/toolkit/content/mozapps/extensions/aboutaddons.html
+-	
++        return p;' chrome/toolkit/content/mozapps/extensions/components/addon-list.mjs
++
+ 	# Add zotero.ftl to the addons page for our own localized strings
+ 	replace_line 'href="toolkit\/about\/aboutAddons.ftl"' 'href="toolkit\/about\/aboutAddons.ftl" \/>\n    <link rel="localization" href="zotero.ftl"' \
+ 		chrome/toolkit/content/mozapps/extensions/aboutaddons.html
+-	# Use our own localized string for blocked plugin notification
+-	file="chrome/toolkit/content/mozapps/extensions/aboutaddons.js"
+-	replace_line 'details-notification-hard-blocked-\$\{typeSuffix\}' 'plugins-blocked-plugin' $file
+ 
+ 	# TODO: Use our own strings, but for now fix the bundled English ones
+ 	replace_line 'Manage Your Extensions' 'Manage Your Plugins' localization/en-US/toolkit/about/aboutAddons.ftl
+-	replace_line '= Extensions' '= Plugins' localization/en-US/toolkit/about/aboutAddons.ftl
+ 	replace_line 'Add-on' 'Plugin' localization/en-US/toolkit/about/aboutAddons.ftl
+ 	replace_line 'add-ons' 'plugins' localization/en-US/toolkit/about/aboutAddons.ftl
+ 	replace_line 'Select add-on to install' 'Select plugin to install' localization/en-US/toolkit/about/aboutAddons.ftl
+ 	
+-	# Hide Recommendations tab in sidebar and recommendations in main pane
+-	replace_line 'function isDiscoverEnabled\(\) \{' 'function isDiscoverEnabled() {return false;' chrome/toolkit/content/mozapps/extensions/aboutaddonsCommon.js
+ 	replace_line 'pref\("extensions.htmlaboutaddons.recommendations.enabled".+' 'pref("extensions.htmlaboutaddons.recommendations.enabled", false);' greprefs.js
+ 	
+ 	# Hide Report option
+@@ -487,8 +493,19 @@
+        }
+        popupset.appendChild(this._autoScrollPopup);' chrome/toolkit/content/global/elements/browser-custom-element.mjs
+ 	
+-	# Remove aria-autocomplete unnecessarily added to search-textbox to not confuse screen readers
+-	remove_line 'this.inputField.setAttribute\("aria-autocomplete' chrome/toolkit/content/global/elements/search-textbox.js
++	# Add the dropmarker for toolbarbuttons with wantdropmarker, which Firefox no longer creates
++	replace_line 'this.appendChild\(this.constructor.fragment.cloneNode\(true\)\);' \
++		'this.appendChild(this.constructor.fragment.cloneNode(true));
++
++        if (this.hasAttribute("wantdropmarker")) {
++          let dropmarker = document.createXULElement("dropmarker");
++          dropmarker.setAttribute("type", "menu");
++          dropmarker.className = "toolbarbutton-menu-dropmarker";
++          this.appendChild(dropmarker);
++        }' chrome/toolkit/content/global/elements/toolbarbutton.js
++	# Let clicks on the dropmarker pass through to the toolbarbutton, which only opens its menu
++	# when it's the original event target, as xul.css did when Firefox created the dropmarker
++	echo '.toolbarbutton-menu-dropmarker { pointer-events: none; }' >> chrome/toolkit/content/global/xul.css
+ 
+ 	# Remove non-native text input styles
+ 	remove_between 'html\|input\:where\(' '^}' chrome/toolkit/skin/classic/global/global-shared.css
+@@ -502,10 +519,12 @@
+ 		overflow: var(--moz-text-control-overflow);
+ 	}' >> chrome/toolkit/res/forms.css
+ 	
+-	# By default, an autocomplete popup's width is calculated based on the input that opened it.
+-	# Allow an ancestor to designate itself as the width container instead. (For creator inputs.)
+-	replace_line 'aElement.getBoundingClientRect\(\).width' \
+-		'(aElement.closest(".autocomplete-popup-width-container") || aElement).getBoundingClientRect().width' \
++	# Size an autocomplete popup to the input that opened it, or to an ancestor that designates
++	# itself as the width container. Firefox sizes the popup to its content. (For creator inputs.)
++	replace_line '\/\/ invalidate\(\) depends on the width attribute' \
++		'let widthElement = aElement.closest(".autocomplete-popup-width-container") || aElement;
++        this.style.setProperty("--panel-width", Math.max(widthElement.getBoundingClientRect().width, 100) + "px");
++        \/\/ invalidate() depends on the width attribute' \
+ 		chrome/toolkit/content/global/elements/autocomplete-popup.js
+ 	
+ 	zip -qr9XD omni.ja *
+diff --git a/chrome/content/zotero/HiddenBrowser.mjs b/chrome/content/zotero/HiddenBrowser.mjs
+--- a/chrome/content/zotero/HiddenBrowser.mjs
++++ b/chrome/content/zotero/HiddenBrowser.mjs
+@@ -156,15 +156,11 @@
+ 		// Next bit adapted from Mozilla's HeadlessShell.jsm
+ 		try {
+ 			// Figure out whether the browser should be remote
+-			let oa = E10SUtils.predictOriginAttributes({ browser: this });
+-			let remoteType = E10SUtils.getRemoteTypeForURI(
+-				uri,
+-				true,
+-				false,
+-				E10SUtils.DEFAULT_REMOTE_TYPE,
+-				null,
+-				oa
+-			);
++			let remoteType = ChromeUtils.predictRemoteTypeForURI(uri, {
++				preferredRemoteType: E10SUtils.DEFAULT_REMOTE_TYPE,
++				useRemoteTabs: true,
++				useRemoteSubframes: false
++			});
+ 			if (this.remoteType !== remoteType) {
+ 				// The following functions need to be called on the <browser> directly,
+ 				// not through our proxy (aka 'this')
+diff --git a/chrome/content/zotero/actors/TranslationChild.mjs b/chrome/content/zotero/actors/TranslationChild.mjs
+--- a/chrome/content/zotero/actors/TranslationChild.mjs
++++ b/chrome/content/zotero/actors/TranslationChild.mjs
+@@ -209,6 +209,9 @@
+ 			sameZoneAs: this.contentWindow,
+ 			wantXrays: true,
+ 			wantGlobalProperties: ["XMLHttpRequest", "fetch", "WebSocket"],
++			// The translation framework adds Bluebird methods to Promise, which system-principal
++			// sandboxes freeze by default
++			freezeBuiltins: false,
+ 		});
+ 		
+ 		let scriptURIs = [
+diff --git a/chrome/content/zotero/components/progressQueueTable.jsx b/chrome/content/zotero/components/progressQueueTable.jsx
+--- a/chrome/content/zotero/components/progressQueueTable.jsx
++++ b/chrome/content/zotero/components/progressQueueTable.jsx
+@@ -75,10 +75,10 @@
+ 		for (let column of columns) {
+ 			if (column.dataKey === 'success') {
+ 				let span = document.createElement('span');
+-				if (!span.ownerGlobal) {
++				if (!span.documentGlobal) {
+ 					// If this script was imported from a non-window context, we'll have a global object that looks like
+ 					// a Window and document.createElement() will succeed, but the returned Element object won't have
+-					// an ownerGlobal. Trying to append a child or set its innerHTML will segfault Zotero. For now,
++					// an documentGlobal. Trying to append a child or set its innerHTML will segfault Zotero. For now,
+ 					// let's just abort if we get an invalid Element.
+ 					// TODO: Remove once we're using ES modules
+ 					return div;
+diff --git a/chrome/content/zotero/contextMenuUtils.sys.mjs b/chrome/content/zotero/contextMenuUtils.sys.mjs
+--- a/chrome/content/zotero/contextMenuUtils.sys.mjs
++++ b/chrome/content/zotero/contextMenuUtils.sys.mjs
+@@ -124,7 +124,7 @@
+  */
+ export function createContextMenuEvent(targetElement) {
+ 	let { clientX, clientY } = getContextMenuPosition(targetElement);
+-	let win = targetElement.ownerGlobal;
++	let win = targetElement.documentGlobal;
+ 	let screenX = win.mozInnerScreenX + clientX;
+ 	let screenY = win.mozInnerScreenY + clientY;
+ 	// Need to use initNSMouseEvent() to set inputSource, so just construct a
+diff --git a/chrome/content/zotero/contextPane.js b/chrome/content/zotero/contextPane.js
+--- a/chrome/content/zotero/contextPane.js
++++ b/chrome/content/zotero/contextPane.js
+@@ -53,8 +53,8 @@
+ 			return this.splitter.getAttribute('state') === 'collapsed';
+ 		},
+ 		set: (collapsed) => {
+-			_contextPane.setAttribute('collapsed', !!collapsed);
+-			_contextPaneInner.setAttribute('collapsed', !!collapsed);
++			_contextPane.toggleAttribute('collapsed', !!collapsed);
++			_contextPaneInner.toggleAttribute('collapsed', !!collapsed);
+ 			_contextPaneSplitter.setAttribute('state', collapsed ? 'collapsed' : 'open');
+ 			_contextPaneSplitterStacked.setAttribute('state', collapsed ? 'collapsed' : 'open');
+ 			this.update();
+@@ -141,7 +141,7 @@
+ 			return;
+ 		}
+ 		if (_isStacked()) {
+-			_contextPaneSplitterStacked.setAttribute('hidden', false);
++			_contextPaneSplitterStacked.removeAttribute('hidden');
+ 			_contextPaneSplitter.setAttribute('hidden', true);
+ 			_contextPane.classList.add('stacked');
+ 			_contextPane.classList.remove('standard');
+@@ -159,7 +159,7 @@
+ 			_contextPaneSplitter.setAttribute('state', this.collapsed ? 'collapsed' : 'open');
+ 		}
+ 		else {
+-			_contextPaneSplitter.setAttribute('hidden', false);
++			_contextPaneSplitter.removeAttribute('hidden');
+ 			_contextPaneSplitterStacked.setAttribute('hidden', true);
+ 			_contextPane.classList.add('standard');
+ 			_contextPane.classList.remove('stacked');
+@@ -180,12 +180,12 @@
+ 		var height = null;
+ 		if (_isStacked()) {
+ 			height = 0;
+-			if (_contextPane.getAttribute('collapsed') != 'true') {
++			if (!_contextPane.hasAttribute('collapsed')) {
+ 				height = _contextPaneInner.getBoundingClientRect().height;
+ 			}
+ 		}
+ 
+-		_contextPaneInner.setAttribute('collapsed', this.collapsed ? 'true' : 'false');
++		_contextPaneInner.toggleAttribute('collapsed', this.collapsed);
+ 
+ 		let tabContent = _getTabContent();
+ 		if (tabContent) {
+diff --git a/chrome/content/zotero/customElements.js b/chrome/content/zotero/customElements.js
+--- a/chrome/content/zotero/customElements.js
++++ b/chrome/content/zotero/customElements.js
+@@ -53,6 +53,7 @@
+ 		['notes-box', 'chrome://zotero/content/elements/notesBox.js'],
+ 		['quick-search-textbox', 'chrome://zotero/content/elements/quickSearchTextbox.js'],
+ 		['related-box', 'chrome://zotero/content/elements/relatedBox.js'],
++		['search-textbox', 'chrome://zotero/content/elements/searchTextbox.js'],
+ 		['shadow-autocomplete-input', 'chrome://zotero/content/elements/shadowAutocompleteInput.js'],
+ 		['split-menu-button', 'chrome://zotero/content/elements/splitMenuButton.js'],
+ 		['tabs-menu-panel', 'chrome://zotero/content/elements/tabsMenuPanel.js'],
+diff --git a/chrome/content/zotero/elements/attachmentBox.js b/chrome/content/zotero/elements/attachmentBox.js
+--- a/chrome/content/zotero/elements/attachmentBox.js
++++ b/chrome/content/zotero/elements/attachmentBox.js
+@@ -593,7 +593,7 @@
+ 				}
+ 				
+ 				if (show) {
+-					reindexButton.setAttribute('hidden', false);
++					reindexButton.removeAttribute('hidden');
+ 				}
+ 				else {
+ 					reindexButton.setAttribute('hidden', true);
+diff --git a/chrome/content/zotero/elements/attachmentRow.js b/chrome/content/zotero/elements/attachmentRow.js
+--- a/chrome/content/zotero/elements/attachmentRow.js
++++ b/chrome/content/zotero/elements/attachmentRow.js
+@@ -39,7 +39,7 @@
+ 					<html:span class="icon"/>
+ 					<html:span class="label"/>
+ 				</html:div>
+-				<toolbarbutton class="zotero-clicky zotero-clicky-minus" tabindex="0" data-l10n-id="section-button-remove" disabled="false">
++				<toolbarbutton class="zotero-clicky zotero-clicky-minus" tabindex="0" data-l10n-id="section-button-remove">
+ 					<image class="toolbarbutton-icon"/>
+ 					<label class="toolbarbutton-text" />
+ 				</toolbarbutton>
+diff --git a/chrome/content/zotero/elements/contextPane.js b/chrome/content/zotero/elements/contextPane.js
+--- a/chrome/content/zotero/elements/contextPane.js
++++ b/chrome/content/zotero/elements/contextPane.js
+@@ -224,9 +224,9 @@
+ 				else {
+ 					this._disableNotesContext();
+ 				}
+-				_contextPaneSplitter.setAttribute('hidden', false);
+-
+-				_contextPane.setAttribute('collapsed', !(_contextPaneSplitter.getAttribute('state') != 'collapsed'));
++				_contextPaneSplitter.removeAttribute('hidden');
++
++				_contextPane.toggleAttribute('collapsed', _contextPaneSplitter.getAttribute('state') == 'collapsed');
+ 				
+ 				this._sidenav.hidden = false;
+ 
+diff --git a/chrome/content/zotero/elements/guidancePanel.js b/chrome/content/zotero/elements/guidancePanel.js
+--- a/chrome/content/zotero/elements/guidancePanel.js
++++ b/chrome/content/zotero/elements/guidancePanel.js
+@@ -161,7 +161,7 @@
+ 				// If the anchor element is inside another frame, create a proxy
+ 				// element in the parent document at the anchor's visual location
+ 				if (forEl.ownerDocument !== document) {
+-					let iframe = forEl.ownerGlobal.frameElement;
++					let iframe = forEl.documentGlobal.frameElement;
+ 					if (iframe) {
+ 						let iframeRect = iframe.getBoundingClientRect();
+ 						let forElRect = forEl.getBoundingClientRect();
+diff --git a/chrome/content/zotero/elements/itemBox.js b/chrome/content/zotero/elements/itemBox.js
+--- a/chrome/content/zotero/elements/itemBox.js
++++ b/chrome/content/zotero/elements/itemBox.js
+@@ -2958,7 +2958,7 @@
+ 				return;
+ 			}
+ 			
+-			let refocusField = this.querySelector(`#${CSS.escape(this._selectField)}:not([disabled="true"])`);
++			let refocusField = this.querySelector(`#${CSS.escape(this._selectField)}:not([disabled])`);
+ 			// For creator rows, if a focusable node with desired id does not exist, try to focus
+ 			// the same component from the last available creator row
+ 			if (!refocusField && this._selectField.startsWith("creator-")) {
+@@ -3273,10 +3273,10 @@
+ 			
+ 			this._id('creator-transform-swap-names').hidden = hideNameSwap;
+ 			this._id('creator-transform-capitalize').disabled = !this.canCapitalizeCreatorName(row);
+-			this._id('zotero-creator-move-sep').setAttribute('hidden', hideMoveSep);
+-			this._id('zotero-creator-move-to-top').setAttribute('hidden', hideMoveToTop);
+-			this._id('zotero-creator-move-up').setAttribute('hidden', hideMoveUp);
+-			this._id('zotero-creator-move-down').setAttribute('hidden', hideMoveDown);
++			this._id('zotero-creator-move-sep').toggleAttribute('hidden', hideMoveSep);
++			this._id('zotero-creator-move-to-top').toggleAttribute('hidden', hideMoveToTop);
++			this._id('zotero-creator-move-up').toggleAttribute('hidden', hideMoveUp);
++			this._id('zotero-creator-move-down').toggleAttribute('hidden', hideMoveDown);
+ 		};
+ 
+ 		_handleCreatorTransformMenuCommand = async (event) => {
+diff --git a/chrome/content/zotero/elements/itemPane.js b/chrome/content/zotero/elements/itemPane.js
+--- a/chrome/content/zotero/elements/itemPane.js
++++ b/chrome/content/zotero/elements/itemPane.js
+@@ -228,7 +228,7 @@
+ 
+ 			this._itemDetails.render();
+ 
+-			if (this.getAttribute("collapsed") == "true") {
++			if (this.hasAttribute("collapsed")) {
+ 				return true;
+ 			}
+ 
+@@ -684,7 +684,7 @@
+ 		}
+ 
+ 		handleResize() {
+-			if (this.getAttribute("collapsed")) {
++			if (this.hasAttribute("collapsed")) {
+ 				this.removeAttribute("width");
+ 				this.removeAttribute("height");
+ 			}
+diff --git a/chrome/content/zotero/elements/itemPaneHeader.js b/chrome/content/zotero/elements/itemPaneHeader.js
+--- a/chrome/content/zotero/elements/itemPaneHeader.js
++++ b/chrome/content/zotero/elements/itemPaneHeader.js
+@@ -438,7 +438,7 @@
+ 				let menuitem = document.createXULElement('menuitem');
+ 				menuitem.setAttribute('data-l10n-id', 'item-pane-header-' + headerMode);
+ 				menuitem.setAttribute('type', 'radio');
+-				menuitem.setAttribute('checked', headerMode === selectedMode);
++				menuitem.toggleAttribute('checked', headerMode === selectedMode);
+ 				menuitem.addEventListener('command', () => {
+ 					Zotero.Prefs.set(PREF_HEADER_MODE, headerMode);
+ 				});
+diff --git a/chrome/content/zotero/elements/notesContext.js b/chrome/content/zotero/elements/notesContext.js
+--- a/chrome/content/zotero/elements/notesContext.js
++++ b/chrome/content/zotero/elements/notesContext.js
+@@ -192,7 +192,7 @@
+ 				let { id, screenX, screenY } = event.detail;
+ 				let item = Zotero.Items.get(id);
+ 				if (item) {
+-					this.querySelector('.context-pane-list-move-to-trash').setAttribute('disabled', !this.editable);
++					this.querySelector('.context-pane-list-move-to-trash').toggleAttribute('disabled', !this.editable);
+ 					let popup = this.querySelector('.context-pane-list-popup');
+ 					popup.dataset.itemId = id;
+ 					popup.openPopupAtScreen(screenX, screenY, true);
+@@ -203,8 +203,8 @@
+ 				this._handleAddChildNotePopupClick(event);
+ 			});
+ 			this.notesList.addEventListener('add-child', (event) => {
+-				this.querySelector('.context-pane-add-child-note').setAttribute('disabled', !this.editable);
+-				this.querySelector('.context-pane-add-child-note-from-annotations').setAttribute('disabled', !this.editable);
++				this.querySelector('.context-pane-add-child-note').toggleAttribute('disabled', !this.editable);
++				this.querySelector('.context-pane-add-child-note-from-annotations').toggleAttribute('disabled', !this.editable);
+ 				Zotero.MenuManager.updateMenuPopup(addChildNotePopup, "notesPane/addItemNote", {
+ 					event: undefined,
+ 					getContext: () => {
+@@ -227,8 +227,8 @@
+ 				this._handleAddStandaloneNotePopupClick(event);
+ 			});
+ 			this.notesList.addEventListener('add-standalone', (event) => {
+-				this.querySelector('.context-pane-add-standalone-note').setAttribute('disabled', !this.editable);
+-				this.querySelector('.context-pane-add-standalone-note-from-annotations').setAttribute('disabled', !this.editable);
++				this.querySelector('.context-pane-add-standalone-note').toggleAttribute('disabled', !this.editable);
++				this.querySelector('.context-pane-add-standalone-note-from-annotations').toggleAttribute('disabled', !this.editable);
+ 				Zotero.MenuManager.updateMenuPopup(addStandaloneNotePopup, "notesPane/addStandaloneNote", {
+ 					event: undefined,
+ 					getContext: () => {
+diff --git a/chrome/content/zotero/elements/richlistCheckbox.js b/chrome/content/zotero/elements/richlistCheckbox.js
+--- a/chrome/content/zotero/elements/richlistCheckbox.js
++++ b/chrome/content/zotero/elements/richlistCheckbox.js
+@@ -37,7 +37,7 @@
+ 		connectedCallback() {
+ 			this._checkbox = document.createXULElement('checkbox');
+ 			this._checkbox.setAttribute('native', 'true');
+-			this._checkbox.setAttribute('checked', this.checked);
++			this._checkbox.toggleAttribute('checked', this.checked);
+ 			this._checkbox.addEventListener('focus', () => this.control.focus());
+ 			this._label = document.createElement('label');
+ 			this._label.textContent = this.label;
+@@ -75,12 +75,12 @@
+ 		}
+ 		
+ 		get checked() {
+-			return JSON.parse(this.getAttribute('checked'));
++			return this.hasAttribute('checked');
+ 		}
+ 
+ 		set checked(val) {
+-			this._checkbox.setAttribute('checked', !!val);
+-			this.setAttribute('checked', !!val);
++			this._checkbox.toggleAttribute('checked', !!val);
++			this.toggleAttribute('checked', !!val);
+ 		}
+ 	}
+ 	
+diff --git a/chrome/content/zotero/elements/searchTextbox.js b/chrome/content/zotero/elements/searchTextbox.js
+--- /dev/null
++++ b/chrome/content/zotero/elements/searchTextbox.js
+@@ -0,0 +1,264 @@
++// Adapted from Mozilla toolkit/content/widgets/search-textbox.js, removed in Firefox 153
++// Modified to not set aria-autocomplete, which confuses screen readers
++
++// -*- indent-tabs-mode: nil; js-indent-level: 2 -*-
++
++/* This Source Code Form is subject to the terms of the Mozilla Public
++ * License, v. 2.0. If a copy of the MPL was not distributed with this
++ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
++
++"use strict";
++
++{
++  class MozSearchTextbox extends MozXULElement {
++    constructor() {
++      super();
++
++      MozXULElement.insertFTLIfNeeded("toolkit/global/textActions.ftl");
++
++      this.inputField = document.createElement("input");
++
++      const METHODS = [
++        "focus",
++        "blur",
++        "select",
++        "setUserInput",
++        "setSelectionRange",
++      ];
++      for (const method of METHODS) {
++        this[method] = (...args) => this.inputField[method](...args);
++      }
++
++      const READ_WRITE_PROPERTIES = [
++        "defaultValue",
++        "placeholder",
++        "readOnly",
++        "size",
++        "selectionStart",
++        "selectionEnd",
++      ];
++      for (const property of READ_WRITE_PROPERTIES) {
++        Object.defineProperty(this, property, {
++          enumerable: true,
++          get() {
++            return this.inputField[property];
++          },
++          set(val) {
++            this.inputField[property] = val;
++          },
++        });
++      }
++
++      this.attachShadow({ mode: "open" });
++      this.addEventListener("input", this);
++      this.addEventListener("keypress", this);
++      this.addEventListener("mousedown", this);
++    }
++
++    static get inheritedAttributes() {
++      return {
++        input:
++          "value,maxlength,disabled,size,readonly,placeholder,tabindex,accesskey,inputmode,spellcheck",
++        ".textbox-search-icon": "label=searchbuttonlabel,disabled",
++        ".textbox-search-clear": "disabled",
++      };
++    }
++
++    connectedCallback() {
++      if (this.delayConnectedCallback() || this.connected) {
++        return;
++      }
++
++      document.l10n.connectRoot(this.shadowRoot);
++
++      this.connected = true;
++      this.textContent = "";
++
++      const stylesheet = document.createElement("link");
++      stylesheet.rel = "stylesheet";
++      stylesheet.href = "chrome://zotero/skin/search-textbox.css";
++
++      const textboxSign = document.createXULElement("image");
++      textboxSign.className = "textbox-search-sign";
++      textboxSign.part = "search-sign";
++
++      const input = this.inputField;
++      input.setAttribute("inputmode", "search");
++      input.autocomplete = "off"; // not applicable in XUL docs and confuses aria.
++      input.addEventListener("focus", this);
++      input.addEventListener("blur", this);
++
++      const searchBtn = (this._searchButtonIcon =
++        document.createXULElement("image"));
++      searchBtn.className = "textbox-search-icon";
++      searchBtn.addEventListener("click", e => this._iconClick(e));
++
++      const clearBtn = document.createXULElement("image");
++      clearBtn.className = "textbox-search-clear";
++      clearBtn.part = "clear-icon";
++      clearBtn.setAttribute("role", "button");
++      document.l10n.setAttributes(
++        clearBtn,
++        "text-action-search-text-box-clear"
++      );
++      clearBtn.addEventListener("click", () => this._clearSearch());
++
++      const deck = (this._searchIcons = document.createXULElement("deck"));
++      deck.className = "textbox-search-icons";
++      deck.append(searchBtn, clearBtn);
++      this.shadowRoot.append(stylesheet, textboxSign, input, deck);
++
++      this._timer = null;
++
++      // Ensure the button state is up to date:
++      // eslint-disable-next-line no-self-assign
++      this.searchButton = this.searchButton;
++
++      this.initializeAttributeInheritance();
++    }
++
++    disconnectedCallback() {
++      document.l10n.disconnectRoot(this.shadowRoot);
++    }
++
++    set timeout(val) {
++      this.setAttribute("timeout", val);
++    }
++
++    get timeout() {
++      return parseInt(this.getAttribute("timeout")) || 500;
++    }
++
++    set searchButton(val) {
++      if (val) {
++        this.setAttribute("searchbutton", "true");
++        this.inputField.removeAttribute("aria-autocomplete");
++        this._searchButtonIcon.setAttribute("role", "button");
++      } else {
++        this.removeAttribute("searchbutton");
++        this._searchButtonIcon.setAttribute("role", "none");
++      }
++    }
++
++    get searchButton() {
++      return this.getAttribute("searchbutton") == "true";
++    }
++
++    set value(val) {
++      this.inputField.value = val;
++
++      if (val) {
++        this._searchIcons.selectedIndex = this.searchButton ? 0 : 1;
++      } else {
++        this._searchIcons.selectedIndex = 0;
++      }
++
++      if (this._timer) {
++        clearTimeout(this._timer);
++      }
++    }
++
++    get value() {
++      return this.inputField.value;
++    }
++
++    get editor() {
++      return this.inputField.editor;
++    }
++
++    set disabled(val) {
++      this.inputField.disabled = val;
++      if (val) {
++        this.setAttribute("disabled", "true");
++      } else {
++        this.removeAttribute("disabled");
++      }
++    }
++
++    get disabled() {
++      return this.inputField.disabled;
++    }
++
++    on_blur() {
++      this.removeAttribute("focused");
++    }
++
++    on_focus() {
++      this.setAttribute("focused", "true");
++    }
++
++    on_input() {
++      if (this.searchButton) {
++        this._searchIcons.selectedIndex = 0;
++        return;
++      }
++      if (this._timer) {
++        clearTimeout(this._timer);
++      }
++      this._timer =
++        this.timeout && setTimeout(this._fireCommand, this.timeout, this);
++      this._searchIcons.selectedIndex = this.value ? 1 : 0;
++    }
++
++    on_keypress(event) {
++      switch (event.keyCode) {
++        case KeyEvent.DOM_VK_ESCAPE:
++          if (this._clearSearch()) {
++            event.preventDefault();
++            event.stopPropagation();
++          }
++          break;
++        case KeyEvent.DOM_VK_RETURN:
++          this._enterSearch();
++          event.preventDefault();
++          event.stopPropagation();
++          break;
++      }
++    }
++
++    on_mousedown() {
++      if (!this.hasAttribute("focused")) {
++        this.setSelectionRange(0, 0);
++        this.focus();
++      }
++    }
++
++    _fireCommand(me) {
++      if (me._timer) {
++        clearTimeout(me._timer);
++      }
++      me._timer = null;
++      me.doCommand();
++    }
++
++    _iconClick() {
++      if (this.searchButton) {
++        this._enterSearch();
++      } else {
++        this.focus();
++      }
++    }
++
++    _enterSearch() {
++      if (this.disabled) {
++        return;
++      }
++      if (this.searchButton && this.value && !this.readOnly) {
++        this._searchIcons.selectedIndex = 1;
++      }
++      this._fireCommand(this);
++    }
++
++    _clearSearch() {
++      if (!this.disabled && !this.readOnly && this.value) {
++        this.value = "";
++        this._fireCommand(this);
++        this._searchIcons.selectedIndex = 0;
++        return true;
++      }
++      return false;
++    }
++  }
++
++  customElements.define("search-textbox", MozSearchTextbox);
++}
+diff --git a/chrome/content/zotero/elements/tagsBox.js b/chrome/content/zotero/elements/tagsBox.js
+--- a/chrome/content/zotero/elements/tagsBox.js
++++ b/chrome/content/zotero/elements/tagsBox.js
+@@ -239,7 +239,7 @@
+ 
+ 			// "-" button
+ 			if (this.editable) {
+-				remove.setAttribute('disabled', false);
++				remove.removeAttribute('disabled');
+ 				remove.addEventListener('click', async (_event) => {
+ 					if (tagData) {
+ 						let item = this.item;
+diff --git a/chrome/content/zotero/elements/utils/collapsiblePane.mjs b/chrome/content/zotero/elements/utils/collapsiblePane.mjs
+--- a/chrome/content/zotero/elements/utils/collapsiblePane.mjs
++++ b/chrome/content/zotero/elements/utils/collapsiblePane.mjs
+@@ -30,11 +30,11 @@
+  * @returns {boolean}
+  */
+ export function isPaneCollapsed(pane) {
+-	let collapsibleParent = pane.closest('splitter:not([hidden="true"]) + *');
++	let collapsibleParent = pane.closest('splitter:not([hidden]) + *');
+ 	if (!collapsibleParent) {
+ 		return false;
+ 	}
+-	return collapsibleParent.getAttribute('collapsed') === 'true';
++	return collapsibleParent.hasAttribute('collapsed');
+ }
+ 
+ /**
+@@ -44,7 +44,7 @@
+  * @param {boolean} collapsed
+  */
+ export function setPaneCollapsed(pane, collapsed) {
+-	let collapsibleParent = pane.closest('splitter:not([hidden="true"]) + *');
++	let collapsibleParent = pane.closest('splitter:not([hidden]) + *');
+ 	if (!collapsibleParent) {
+ 		return;
+ 	}
+diff --git a/chrome/content/zotero/elements/zoteroSearch.js b/chrome/content/zotero/elements/zoteroSearch.js
+--- a/chrome/content/zotero/elements/zoteroSearch.js
++++ b/chrome/content/zotero/elements/zoteroSearch.js
+@@ -390,7 +390,7 @@
+ 				if (next) {
+ 					let button = next.querySelector('#remove');
+ 					// A disabled remove button can't take focus, so fall back to the drop-down
+-					let target = button.getAttribute('disabled') == 'true'
++					let target = button.hasAttribute('disabled')
+ 						? next.querySelector('#conditionsmenu')
+ 						: button;
+ 					setTimeout(() => target.focus({ focusVisible: true }));
+@@ -1170,7 +1170,7 @@
+ 			for (var i = 0, len = operatorsList.firstChild.childNodes.length; i < len; i++) {
+ 				var val = operatorsList.firstChild.childNodes[i].getAttribute('value');
+ 				var hidden = !operators[val];
+-				operatorsList.firstChild.childNodes[i].setAttribute('hidden', hidden);
++				operatorsList.firstChild.childNodes[i].toggleAttribute('hidden', hidden);
+ 				if (!hidden && (selectThis === null || this.selectedOperator == val)) {
+ 					selectThis = i;
+ 				}
+@@ -1774,7 +1774,7 @@
+ 
+ 		enableRemoveButton() {
+ 			var button = this.querySelector("#remove");
+-			button.setAttribute('disabled', false);
++			button.removeAttribute('disabled');
+ 			button.setAttribute('onclick', "this.closest('zoterosearchcondition').onRemoveClicked(event)");
+ 		}
+ 	}
+@@ -1826,7 +1826,7 @@
+ 			
+ 			var selectedIndex = -1;
+ 			for (var i = 0; i < menu.childNodes.length; i++) {
+-				if (menu.childNodes[i].getAttribute('checked') == 'true') {
++				if (menu.childNodes[i].hasAttribute('checked')) {
+ 					selectedIndex = i;
+ 					break;
+ 				}
+diff --git a/chrome/content/zotero/itemTree.jsx b/chrome/content/zotero/itemTree.jsx
+--- a/chrome/content/zotero/itemTree.jsx
++++ b/chrome/content/zotero/itemTree.jsx
+@@ -2188,7 +2188,7 @@
+ 			.forEach((column, i) => {
+ 				let menuItem = document.createXULElement('menuitem');
+ 				menuItem.setAttribute('type', 'checkbox');
+-				menuItem.setAttribute('checked', this.getSortField() == column.dataKey);
++				menuItem.toggleAttribute('checked', this.getSortField() == column.dataKey);
+ 				menuItem.setAttribute('label', formatColumnName(column));
+ 				menuItem.addEventListener('command', () => {
+ 					this.toggleSort(i, true);
+diff --git a/chrome/content/zotero/locateMenu.js b/chrome/content/zotero/locateMenu.js
+--- a/chrome/content/zotero/locateMenu.js
++++ b/chrome/content/zotero/locateMenu.js
+@@ -29,7 +29,7 @@
+  * This object contains the various functions for the interface
+  */
+ var Zotero_LocateMenu = new function () {
+-	XPCOMUtils.defineLazyServiceGetter(this, "ios", "@mozilla.org/network/io-service;1", "nsIIOService");
++	XPCOMUtils.defineLazyServiceGetter(this, "ios", "@mozilla.org/network/io-service;1", Ci.nsIIOService);
+ 	
+   	/**
+   	 * Clear and build the locate menu
+diff --git a/chrome/content/zotero/merge.js b/chrome/content/zotero/merge.js
+--- a/chrome/content/zotero/merge.js
++++ b/chrome/content/zotero/merge.js
+@@ -298,7 +298,7 @@
+ 		var nextButton = _wizard.getButton("next");
+ 		
+ 		if (Zotero.isMac) {
+-			nextButton.setAttribute("hidden", "false");
++			nextButton.removeAttribute("hidden");
+ 			_wizard.getButton("finish").setAttribute("hidden", "true");
+ 		}
+ 		else {
+@@ -315,7 +315,7 @@
+ 		
+ 		if (Zotero.isMac) {
+ 			_wizard.getButton("next").setAttribute("hidden", "true");
+-			finishButton.setAttribute("hidden", "false");
++			finishButton.removeAttribute("hidden");
+ 		}
+ 		// Windows and Linux use a deck to switch between the Next and Finish buttons
+ 		else {
+diff --git a/chrome/content/zotero/preferences/preferences.js b/chrome/content/zotero/preferences/preferences.js
+--- a/chrome/content/zotero/preferences/preferences.js
++++ b/chrome/content/zotero/preferences/preferences.js
+@@ -608,12 +608,6 @@
+ 			attributeFilter: ['preference']
+ 		});
+ 
+-		// parseXULToFragment() doesn't convert oncommand attributes into actual
+-		// listeners, so we'll do it here
+-		for (let elem of container.querySelectorAll('[oncommand]')) {
+-			elem.oncommand = elem.getAttribute('oncommand');
+-		}
+-
+ 		for (let child of container.children) {
+ 			let event = new Event('load');
+ 			event.waitUntil = (promise) => {
+@@ -787,7 +781,7 @@
+ 	 * @return {Promise<Node[]>}
+ 	 */
+ 	async _findNodesMatching(root, term) {
+-		const EXCLUDE_SELECTOR = 'input, [hidden]:not([hidden="false"]), [no-highlight]';
++		const EXCLUDE_SELECTOR = 'input, [hidden], [no-highlight]';
+ 
+ 		let matched = new Set();
+ 		let treeWalker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+diff --git a/chrome/content/zotero/preferences/preferences_general.js b/chrome/content/zotero/preferences/preferences_general.js
+--- a/chrome/content/zotero/preferences/preferences_general.js
++++ b/chrome/content/zotero/preferences/preferences_general.js
+@@ -438,7 +438,7 @@
+ 			menuitem.setAttribute('type', 'checkbox');
+ 			currentMenuPopup.appendChild(menuitem);
+ 			var checked = r.url == Zotero.Prefs.get('openURL.resolver');
+-			menuitem.setAttribute('checked', checked);
++			menuitem.toggleAttribute('checked', checked);
+ 			if (checked) {
+ 				selectedName = r.name;
+ 			}
+@@ -449,7 +449,7 @@
+ 			openURLMenu.setAttribute('label', selectedName);
+ 			// If we found a match, update stored name
+ 			Zotero.Prefs.set('openURL.name', selectedName);
+-			firstItem.setAttribute('checked', false);
++			firstItem.removeAttribute('checked');
+ 		}
+ 		// Custom
+ 		else {
+diff --git a/chrome/content/zotero/publicationsDialog.js b/chrome/content/zotero/publicationsDialog.js
+--- a/chrome/content/zotero/publicationsDialog.js
++++ b/chrome/content/zotero/publicationsDialog.js
+@@ -66,9 +66,9 @@
+ 		this.wizard = id('publications-dialog-wizard');
+ 
+ 		id('include-files')
+-			.addEventListener('CheckboxStateChange', this.onIntroPageCheckboxChange.bind(this));
++			.addEventListener('command', this.onIntroPageCheckboxChange.bind(this));
+ 		id('confirm-authorship-checkbox')
+-			.addEventListener('CheckboxStateChange', this.onIntroPageCheckboxChange.bind(this));
++			.addEventListener('command', this.onIntroPageCheckboxChange.bind(this));
+ 		id('sharing-radiogroup')
+ 			.addEventListener('select', this.onLicenseAspectRadioChange.bind(this));
+ 		id('choose-adaptations')
+@@ -76,7 +76,7 @@
+ 		id('choose-commercial')
+ 			.addEventListener('select', this.onLicenseAspectRadioChange.bind(this));
+ 		id('keep-rights-checkbox')
+-			.addEventListener('CheckboxStateChange', this.onKeepRightsCheckboxChange.bind(this));
++			.addEventListener('command', this.onKeepRightsCheckboxChange.bind(this));
+ 		this.wizard.getPageById('intro')
+ 			.addEventListener('pageshow', this.onIntroPageShow.bind(this));
+ 		this.wizard.getPageById('choose-sharing')
+diff --git a/chrome/content/zotero/standalone/standalone.js b/chrome/content/zotero/standalone/standalone.js
+--- a/chrome/content/zotero/standalone/standalone.js
++++ b/chrome/content/zotero/standalone/standalone.js
+@@ -508,15 +508,15 @@
+ 		// Panes
+ 		this.updateMenuItemCheckmark(
+ 			'view-menuitem-collections-pane',
+-			document.getElementById('zotero-collections-pane').getAttribute('collapsed') != 'true'
++			!document.getElementById('zotero-collections-pane').hasAttribute('collapsed')
+ 		);
+ 		this.updateMenuItemCheckmark(
+ 			'view-menuitem-item-pane',
+-			document.getElementById('zotero-item-pane').getAttribute('collapsed') != 'true'
++			!document.getElementById('zotero-item-pane').hasAttribute('collapsed')
+ 		);
+ 		this.updateMenuItemCheckmark(
+ 			'view-menuitem-tag-selector',
+-			document.getElementById('zotero-tag-selector-container').getAttribute('collapsed') != 'true'
++			!document.getElementById('zotero-tag-selector-container').hasAttribute('collapsed')
+ 		);
+ 		
+ 		// Font size
+@@ -636,9 +636,9 @@
+ 			case 'collections-pane':
+ 				var collectionsPane = document.getElementById('zotero-collections-pane');
+ 				// Show
+-				if (collectionsPane.getAttribute('collapsed') == 'true') {
++				if (collectionsPane.hasAttribute('collapsed')) {
+ 					document.getElementById('zotero-collections-splitter').setAttribute('state', 'open');
+-					collectionsPane.setAttribute('collapsed', false);
++					collectionsPane.removeAttribute('collapsed');
+ 				}
+ 				// Hide
+ 				else {
+@@ -651,9 +651,9 @@
+ 			case 'item-pane':
+ 				var itemPane = document.getElementById('zotero-item-pane');
+ 				// Show
+-				if (itemPane.getAttribute('collapsed') == 'true') {
++				if (itemPane.hasAttribute('collapsed')) {
+ 					document.getElementById('zotero-items-splitter').setAttribute('state', 'open');
+-					itemPane.setAttribute('collapsed', false);
++					itemPane.removeAttribute('collapsed');
+ 				}
+ 				// Hide
+ 				else {
+@@ -836,13 +836,13 @@
+ 		
+ 		// Make our own removal prompt instead of using BrowserAddonUI.promptRemoveExtension() from
+ 		// browser-addons.js
+-		doc.ownerGlobal.promptRemoveExtension = function (addon) {
++		doc.documentGlobal.promptRemoveExtension = function (addon) {
+ 			var { name } = addon;
+ 			var ps = Services.prompt;
+ 			var buttonFlags = ps.BUTTON_POS_0 * ps.BUTTON_TITLE_IS_STRING
+ 				+ ps.BUTTON_POS_1 * ps.BUTTON_TITLE_CANCEL;
+ 			var result = ps.confirmEx(
+-				doc.ownerGlobal,
++				doc.documentGlobal,
+ 				Zotero.getString('addons.remove.title', name),
+ 				Zotero.getString('addons.remove.text', [name, Zotero.appName]),
+ 				buttonFlags,
+diff --git a/chrome/content/zotero/tabs.js b/chrome/content/zotero/tabs.js
+--- a/chrome/content/zotero/tabs.js
++++ b/chrome/content/zotero/tabs.js
+@@ -123,7 +123,7 @@
+ 		focusFirst: {
+ 			library: async () => {
+ 				let collectionsPane = document.getElementById("zotero-collections-pane");
+-				if (collectionsPane.getAttribute("collapsed")) {
++				if (collectionsPane.hasAttribute("collapsed")) {
+ 					document.getElementById('zotero-tb-add').focus();
+ 					return;
+ 				}
+@@ -404,7 +404,7 @@
+ 		}));
+ 		// Disable File > Close menuitem if multiple tabs are open
+ 		const multipleTabsOpen = this._tabs.length > 1;
+-		document.getElementById('cmd_close').setAttribute('disabled', multipleTabsOpen);
++		document.getElementById('cmd_close').toggleAttribute('disabled', multipleTabsOpen);
+ 		var { tab } = this._getTab(this._selectedID);
+ 		if (!tab) {
+ 			return;
+@@ -441,7 +441,7 @@
+ 		if (width) {
+ 			let sidebarWidth = `${width}px`;
+ 			let placeholder = document.getElementById('zotero-reader-sidebar-pane');
+-			placeholder.setAttribute('collapsed', sidebarWidth ? 'false' : 'true');
++			placeholder.toggleAttribute('collapsed', !sidebarWidth);
+ 			placeholder.setAttribute('width', sidebarWidth);
+ 		}
+ 
+@@ -1197,7 +1197,7 @@
+ 			// Move to start
+ 			menuitem = document.createXULElement('menuitem');
+ 			menuitem.setAttribute('label', Zotero.getString('tabs.moveToStart'));
+-			menuitem.setAttribute('disabled', tabIndex == 1);
++			menuitem.toggleAttribute('disabled', tabIndex == 1);
+ 			menuitem.addEventListener('command', () => {
+ 				this.move(id, 1);
+ 			});
+@@ -1205,7 +1205,7 @@
+ 			// Move to end
+ 			menuitem = document.createXULElement('menuitem');
+ 			menuitem.setAttribute('label', Zotero.getString('tabs.moveToEnd'));
+-			menuitem.setAttribute('disabled', tabIndex == this._tabs.length - 1);
++			menuitem.toggleAttribute('disabled', tabIndex == this._tabs.length - 1);
+ 			menuitem.addEventListener('command', () => {
+ 				this.move(id, this._tabs.length);
+ 			});
+@@ -1214,7 +1214,7 @@
+ 			if (this._hasHook(tabContentType, 'moveToNewWindow')) {
+ 				menuitem = document.createXULElement('menuitem');
+ 				menuitem.setAttribute('label', Zotero.getString('tabs.moveToWindow'));
+-				menuitem.setAttribute('disabled', false);
++				menuitem.removeAttribute('disabled');
+ 				menuitem.addEventListener('command', () => {
+ 					let { tabContentType } = this.parseTabType(tab.type);
+ 					let moveHook = this._getHook(tabContentType, 'moveToNewWindow');
+@@ -1266,7 +1266,7 @@
+ 					this._history.length ? this._history[this._history.length - 1].length : 1
+ 				)
+ 			);
+-			menuitem.setAttribute('disabled', !this._history.length);
++			menuitem.toggleAttribute('disabled', !this._history.length);
+ 			menuitem.addEventListener('command', () => {
+ 				this.undoClose();
+ 			});
+diff --git a/chrome/content/zotero/tagColorChooser.js b/chrome/content/zotero/tagColorChooser.js
+--- a/chrome/content/zotero/tagColorChooser.js
++++ b/chrome/content/zotero/tagColorChooser.js
+@@ -76,7 +76,7 @@
+ 				colorPicker.color = color;
+ 				dialog.buttons = "cancel,accept";
+ 			}
+-			colorPicker.setAttribute('disabled', 'false');
++			colorPicker.removeAttribute('disabled');
+ 			
+ 			var numColors = tagColors.size;
+ 			var max = colorData ? numColors : numColors + 1;
+@@ -86,7 +86,7 @@
+ 				tagPosition.appendItem(i, i-1);
+ 			}
+ 			if (numColors) {
+-				tagPosition.setAttribute('disabled', 'false');
++				tagPosition.removeAttribute('disabled');
+ 				if (colorData) {
+ 					tagPosition.selectedIndex = colorData.position;
+ 				}
+diff --git a/chrome/content/zotero/update/updates.js b/chrome/content/zotero/update/updates.js
+--- a/chrome/content/zotero/update/updates.js
++++ b/chrome/content/zotero/update/updates.js
+@@ -354,6 +354,36 @@
+ 
+ 	/**
+ 	 * Helper function for onLoad
++	 * Adds the extra1 and extra2 buttons to the wizard's button box, since the
++	 * platform wizard only provides the back, next, finish, and cancel buttons,
++	 * and dispatches an event of the same name on the current page when one of
++	 * them is clicked
++	 */
++	_addExtraButtons() {
++		var buttons = this.wiz.shadowRoot.querySelector("wizard-buttons");
++		var buttonBox = buttons.querySelector(
++			".wizard-buttons-btm, .wizard-buttons-box-2"
++		);
++		// Insert extra2 first so that extra1 ends up leftmost
++		for (let dlgType of ["extra2", "extra1"]) {
++			let button = document.createXULElement("button");
++			button.className = "wizard-button";
++			button.setAttribute("dlgtype", dlgType);
++			button.hidden = true;
++			button.addEventListener("command", () => {
++				let page = this.wiz.currentPage;
++				if (page) {
++					page.dispatchEvent(
++						new CustomEvent(dlgType, { bubbles: true, cancelable: true })
++					);
++				}
++			});
++			buttonBox.prepend(button);
++		}
++	},
++
++	/**
++	 * Helper function for onLoad
+ 	 * Saves default button label & accesskey for use by _setButton
+ 	 */
+ 	_cacheButtonStrings(buttonName) {
+@@ -382,6 +412,8 @@
+ 				this._pages[page.pageid] = eval(page.getAttribute("object"));
+ 			}
+ 		}
++
++		this._addExtraButtons();
+ 
+ 		// Cache the standard button labels in case we need to restore them
+ 		this._cacheButtonStrings("next");
+@@ -1382,11 +1414,11 @@
+ 			let moreElevated = document.getElementById(
+ 				"finishedBackgroundMoreElevated"
+ 			);
+-			moreElevated.setAttribute("hidden", "false");
++			moreElevated.removeAttribute("hidden");
+ 			let moreElevatedLink = document.getElementById(
+ 				"finishedBackgroundMoreElevatedLink"
+ 			);
+-			moreElevatedLink.setAttribute("hidden", "false");
++			moreElevatedLink.removeAttribute("hidden");
+ 			let moreElevatedLinkLabel = document.getElementById(
+ 				"finishedBackgroundMoreElevatedLinkLabel"
+ 			);
+@@ -1395,7 +1427,7 @@
+ 			);
+ 			moreElevatedLinkLabel.value = manualURL;
+ 			moreElevatedLinkLabel.setAttribute("url", manualURL);
+-			moreElevatedLinkLabel.setAttribute("hidden", "false");
++			moreElevatedLinkLabel.removeAttribute("hidden");
+ 		}
+ 	},
+ 
+diff --git a/chrome/content/zotero/xpcom/editorInstance.js b/chrome/content/zotero/xpcom/editorInstance.js
+--- a/chrome/content/zotero/xpcom/editorInstance.js
++++ b/chrome/content/zotero/xpcom/editorInstance.js
+@@ -855,7 +855,7 @@
+ 						// Forget the previously focused element within the iframe to avoid
+ 						// it receiving focus for a moment if you later tab back into the editor
+ 						iframe.ownerDocument.activeElement.blur();
+-						Services.focus.moveFocus(iframe.ownerGlobal, iframe, Services.focus.MOVEFOCUS_BACKWARD, Services.focus.FLAG_SHOWRING);
++						Services.focus.moveFocus(iframe.documentGlobal, iframe, Services.focus.MOVEFOCUS_BACKWARD, Services.focus.FLAG_SHOWRING);
+ 					};
+ 					return;
+ 				}
+@@ -981,11 +981,11 @@
+ 						let menuitem = parentNode.ownerDocument.createXULElement('menuitem');
+ 						menuitem.setAttribute('value', item.name);
+ 						menuitem.setAttribute('label', item.label);
+-						menuitem.setAttribute('disabled', !item.enabled);
++						menuitem.toggleAttribute('disabled', !item.enabled);
+ 						if (item.checked) {
+ 							menuitem.setAttribute('type', 'checkbox');
+ 						}
+-						menuitem.setAttribute('checked', item.checked);
++						menuitem.toggleAttribute('checked', item.checked);
+ 						menuitem.addEventListener('command', () => {
+ 							if (item.name === 'insertImage') {
+ 								return this._iframeWindow.eval('openImageFilePicker()');
+@@ -1041,7 +1041,7 @@
+ 		// Check Spelling
+ 		var menuitem = this._popup.ownerDocument.createXULElement('menuitem');
+ 		menuitem.setAttribute('label', Zotero.getString('spellCheck.checkSpelling'));
+-		menuitem.setAttribute('checked', spellChecker.enabled);
++		menuitem.toggleAttribute('checked', spellChecker.enabled);
+ 		menuitem.setAttribute('type', 'checkbox');
+ 		menuitem.addEventListener('command', () => {
+ 			// Possible values: 0 - off, 1 - only multi-line, 2 - multi and single line input boxes
+diff --git a/chrome/content/zotero/xpcom/pluginAPI/menuManager.js b/chrome/content/zotero/xpcom/pluginAPI/menuManager.js
+--- a/chrome/content/zotero/xpcom/pluginAPI/menuManager.js
++++ b/chrome/content/zotero/xpcom/pluginAPI/menuManager.js
+@@ -362,7 +362,7 @@
+ 				return;
+ 			}
+ 			
+-			// let win = popupElem.ownerGlobal;
++			// let win = popupElem.documentGlobal;
+ 			// let doc = popupElem.ownerDocument;
+ 
+ 			// TODO: maybe we can let plugins to load their own l10n files in onShowing,
+@@ -769,12 +769,12 @@
+ 		 */
+ 		_computeAvailableMenuNum(popupElem) {
+ 			// Compute the height of current screen
+-			let screenHeight = popupElem.ownerGlobal.screen.availHeight;
++			let screenHeight = popupElem.documentGlobal.screen.availHeight;
+ 			let maxMenuHeight = screenHeight * 0.8;
+ 
+-			let menuCount = popupElem.querySelectorAll(`& > :is(menuitem, menu):not(.${CUSTOM_MENU_CLASS}):not([hidden=true])`).length;
++			let menuCount = popupElem.querySelectorAll(`& > :is(menuitem, menu):not(.${CUSTOM_MENU_CLASS}):not([hidden])`).length;
+ 			// An additional separator is added before the group
+-			let separatorCount = popupElem.querySelectorAll(`& > menuseparator:not(.${CUSTOM_MENU_CLASS}):not([hidden=true])`).length + 1;
++			let separatorCount = popupElem.querySelectorAll(`& > menuseparator:not(.${CUSTOM_MENU_CLASS}):not([hidden])`).length + 1;
+ 
+ 			let menuHeight, separatorHeight, popupPadding;
+ 
+diff --git a/chrome/content/zotero/xpcom/plugins.js b/chrome/content/zotero/xpcom/plugins.js
+--- a/chrome/content/zotero/xpcom/plugins.js
++++ b/chrome/content/zotero/xpcom/plugins.js
+@@ -34,7 +34,7 @@
+ 	XPCOMUtils.defineLazyServiceGetters(lazy, {
+ 		aomStartup: [
+ 			"@mozilla.org/addons/addon-manager-startup;1",
+-			"amIAddonManagerStartup",
++			Ci.amIAddonManagerStartup,
+ 		],
+ 	});
+ 	var scopes = new Map();
+diff --git a/chrome/content/zotero/xpcom/reader.js b/chrome/content/zotero/xpcom/reader.js
+--- a/chrome/content/zotero/xpcom/reader.js
++++ b/chrome/content/zotero/xpcom/reader.js
+@@ -1355,14 +1355,14 @@
+ 					else {
+ 						let menuitem = parentNode.ownerDocument.createXULElement('menuitem');
+ 						menuitem.setAttribute('label', item.label);
+-						menuitem.setAttribute('disabled', item.disabled);
++						menuitem.toggleAttribute('disabled', item.disabled);
+ 						if (item.color) {
+ 							menuitem.className = 'menuitem-iconic';
+ 							menuitem.setAttribute('image', this._getColorIcon(item.color, item.checked));
+ 						}
+ 						else if (item.checked) {
+ 							menuitem.setAttribute('type', 'checkbox');
+-							menuitem.setAttribute('checked', item.checked);
++							menuitem.toggleAttribute('checked', item.checked);
+ 						}
+ 						menuitem.addEventListener('command', () => item.onCommand());
+ 						parentNode.appendChild(menuitem);
+@@ -1400,7 +1400,7 @@
+ 			return;
+ 		}
+ 
+-		let iframeWindow = event.target.ownerGlobal;
++		let iframeWindow = event.target.documentGlobal;
+ 
+ 		this._window.MozXULElement.insertFTLIfNeeded("toolkit/global/textActions.ftl");
+ 		this._window.MozXULElement.insertFTLIfNeeded("browser/menubar.ftl");
+@@ -1435,7 +1435,7 @@
+ 		menuitemSwitchTextDirection.hidden = !showSwitchTextDirection;
+ 		menuitemSwitchTextDirection.previousElementSibling.hidden = !showSwitchTextDirection;
+ 
+-		let selection = event.target.ownerGlobal.getSelection();
++		let selection = event.target.documentGlobal.getSelection();
+ 		if (!selection || !selection.anchorNode) {
+ 			return;
+ 		}
+@@ -1456,7 +1456,7 @@
+ 			// Check Spelling
+ 			var menuitem = popup.ownerDocument.createXULElement('menuitem');
+ 			menuitem.setAttribute('data-l10n-id', 'text-action-spell-check-toggle');
+-			menuitem.setAttribute('checked', !!Zotero.Prefs.get('layout.spellcheckDefault', true));
++			menuitem.toggleAttribute('checked', !!Zotero.Prefs.get('layout.spellcheckDefault', true));
+ 			menuitem.setAttribute('type', 'checkbox');
+ 			menuitem.addEventListener('command', () => {
+ 				spellChecker.toggleEnabled();
+@@ -2280,8 +2280,8 @@
+ 			&& !(item.deleted || item.parentItem && item.parentItem.deleted)) {
+ 			let annotations = item.getAnnotations();
+ 			let canTransferFromPDF = annotations.find(x => x.annotationIsExternal);
+-			transferFromPDFMenuitem.setAttribute('disabled', !canTransferFromPDF);
+-			importFromEPUBMenuitem.setAttribute('disabled', false);
++			transferFromPDFMenuitem.toggleAttribute('disabled', !canTransferFromPDF);
++			importFromEPUBMenuitem.removeAttribute('disabled');
+ 		}
+ 		else {
+ 			transferFromPDFMenuitem.setAttribute('disabled', true);
+@@ -2305,25 +2305,25 @@
+ 			return;
+ 		}
+ 		if (this._type === 'pdf' || this._type === 'epub') {
+-			this._window.document.getElementById('view-menuitem-no-spreads').setAttribute('checked', this._internalReader.spreadMode === 0);
+-			this._window.document.getElementById('view-menuitem-odd-spreads').setAttribute('checked', this._internalReader.spreadMode === 1);
+-			this._window.document.getElementById('view-menuitem-even-spreads').setAttribute('checked', this._internalReader.spreadMode === 2);
++			this._window.document.getElementById('view-menuitem-no-spreads').toggleAttribute('checked', this._internalReader.spreadMode === 0);
++			this._window.document.getElementById('view-menuitem-odd-spreads').toggleAttribute('checked', this._internalReader.spreadMode === 1);
++			this._window.document.getElementById('view-menuitem-even-spreads').toggleAttribute('checked', this._internalReader.spreadMode === 2);
+ 		}
+ 		if (this._type === 'pdf') {
+-			this._window.document.getElementById('view-menuitem-vertical-scrolling').setAttribute('checked', this._internalReader.scrollMode === 0);
+-			this._window.document.getElementById('view-menuitem-horizontal-scrolling').setAttribute('checked', this._internalReader.scrollMode === 1);
+-			this._window.document.getElementById('view-menuitem-wrapped-scrolling').setAttribute('checked', this._internalReader.scrollMode === 2);
+-			this._window.document.getElementById('view-menuitem-hand-tool').setAttribute('checked', this._internalReader.toolType === 'hand');
+-			this._window.document.getElementById('view-menuitem-zoom-auto').setAttribute('checked', this._internalReader.zoomAutoEnabled);
+-			this._window.document.getElementById('view-menuitem-zoom-page-width').setAttribute('checked', this._internalReader.zoomPageWidthEnabled);
+-			this._window.document.getElementById('view-menuitem-zoom-page-height').setAttribute('checked', this._internalReader.zoomPageHeightEnabled);
++			this._window.document.getElementById('view-menuitem-vertical-scrolling').toggleAttribute('checked', this._internalReader.scrollMode === 0);
++			this._window.document.getElementById('view-menuitem-horizontal-scrolling').toggleAttribute('checked', this._internalReader.scrollMode === 1);
++			this._window.document.getElementById('view-menuitem-wrapped-scrolling').toggleAttribute('checked', this._internalReader.scrollMode === 2);
++			this._window.document.getElementById('view-menuitem-hand-tool').toggleAttribute('checked', this._internalReader.toolType === 'hand');
++			this._window.document.getElementById('view-menuitem-zoom-auto').toggleAttribute('checked', this._internalReader.zoomAutoEnabled);
++			this._window.document.getElementById('view-menuitem-zoom-page-width').toggleAttribute('checked', this._internalReader.zoomPageWidthEnabled);
++			this._window.document.getElementById('view-menuitem-zoom-page-height').toggleAttribute('checked', this._internalReader.zoomPageHeightEnabled);
+ 		}
+ 		else if (this._type === 'epub') {
+-			this._window.document.getElementById('view-menuitem-scrolled').setAttribute('checked', this._internalReader.flowMode === 'scrolled');
+-			this._window.document.getElementById('view-menuitem-paginated').setAttribute('checked', this._internalReader.flowMode === 'paginated');
+-		}
+-		this._window.document.getElementById('view-menuitem-split-vertically').setAttribute('checked', this._internalReader.splitType === 'vertical');
+-		this._window.document.getElementById('view-menuitem-split-horizontally').setAttribute('checked', this._internalReader.splitType === 'horizontal');
++			this._window.document.getElementById('view-menuitem-scrolled').toggleAttribute('checked', this._internalReader.flowMode === 'scrolled');
++			this._window.document.getElementById('view-menuitem-paginated').toggleAttribute('checked', this._internalReader.flowMode === 'paginated');
++		}
++		this._window.document.getElementById('view-menuitem-split-vertically').toggleAttribute('checked', this._internalReader.splitType === 'vertical');
++		this._window.document.getElementById('view-menuitem-split-horizontally').toggleAttribute('checked', this._internalReader.splitType === 'horizontal');
+ 
+ 		this.onUpdateCustomMenus(event, 'view', popup);
+ 	}
+@@ -2354,11 +2354,11 @@
+ 		menuItemForward.setAttribute('key', 'key_forward');
+ 
+ 		if (['pdf', 'epub'].includes(this._type)) {
+-			this._window.document.getElementById('go-menuitem-first-page').setAttribute('disabled', !this._internalReader.canNavigateToFirstPage);
+-			this._window.document.getElementById('go-menuitem-last-page').setAttribute('disabled', !this._internalReader.canNavigateToLastPage);
+-		}
+-		this._window.document.getElementById('go-menuitem-back').setAttribute('disabled', !this._internalReader.canNavigateBack);
+-		this._window.document.getElementById('go-menuitem-forward').setAttribute('disabled', !this._internalReader.canNavigateForward);
++			this._window.document.getElementById('go-menuitem-first-page').toggleAttribute('disabled', !this._internalReader.canNavigateToFirstPage);
++			this._window.document.getElementById('go-menuitem-last-page').toggleAttribute('disabled', !this._internalReader.canNavigateToLastPage);
++		}
++		this._window.document.getElementById('go-menuitem-back').toggleAttribute('disabled', !this._internalReader.canNavigateBack);
++		this._window.document.getElementById('go-menuitem-forward').toggleAttribute('disabled', !this._internalReader.canNavigateForward);
+ 
+ 		this.onUpdateCustomMenus(event, 'go', popup);
+ 	}
+diff --git a/chrome/content/zotero/xpcom/storage/webdav.js b/chrome/content/zotero/xpcom/storage/webdav.js
+--- a/chrome/content/zotero/xpcom/storage/webdav.js
++++ b/chrome/content/zotero/xpcom/storage/webdav.js
+@@ -342,7 +342,7 @@
+ 		for (let i = 0; i < logins.length; i++) {
+ 			if (logins[i].httpRealm == this._loginManagerRealmLegacy) {
+ 				try {
+-					Services.logins.removeLogin(logins[i]);
++					await Services.logins.removeLoginAsync(logins[i]);
+ 				}
+ 				catch (e) {
+ 					Zotero.logError(e);
+@@ -359,7 +359,7 @@
+ 			Zotero.debug('Clearing old WebDAV passwords');
+ 			if (logins[i].formSubmitURL == "Zotero Storage Server") {
+ 				try {
+-					Services.logins.removeLogin(logins[i]);
++					await Services.logins.removeLoginAsync(logins[i]);
+ 				}
+ 				catch (e) {
+ 					Zotero.logError(e);
+@@ -385,7 +385,7 @@
+ 		}
+ 		// If the write failed because the key database was unusable, reset the login manager
+ 		// and retry
+-		if (Zotero.Sync.Data.Local.repairLoginManager()) {
++		if (await Zotero.Sync.Data.Local.repairLoginManager()) {
+ 			try {
+ 				await this._writeEncryptedPassword(username, password);
+ 				return;
+@@ -418,7 +418,7 @@
+ 		});
+ 		for (let i = 0; i < logins.length; i++) {
+ 			if (logins[i].username == username) {
+-				Services.logins.removeLogin(logins[i]);
++				await Services.logins.removeLoginAsync(logins[i]);
+ 			}
+ 		}
+ 		
+diff --git a/chrome/content/zotero/xpcom/sync/syncLocal.js b/chrome/content/zotero/xpcom/sync/syncLocal.js
+--- a/chrome/content/zotero/xpcom/sync/syncLocal.js
++++ b/chrome/content/zotero/xpcom/sync/syncLocal.js
+@@ -34,6 +34,8 @@
+ 	_loginManagerRealmLegacy: 'Zotero Web API',
+ 	_lastSyncTime: null,
+ 	_lastClassicSyncTime: null,
++	// Cached hasCredentials() result, for the synchronous Zotero.Sync.Runner.enabled getter
++	_hasCredentials: false,
+ 	// Item/Collection-only -- synced settings can't affect the undo stack
+ 	_remoteChangesApplied: false,
+ 
+@@ -54,6 +56,7 @@
+ 		if (!_lastSyncTime) {
+ 			await this._loadLastClassicSyncTime();
+ 		}
++		await this.hasCredentials();
+ 	},
+ 	
+ 	
+@@ -67,7 +70,7 @@
+ 		// keep the legacy entry so a downgrade can still read it. The legacy
+ 		// realm will be cleared in a future version once downgrades are
+ 		// unlikely.
+-		var legacyLogin = this._getLegacyAPIKeyLoginInfo();
++		var legacyLogin = await this._getLegacyAPIKeyLoginInfo();
+ 		if (legacyLogin) {
+ 			let apiKey = legacyLogin.password;
+ 			if (!this._mirroredAPIKey) {
+@@ -85,7 +88,7 @@
+ 			}
+ 			return apiKey;
+ 		}
+-		var login = this._getAPIKeyLoginInfo();
++		var login = await this._getAPIKeyLoginInfo();
+ 		if (login) {
+ 			if (Zotero.OSKeyStore.isEncrypted(login.password)) {
+ 				return Zotero.OSKeyStore.decrypt(login.password);
+@@ -121,30 +124,49 @@
+ 	
+ 	/**
+ 	 * Check for an API key or a legacy username/password (which may or may not be valid)
+-	 */
+-	hasCredentials: function () {
+-		if (this._getAPIKeyLoginInfo() || this._getLegacyAPIKeyLoginInfo()) {
++	 *
++	 * @return {Promise<Boolean>}
++	 */
++	hasCredentials: async function () {
++		this._hasCredentials = await this._checkCredentials();
++		return this._hasCredentials;
++	},
++	
++	
++	/**
++	 * The result of the last hasCredentials() call, for callers that can't await
++	 *
++	 * @return {Boolean}
++	 */
++	get hasCachedCredentials() {
++		return this._hasCredentials;
++	},
++	
++	
++	_checkCredentials: async function () {
++		if ((await this._getAPIKeyLoginInfo()) || (await this._getLegacyAPIKeyLoginInfo())) {
+ 			return true;
+ 		}
+ 		// If no API key, check for legacy login
+ 		var username = Zotero.Prefs.get('sync.server.username');
+-		return username && !!this.getLegacyPassword(username)
++		return !!username && !!(await this.getLegacyPassword(username));
+ 	},
+ 	
+ 	
+ 	setAPIKey: async function (apiKey) {
+-		var oldLoginInfo = this._getAPIKeyLoginInfo();
+-		var legacyLoginInfo = this._getLegacyAPIKeyLoginInfo();
++		var oldLoginInfo = await this._getAPIKeyLoginInfo();
++		var legacyLoginInfo = await this._getLegacyAPIKeyLoginInfo();
+ 		
+ 		// Clear old login
+ 		if ((!apiKey || apiKey === "")) {
+ 			if (oldLoginInfo) {
+ 				Zotero.debug("Clearing old API key");
+-				Services.logins.removeLogin(oldLoginInfo);
++				await Services.logins.removeLoginAsync(oldLoginInfo);
+ 			}
+ 			if (legacyLoginInfo) {
+-				Services.logins.removeLogin(legacyLoginInfo);
+-			}
++				await Services.logins.removeLoginAsync(legacyLoginInfo);
++			}
++			this._hasCredentials = false;
+ 			Zotero.Notifier.trigger('delete', 'api-key', []);
+ 			return;
+ 		}
+@@ -152,8 +174,9 @@
+ 		await this._saveAPIKey(apiKey);
+ 		// Drop any leftover plaintext entry from the legacy realm
+ 		if (legacyLoginInfo) {
+-			Services.logins.removeLogin(legacyLoginInfo);
+-		}
++			await Services.logins.removeLoginAsync(legacyLoginInfo);
++		}
++		this._hasCredentials = true;
+ 		Zotero.Notifier.trigger('modify', 'api-key', []);
+ 	},
+ 	
+@@ -174,7 +197,7 @@
+ 		}
+ 		// If the write failed because the key database was unusable, reset the login manager
+ 		// and retry, so that logging in works without a manual fix
+-		if (this.repairLoginManager()) {
++		if (await this.repairLoginManager()) {
+ 			try {
+ 				await this._writeEncryptedAPIKey(apiKey);
+ 				return;
+@@ -200,7 +223,7 @@
+ 	
+ 	
+ 	_writeAPIKey: async function (storedValue) {
+-		var oldLoginInfo = this._getAPIKeyLoginInfo();
++		var oldLoginInfo = await this._getAPIKeyLoginInfo();
+ 		var nsLoginInfo = new Components.Constructor("@mozilla.org/login-manager/loginInfo;1",
+ 				Components.interfaces.nsILoginInfo, "init");
+ 		var loginInfo = new nsLoginInfo(
+@@ -218,7 +241,7 @@
+ 		}
+ 		else {
+ 			Zotero.debug("Replacing API key");
+-			Services.logins.modifyLogin(oldLoginInfo, loginInfo);
++			await Services.logins.modifyLoginAsync(oldLoginInfo, loginInfo);
+ 		}
+ 	},
+ 	
+@@ -529,22 +552,20 @@
+ 	 * since there's no primary-password prompt. Clear stored logins and reset the key database
+ 	 * so that credentials can be saved again.
+ 	 *
+-	 * @return {Boolean} - True if the login manager was reset
+-	 */
+-	repairLoginManager: function () {
++	 * @return {Promise<Boolean>} - True if the login manager was reset
++	 */
++	repairLoginManager: async function () {
+ 		try {
+-			let token = Cc["@mozilla.org/security/pk11tokendb;1"]
+-				.getService(Ci.nsIPK11TokenDB)
+-				.getInternalKeyToken();
++			let token = Cc["@mozilla.org/security/internalkeytoken;1"]
++				.createInstance(Ci.nsIPKCS11Token);
+ 			if (!token.hasPassword) {
+ 				return false;
+ 			}
+ 			Zotero.debug("Primary password set on NSS key database -- resetting login manager", 1);
+-			Services.logins.removeAllLogins();
++			await Services.logins.removeAllLoginsAsync();
++			this._hasCredentials = false;
+ 			token.reset();
+-			if (token.needsUserInit) {
+-				token.initPassword("");
+-			}
++			token.changePassword("", "");
+ 		}
+ 		catch (e) {
+ 			Zotero.logError(e);
+@@ -556,21 +577,20 @@
+ 
+ 
+ 	/**
+-	 * @return {nsILoginInfo|false}
+-	 */
+-	_getAPIKeyLoginInfo: function () {
++	 * @return {Promise<nsILoginInfo|false>}
++	 */
++	_getAPIKeyLoginInfo: async function () {
+ 		try {
+-			var logins = Services.logins.findLogins(
+-				this._loginManagerHost,
+-				null,
+-				this._loginManagerRealm
+-			);
++			var logins = await Services.logins.searchLoginsAsync({
++				origin: this._loginManagerHost,
++				httpRealm: this._loginManagerRealm
++			});
+ 		}
+ 		catch (e) {
+ 			Zotero.logError(e);
+ 			// If the key database was unusable, reset the login manager so that credentials
+ 			// can be saved again
+-			if (this.repairLoginManager()) {
++			if (await this.repairLoginManager()) {
+ 				return false;
+ 			}
+ 			if (!this._lastLoginManagerErrorTime
+@@ -589,15 +609,14 @@
+ 	
+ 	
+ 	/**
+-	 * @return {nsILoginInfo|false}
+-	 */
+-	_getLegacyAPIKeyLoginInfo: function () {
++	 * @return {Promise<nsILoginInfo|false>}
++	 */
++	_getLegacyAPIKeyLoginInfo: async function () {
+ 		try {
+-			var logins = Services.logins.findLogins(
+-				this._loginManagerHost,
+-				null,
+-				this._loginManagerRealmLegacy
+-			);
++			var logins = await Services.logins.searchLoginsAsync({
++				origin: this._loginManagerHost,
++				httpRealm: this._loginManagerRealmLegacy
++			});
+ 		}
+ 		catch (e) {
+ 			Zotero.logError(e);
+@@ -612,20 +631,20 @@
+ 		if (username) {
+ 			// Check for legacy password if no password set in current session
+ 			// and no API keys stored yet
+-			let password = this.getLegacyPassword(username);
++			let password = await this.getLegacyPassword(username);
+ 			if (!password) {
+ 				return "";
+ 			}
+ 			
+ 			let json = await Zotero.Sync.Runner.createAPIKeyFromCredentials(username, password);
+-			this.removeLegacyLogins();
++			await this.removeLegacyLogins();
+ 			return json.key;
+ 		}
+ 		return "";
+ 	},
+ 	
+ 	
+-	getLegacyPassword: function (username) {
++	getLegacyPassword: async function (username) {
+ 		var loginManagerHost = 'chrome://zotero';
+ 		var loginManagerRealm = 'Zotero Sync Server';
+ 		
+@@ -634,7 +653,10 @@
+ 		var loginManager = Components.classes["@mozilla.org/login-manager;1"]
+ 			.getService(Components.interfaces.nsILoginManager);
+ 		try {
+-			var logins = loginManager.findLogins(loginManagerHost, null, loginManagerRealm);
++			var logins = await loginManager.searchLoginsAsync({
++				origin: loginManagerHost,
++				httpRealm: loginManagerRealm
++			});
+ 		}
+ 		catch (e) {
+ 			Zotero.logError(e);
+@@ -649,7 +671,7 @@
+ 		}
+ 		
+ 		// Pre-4.0.28.5 format, broken for findLogins and removeLogin in Fx41,
+-		var logins = loginManager.findLogins(loginManagerHost, "", null);
++		var logins = await loginManager.searchLoginsAsync({ origin: loginManagerHost });
+ 		for (let i = 0; i < logins.length; i++) {
+ 			if (logins[i].username == username
+ 					&& logins[i].formSubmitURL == "Zotero Sync Server") {
+@@ -660,7 +682,7 @@
+ 	},
+ 	
+ 	
+-	removeLegacyLogins: function () {
++	removeLegacyLogins: async function () {
+ 		var loginManagerHost = 'chrome://zotero';
+ 		var loginManagerRealm = 'Zotero Sync Server';
+ 		
+@@ -669,7 +691,10 @@
+ 		var loginManager = Components.classes["@mozilla.org/login-manager;1"]
+ 			.getService(Components.interfaces.nsILoginManager);
+ 		try {
+-			var logins = loginManager.findLogins(loginManagerHost, null, loginManagerRealm);
++			var logins = await loginManager.searchLoginsAsync({
++				origin: loginManagerHost,
++				httpRealm: loginManagerRealm
++			});
+ 		}
+ 		catch (e) {
+ 			Zotero.logError(e);
+@@ -678,7 +703,7 @@
+ 		
+ 		// Remove all legacy users
+ 		for (let login of logins) {
+-			loginManager.removeLogin(login);
++			await loginManager.removeLoginAsync(login);
+ 		}
+ 		// Remove the legacy pref
+ 		Zotero.Prefs.clear('sync.server.username');
+diff --git a/chrome/content/zotero/xpcom/sync/syncRunner.js b/chrome/content/zotero/xpcom/sync/syncRunner.js
+--- a/chrome/content/zotero/xpcom/sync/syncRunner.js
++++ b/chrome/content/zotero/xpcom/sync/syncRunner.js
+@@ -35,7 +35,7 @@
+ 	
+ 	Zotero.defineProperty(this, 'enabled', {
+ 		get: () => {
+-			return _apiKey || Zotero.Sync.Data.Local.hasCredentials();
++			return !!_apiKey || Zotero.Sync.Data.Local.hasCachedCredentials;
+ 		}
+ 	});
+ 	Zotero.defineProperty(this, 'syncInProgress', { get: () => _syncInProgress });
+diff --git a/chrome/content/zotero/xpcom/utilities_internal.js b/chrome/content/zotero/xpcom/utilities_internal.js
+--- a/chrome/content/zotero/xpcom/utilities_internal.js
++++ b/chrome/content/zotero/xpcom/utilities_internal.js
+@@ -1731,7 +1731,7 @@
+ 			}
+ 			menuitem.setAttribute("value", value);
+ 			menuitem.setAttribute("image", icon);
+-			menuitem.setAttribute("disabled", disabled);
++			menuitem.toggleAttribute("disabled", disabled);
+ 			menuitem.addEventListener('command', command);
+ 			menuitem.classList.add('menuitem-iconic');
+ 			return menuitem;
+@@ -1877,7 +1877,7 @@
+ 		
+ 		// Pull window to foreground
+ 		Zotero.Utilities.Internal.activate(pane.document.defaultView);
+-		pane.document.ownerGlobal.focus();
++		pane.document.documentGlobal.focus();
+ 	},
+ 	
+ 	
+diff --git a/chrome/content/zotero/zoteroPane.js b/chrome/content/zotero/zoteroPane.js
+--- a/chrome/content/zotero/zoteroPane.js
++++ b/chrome/content/zotero/zoteroPane.js
+@@ -371,10 +371,10 @@
+ 					ArrowPrevious: () => null,
+ 					Tab: () => document.getElementById("zotero-tb-search").focus(),
+ 					ShiftTab: () => {
+-						if (collectionsPane.getAttribute("collapsed")) {
++						if (collectionsPane.hasAttribute("collapsed")) {
+ 							return document.getElementById('zotero-tb-sync');
+ 						}
+-						if (tagContainer.getAttribute('collapsed') == "true") {
++						if (tagContainer.hasAttribute('collapsed')) {
+ 							return focusCollectionTree();
+ 						}
+ 						return document.querySelector("#zotero-tag-selector button");
+@@ -430,7 +430,7 @@
+ 				'collection-tree': {
+ 					ShiftTab: () => document.getElementById('zotero-tb-collections-search').click(),
+ 					Tab: () => {
+-						if (tagContainer.getAttribute('collapsed') == "true") {
++						if (tagContainer.hasAttribute('collapsed')) {
+ 							return document.getElementById('zotero-tb-add');
+ 						}
+ 						// If tag selector is collapsed, go to "New item" button, otherwise focus tag selector
+@@ -1464,8 +1464,8 @@
+ 		});
+ 		
+ 		// Expand the item pane if it's closed
+-		if (this.itemPane.getAttribute("collapsed") == "true") {
+-			this.itemPane.setAttribute("collapsed", false);
++		if (this.itemPane.hasAttribute("collapsed")) {
++			this.itemPane.removeAttribute("collapsed");
+ 		}
+ 		
+ 		//set to Info tab
+@@ -1648,7 +1648,7 @@
+ 	this.initTagSelector = async function () {
+ 		try {
+ 			var container = document.getElementById('zotero-tag-selector-container');
+-			if (!container.hasAttribute('collapsed') || container.getAttribute('collapsed') == 'false') {
++			if (!container.hasAttribute('collapsed')) {
+ 				this.tagSelector = await Zotero.TagSelector.init(
+ 					document.getElementById('zotero-tag-selector'),
+ 					{
+@@ -1695,8 +1695,8 @@
+ 	// Keep in sync with ZoteroStandalone.updateViewOption()
+ 	this.toggleTagSelector = async function () {
+ 		var container = document.getElementById('zotero-tag-selector-container');
+-		var showing = container.getAttribute('collapsed') == 'true';
+-		container.setAttribute('collapsed', !showing);
++		var showing = container.hasAttribute('collapsed');
++		container.toggleAttribute('collapsed', !showing);
+ 		
+ 		// If showing, set scope to items in current view
+ 		// and focus filter textbox
+@@ -1716,14 +1716,13 @@
+ 		var collectionTreeRows = this.getCollectionTreeRows();
+ 		if (!collectionTreeRows.length) return;
+ 		var tagSelector = document.getElementById('zotero-tag-selector-container');
+-		return !tagSelector.hasAttribute('collapsed')
+-			|| tagSelector.getAttribute('collapsed') == 'false';
++		return !tagSelector.hasAttribute('collapsed');
+ 	};
+ 
+ 
+ 	this.updateTagSelectorViewSettingsMenu = async function () {
+-		document.getElementById('show-automatic').setAttribute('checked', ZoteroPane.tagSelector.showAutomatic);
+-		document.getElementById('display-all-tags').setAttribute('checked', ZoteroPane.tagSelector.displayAllTags);
++		document.getElementById('show-automatic').toggleAttribute('checked', ZoteroPane.tagSelector.showAutomatic);
++		document.getElementById('display-all-tags').toggleAttribute('checked', ZoteroPane.tagSelector.displayAllTags);
+ 		document.getElementById('num-selected').label = ZoteroPane.tagSelector.label;
+ 		var libraryID = ZoteroPane.tagSelector.libraryID;
+ 		var library = Zotero.Libraries.get(libraryID);
+@@ -2291,7 +2290,7 @@
+ 			['cmd_zotero_newChildURLAttachment', oneItemSelected],
+ 		];
+ 		for (let command of commandsEnabled) {
+-			document.getElementById(command[0]).setAttribute('disabled', !command[1]);
++			document.getElementById(command[0]).toggleAttribute('disabled', !command[1]);
+ 		}
+ 
+ 		Zotero.MenuManager.updateMenuPopup(
+@@ -2360,9 +2359,9 @@
+ 			}
+ 		}
+ 		
+-		document.getElementById('cmd_zotero_copyCitation').setAttribute('disabled', !canCopy);
+-		document.getElementById('cmd_zotero_copyBibliography').setAttribute('disabled', !canCopy);
+-		document.getElementById('cmd_zotero_copyAnnotation').setAttribute('disabled', !canCopy);
++		document.getElementById('cmd_zotero_copyCitation').toggleAttribute('disabled', !canCopy);
++		document.getElementById('cmd_zotero_copyBibliography').toggleAttribute('disabled', !canCopy);
++		document.getElementById('cmd_zotero_copyAnnotation').toggleAttribute('disabled', !canCopy);
+ 	};
+ 	
+ 	
+@@ -4120,11 +4119,11 @@
+ 		// Hide and enable all actions by default (so if they're shown they're enabled)
+ 		for (let i in m) {
+ 			m[i].setAttribute('hidden', true);
+-			m[i].setAttribute('disabled', false);
++			m[i].removeAttribute('disabled');
+ 		}
+ 		
+ 		for (let id of show) {
+-			m[id].setAttribute('hidden', false);
++			m[id].removeAttribute('hidden');
+ 		}
+ 		
+ 		for (let id of disable) {
+@@ -4665,7 +4664,7 @@
+ 		for (let i in m) {
+ 			let pos = m[i];
+ 			menu.childNodes[pos].setAttribute('hidden', true);
+-			menu.childNodes[pos].setAttribute('disabled', false);
++			menu.childNodes[pos].removeAttribute('disabled');
+ 		}
+ 		
+ 		for (let x of disable) {
+@@ -4673,7 +4672,7 @@
+ 		}
+ 		
+ 		for (let x of show) {
+-			menu.childNodes[x].setAttribute('hidden', false);
++			menu.childNodes[x].removeAttribute('hidden');
+ 		}
+ 
+ 		// No locate menu options if annotations are selected
+@@ -7497,7 +7496,7 @@
+ 		const windowAutoStackMinWidth = 930;
+ 		if (window.innerWidth < windowAutoStackMinWidth) {
+ 			// Disable layout mode menus because the standard mode is not available
+-			layoutModeMenus.forEach(menu => menu.setAttribute("disabled", "true"));
++			layoutModeMenus.forEach(menu => menu.toggleAttribute("disabled", "true"));
+ 			// If the window is too small in standard mode, enter stack mode temporarily
+ 			if (!isStackedMode && !isTempStackedMode) {
+ 				Zotero.Prefs.set('tempStackedMode', true);
+diff --git a/chrome/skin/default/zotero/integration.css b/chrome/skin/default/zotero/integration.css
+--- a/chrome/skin/default/zotero/integration.css
++++ b/chrome/skin/default/zotero/integration.css
+@@ -33,7 +33,7 @@
+ 	list-style-image: url('chrome://zotero/skin/citation-up.png');
+ }
+ 
+-#up[disabled="true"] {
++#up[disabled] {
+ 	list-style-image: url('chrome://zotero/skin/citation-up-gray.png');
+ }
+ 
+@@ -41,7 +41,7 @@
+ 	list-style-image: url('chrome://zotero/skin/citation-down.png');
+ }
+ 
+-#down[disabled="true"] {
++#down[disabled] {
+ 	list-style-image: url('chrome://zotero/skin/citation-down-gray.png');
+ }
+ 
+@@ -50,7 +50,7 @@
+ 	list-style-image: url('chrome://zotero/skin/citation-add.png');
+ }
+ 
+-#add[disabled="true"] {
++#add[disabled] {
+ 	list-style-image: url('chrome://zotero/skin/citation-add-gray.png');
+ }
+ 
+@@ -58,7 +58,7 @@
+ 	list-style-image: url('chrome://zotero/skin/citation-delete.png');
+ }
+ 
+-#remove[disabled="true"] {
++#remove[disabled] {
+ 	list-style-image: url('chrome://zotero/skin/citation-delete-gray.png');
+ }
+ 
+@@ -161,7 +161,7 @@
+ 	border-color: #6d95e0;
+ }
+ 
+-.citation-dialog.bubble[selected="true"] {
++.citation-dialog.bubble[selected] {
+ 	border-radius: 8px !important;
+ 	background-color: #598bec;
+ 	color: #fff;
+@@ -265,7 +265,7 @@
+ 	color: var(--fill-secondary);
+ }
+ 
+-richlistitem[selected="true"] {
++richlistitem[selected] {
+ 	background: Highlight !important;
+ 	color: HighlightText !important;
+ }
+diff --git a/chrome/skin/default/zotero/overlay.css b/chrome/skin/default/zotero/overlay.css
+--- a/chrome/skin/default/zotero/overlay.css
++++ b/chrome/skin/default/zotero/overlay.css
+@@ -42,7 +42,7 @@
+ /* 
+ 	Fix to odd fx115 behavior that gives an un-collapsed pane the initial width of min-width + last width
+ */
+-#zotero-collections-pane[collapsed=true] {
++#zotero-collections-pane[collapsed] {
+ 	min-width: 0px !important;
+ 	width: 0px !important;
+ }
+diff --git a/chrome/skin/default/zotero/search-textbox.css b/chrome/skin/default/zotero/search-textbox.css
+--- /dev/null
++++ b/chrome/skin/default/zotero/search-textbox.css
+@@ -0,0 +1,116 @@
++/* This Source Code Form is subject to the terms of the Mozilla Public
++ * License, v. 2.0. If a copy of the MPL was not distributed with this
++ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
++
++:host {
++  appearance: auto;
++  -moz-default-appearance: textfield;
++  cursor: text;
++  margin: 2px 4px; /* matches <input> global.css margin */
++  padding: 2px 2px 3px;
++  padding-inline-start: 4px;
++  background-color: Field;
++  color: FieldText;
++  min-width: 0;
++}
++
++@media (-moz-platform: macos) {
++  :host {
++    -moz-default-appearance: searchfield;
++    /* TODO: These are a bit dubious, see bug 1815264 */
++    font-size: 12px;
++    margin: 4px; /* matches <input> global.css margin */
++    padding: 1px;
++  }
++}
++
++input {
++  border: none;
++  padding: 0 1px;
++  background-color: transparent;
++  outline: none;
++  color: inherit;
++  font: inherit;
++  text-shadow: inherit;
++  box-sizing: border-box;
++  flex: 1;
++  text-align: inherit;
++  min-width: 0;
++}
++
++:host([readonly="true"]) {
++  background-color: -moz-Dialog;
++  color: -moz-DialogText;
++}
++
++:host([disabled]) {
++  cursor: default;
++  background-color: -moz-Dialog;
++  color: GrayText;
++}
++
++:host(:focus-within) {
++  outline: auto;
++}
++
++.textbox-search-icons {
++  align-items: center;
++  justify-items: center;
++}
++
++.textbox-search-icon,
++.textbox-search-sign,
++.textbox-search-clear {
++  /* Search icon is 12px, but we expand to the clear button size so they
++   * overlap. That doesn't make the icon noticeably less crisp */
++  width: 14px;
++}
++
++.textbox-search-sign,
++.textbox-search-icon {
++  list-style-image: url(chrome://global/skin/icons/search-textbox.svg);
++}
++
++.textbox-search-sign:-moz-locale-dir(rtl),
++.textbox-search-icon:-moz-locale-dir(rtl) {
++  transform: scaleX(-1);
++}
++
++.textbox-search-sign {
++  margin-inline-end: 5px;
++}
++
++.textbox-search-clear {
++  list-style-image: url(resource://content-accessible/close-12.svg);
++  -moz-context-properties: fill;
++  fill: currentColor;
++}
++
++.textbox-search-icon:not([disabled]) {
++  cursor: pointer;
++}
++
++.textbox-search-clear:not([disabled]) {
++  cursor: default;
++}
++
++/* searchbutton disables the icon to the left.
++ * Otherwise we don't show the search icon, only the clear icon, see
++ * bug 1385902 */
++:host([searchbutton]) .textbox-search-sign,
++:host(:not([searchbutton])) .textbox-search-icons:not([selectedIndex="1"]) {
++  display: none;
++}
++
++/* On macOS -moz-default-appearance: searchbox provides the search icon too, so
++ * disable those there unconditionally */
++@media (-moz-platform: macos) {
++  .textbox-search-sign,
++  .textbox-search-icons:not([selectedIndex="1"]) {
++    display: none;
++  }
++
++  .textbox-search-clear {
++    margin-bottom: 1px;
++  }
++}
+diff --git a/defaults/preferences/zotero.js b/defaults/preferences/zotero.js
+--- a/defaults/preferences/zotero.js
++++ b/defaults/preferences/zotero.js
+@@ -257,3 +257,14 @@
+ 
+ // Need to enable -moz-context-properties for SVG context properties to work
+ pref("svg.context-properties.content.enabled", true);
++
++// Firefox applies a baseline "script-src chrome: resource: moz-src:" CSP to every chrome:
++// document, which blocks inline <script>s and inline event handlers
++pref("security.chrome_baseline_csp.enabled", false);
++
++// Allow chrome: DTDs to be loaded, which we still use for localized strings in XUL markup
++pref("dom.fetch.allow_force_allowed_dtd", true);
++
++// Translators are evaluated in the parent process with the system principal
++pref("security.allow_eval_with_system_principal", true);
++pref("security.allow_eval_in_parent_process", true);
+diff --git a/resource/loader.sys.mjs b/resource/loader.sys.mjs
+--- a/resource/loader.sys.mjs
++++ b/resource/loader.sys.mjs
+@@ -17,7 +17,7 @@
+     lazy,
+     "resProto",
+     "@mozilla.org/network/protocol;1?name=resource",
+-    "nsIResProtocolHandler"
++    Ci.nsIResProtocolHandler
+ );
+ 
+ ChromeUtils.defineESModuleGetters(
+diff --git a/scss/abstracts/_svgicon.scss b/scss/abstracts/_svgicon.scss
+--- a/scss/abstracts/_svgicon.scss
++++ b/scss/abstracts/_svgicon.scss
+@@ -24,7 +24,9 @@
+ 
+ @mixin svgicon-menu($icon, $color, $size: "16", $prefix: false, $has2x: false, $light-dark: false) {
+     // Disable 2x because list-style-image doesn't support image-set
++    // list-style-image is used by native macOS menus, --menuitem-icon by in-content menus
+     list-style-image: -make-icon-background($icon, $color, $size, $prefix, false);
++    --menuitem-icon: #{-make-icon-background($icon, $color, $size, $prefix, false)};
+     @if ($color == 'universal') {
+         @if ($light-dark) {
+             @include light-dark(fill, nth($light-dark, 1), nth($light-dark, 2));
+diff --git a/scss/components/_banners.scss b/scss/components/_banners.scss
+--- a/scss/components/_banners.scss
++++ b/scss/components/_banners.scss
+@@ -68,7 +68,7 @@
+ // Add drop shadow after banner that's followed by another
+ //
+ // We set a z-index in ZoteroPane.setBannerZIndexes() to make this work
+-.banner-container:has(~ .banner-container:not([collapsed="true"])) {
++.banner-container:has(~ .banner-container:not([collapsed])) {
+ 	box-shadow: 0px 1px 4px 0px rgba(0, 0, 0, 0.25);
+ }
+ 
+diff --git a/scss/components/_clicky.scss b/scss/components/_clicky.scss
+--- a/scss/components/_clicky.scss
++++ b/scss/components/_clicky.scss
+@@ -2,7 +2,7 @@
+ 	border-radius: 6px;
+ 	padding: 2px;
+ 
+-	&:not([disabled=true]) {
++	&:not([disabled]) {
+ 		&:hover {
+ 			background: var(--fill-quinary) !important;
+ 		}
+@@ -81,6 +81,6 @@
+ 	border: 0px !important;
+ }
+ 
+-.zotero-clicky-minus[disabled=true], .zotero-clicky-plus[disabled=true] {
++.zotero-clicky-minus[disabled], .zotero-clicky-plus[disabled] {
+ 	opacity: .5;
+ }
+diff --git a/scss/components/_contextPane.scss b/scss/components/_contextPane.scss
+--- a/scss/components/_contextPane.scss
++++ b/scss/components/_contextPane.scss
+@@ -54,7 +54,7 @@
+ 	background: var(--material-sidepane);
+ 	flex-direction: column;
+ 	
+-	&[collapsed=true] {
++	&[collapsed] {
+ 		height: 0 !important;
+ 	}
+ }
+@@ -113,9 +113,9 @@
+ 	height: 28px;
+ }
+ 
+-#zotero-context-pane[collapsed=true] .notes-list-container,
+-#zotero-context-pane-inner[collapsed=true] .notes-list-container,
+-#zotero-context-pane[collapsed=true] .zotero-view-item > tabpanel > *,
+-#zotero-context-pane-inner[collapsed=true] .zotero-view-item > tabpanel > * {
++#zotero-context-pane[collapsed] .notes-list-container,
++#zotero-context-pane-inner[collapsed] .notes-list-container,
++#zotero-context-pane[collapsed] .zotero-view-item > tabpanel > *,
++#zotero-context-pane-inner[collapsed] .zotero-view-item > tabpanel > * {
+ 	overflow: unset !important;
+ }
+diff --git a/scss/components/_exportOptions.scss b/scss/components/_exportOptions.scss
+--- a/scss/components/_exportOptions.scss
++++ b/scss/components/_exportOptions.scss
+@@ -4,13 +4,13 @@
+ 		margin-left: 17px;
+ 	}
+ 	
+-	checkbox[disabled=true] label {
++	checkbox[disabled] label {
+ 		opacity: .5;
+ 	}
+ 
+ 	/* Override rules from Mozilla checkbox.css that make text almost unreadable when disabled
+ 	   when combined with our opacity: .5 */
+-	checkbox[native][disabled="true"] {
++	checkbox[native][disabled] {
+ 		color: unset;
+ 	}
+ }
+diff --git a/scss/components/_import-wizard.scss b/scss/components/_import-wizard.scss
+--- a/scss/components/_import-wizard.scss
++++ b/scss/components/_import-wizard.scss
+@@ -44,7 +44,7 @@
+ 		margin: 0;
+ 	}
+ 
+-	[disabled="true"] .checkbox-label {
++	[disabled] .checkbox-label {
+ 		opacity: .5;
+ 	}
+ 
+diff --git a/scss/components/_menu.scss b/scss/components/_menu.scss
+--- a/scss/components/_menu.scss
++++ b/scss/components/_menu.scss
+@@ -89,7 +89,7 @@
+ 	@include macOS-hide-menu-icons;
+ }
+ 
+-menupopup image {
++menupopup :is(image, .menu-icon) {
+ 	-moz-context-properties: fill, fill-opacity;
+ 	fill: var(--fill-secondary);
+ 	
+@@ -103,9 +103,11 @@
+ 	&.zotero-custom-menu-item {
+ 		@media (prefers-color-scheme: light) {
+ 			list-style-image: var(--custom-menu-icon-light, none);
++			--menuitem-icon: var(--custom-menu-icon-light, none);
+ 		}
+ 		@media (prefers-color-scheme: dark) {
+ 			list-style-image: var(--custom-menu-icon-dark, none);
++			--menuitem-icon: var(--custom-menu-icon-dark, none);
+ 		}
+ 	}
+ }
+diff --git a/scss/components/_richlistbox.scss b/scss/components/_richlistbox.scss
+--- a/scss/components/_richlistbox.scss
++++ b/scss/components/_richlistbox.scss
+@@ -27,7 +27,7 @@
+ 		}
+ 
+ 		// Selected but not focused
+-		&[selected="true"] {
++		&[selected] {
+ 			background-color: var(--color-quarternary-on-sidepane);
+ 			color: var(--color-accent-text);
+ 		}
+@@ -36,7 +36,7 @@
+ 	&:focus {
+ 		& > richlistitem {
+ 			// Selected and focused
+-			&[selected="true"] {
++			&[selected] {
+ 				background-color: var(--color-accent);
+ 				color: var(--color-accent-text);
+ 			}
+@@ -44,7 +44,7 @@
+ 
+ 		// Add focus ring to richlistbox if the richlistbox is multi-select
+ 		&[seltype="multiple"] > richlistitem {
+-			&[selected="true"][current="true"] {
++			&[selected][current] {
+ 				outline: var(--default-focusring);
+ 				outline-color: currentColor;
+ 				outline-offset: calc(-1 * var(--default-focusring-width));
+diff --git a/scss/components/_search.scss b/scss/components/_search.scss
+--- a/scss/components/_search.scss
++++ b/scss/components/_search.scss
+@@ -22,6 +22,11 @@
+ 		@media not (-moz-platform: windows) {
+ 			@include focus-ring;
+ 		}
++
++		// We draw our own clear button below
++		&::-moz-search-clear-button {
++			display: none;
++		}
+ 	}
+ 
+ 	.search-cancel-button {
+@@ -40,6 +45,15 @@
+ 	}
+ }
+ 
++// Firefox gives the native clear button a hover background that runs into the field's focus ring,
++// and we don't use hover effects on comparable buttons
++input::-moz-search-clear-button {
++	&:hover,
++	&:active {
++		background-color: transparent;
++	}
++}
++
+ search-textbox {
+ 	appearance: none;
+ 	background: var(--material-background);
+@@ -48,6 +62,10 @@
+ 	color: var(--fill-primary);
+ 	padding: 0;
+ 	padding-inline-end: 6px;
++	text-shadow: none;
++	// Allow text selection in the field instead of dragging the window when the
++	// field is in a draggable toolbar
++	-moz-window-dragging: no-drag;
+ 
+ 	&::placeholder {
+ 		color: var(--fill-tertiary);
+diff --git a/scss/components/_tagSelector.scss b/scss/components/_tagSelector.scss
+--- a/scss/components/_tagSelector.scss
++++ b/scss/components/_tagSelector.scss
+@@ -6,7 +6,7 @@
+ 	min-height: 100px;
+ }
+ 
+-#zotero-tag-selector-container[collapsed=true] {
++#zotero-tag-selector-container[collapsed] {
+ 	visibility: collapse;
+ }
+ 
+diff --git a/scss/components/_toolbar.scss b/scss/components/_toolbar.scss
+--- a/scss/components/_toolbar.scss
++++ b/scss/components/_toolbar.scss
+@@ -81,12 +81,12 @@
+ }
+ 
+ /* Hide collection search on pane collapse, otherwise it still shows when focused */
+-#zotero-collections-pane[collapsed=true] #zotero-collections-search.visible {
++#zotero-collections-pane[collapsed] #zotero-collections-search.visible {
+ 	display: none;
+ }
+ 
+ /* Hide the add button on pane collapse. Otherwise, it may show on top of 'New Item' */
+-#zotero-collections-pane[collapsed=true] #zotero-tb-collection-add {
++#zotero-collections-pane[collapsed] #zotero-tb-collection-add {
+ 	visibility: hidden;
+ }
+ 
+diff --git a/scss/components/_toolbarbutton.scss b/scss/components/_toolbarbutton.scss
+--- a/scss/components/_toolbarbutton.scss
++++ b/scss/components/_toolbarbutton.scss
+@@ -10,14 +10,6 @@
+ 	background-color: transparent;
+ 
+ 
+-	.toolbarbutton-menu-dropmarker {
+-		-moz-default-appearance: none;
+-		@include svgicon-menu("chevron-8", "universal", "8");
+-		color: var(--fill-secondary);
+-		width: 8px;
+-		height: 8px;
+-	}
+-
+ 	&:hover {
+ 		background-color: var(--fill-quinary);
+ 	}
+@@ -29,7 +21,7 @@
+ 	@include focus-ring;
+ 	
+ 	&:disabled,
+-	&[disabled="true"] {
++	&[disabled] {
+ 		background-color: transparent;
+ 		color: var(--fill-tertiary);
+ 
+@@ -41,6 +33,15 @@
+ 	&[open="true"] {
+ 		background-color: var(--fill-quarternary);
+ 	}
++}
++
++// Also hosted by plain <button>s, e.g., in the feed settings dialog
++.toolbarbutton-menu-dropmarker {
++	-moz-default-appearance: none;
++	@include svgicon("chevron-6", "universal", "8");
++	color: var(--fill-secondary);
++	width: 8px;
++	height: 8px;
+ }
+ 
+ @keyframes rotating {
+diff --git a/scss/elements/_attachmentBox.scss b/scss/elements/_attachmentBox.scss
+--- a/scss/elements/_attachmentBox.scss
++++ b/scss/elements/_attachmentBox.scss
+@@ -39,7 +39,7 @@
+ 			padding: 4px;
+ 			margin-left: 4px;
+ 			@include svgicon-menu("sync", "universal", "16");
+-			&:not([disabled='true']) {
++			&:not([disabled]) {
+ 				color: var(--fill-secondary);
+ 			}
+ 		}
+@@ -50,7 +50,7 @@
+ 			padding: 4px;
+ 			margin-left: 4px;
+ 			@include svgicon-menu("rename-from-parent", "universal", "16");
+-			&:not([disabled='true']) {
++			&:not([disabled]) {
+ 				color: var(--fill-secondary);
+ 			}
+ 		}
+diff --git a/scss/elements/_attachmentPreview.scss b/scss/elements/_attachmentPreview.scss
+--- a/scss/elements/_attachmentPreview.scss
++++ b/scss/elements/_attachmentPreview.scss
+@@ -90,7 +90,7 @@
+ 			}
+ 
+ 			&:disabled,
+-			&[disabled="true"] {
++			&[disabled] {
+ 				opacity: 0.4;
+ 			}
+ 		}
+diff --git a/scss/elements/_colorPicker.scss b/scss/elements/_colorPicker.scss
+--- a/scss/elements/_colorPicker.scss
++++ b/scss/elements/_colorPicker.scss
+@@ -34,11 +34,11 @@
+ 		padding: 0;
+ 	}
+ 
+-	.grid-tile[selected="true"] {
++	.grid-tile[selected] {
+ 		border: 1px outset #C0C0C0;
+ 	}
+ 
+-	.grid-tile:hover:not([selected="true"]) {
++	.grid-tile:hover:not([selected]) {
+ 		border: 1px dotted #A7A7A7;
+ 	}
+ }
+diff --git a/scss/elements/_duplicatesMergePane.scss b/scss/elements/_duplicatesMergePane.scss
+--- a/scss/elements/_duplicatesMergePane.scss
++++ b/scss/elements/_duplicatesMergePane.scss
+@@ -41,7 +41,7 @@
+ 
+ 	/* Show duplicates date list item as selected even when not focused
+ 	(default behavior on other platforms) */
+-	#zotero-duplicates-merge-original-date:not(:focus) > richlistitem[selected="true"] {
++	#zotero-duplicates-merge-original-date:not(:focus) > richlistitem[selected] {
+ 		background-color: -moz-cellhighlight;
+ 		color: -moz-cellhighlighttext;
+ 	}
+diff --git a/scss/elements/_itemPane.scss b/scss/elements/_itemPane.scss
+--- a/scss/elements/_itemPane.scss
++++ b/scss/elements/_itemPane.scss
+@@ -4,7 +4,7 @@
+ 	min-width: var(--width-available-item-pane, $min-width-item-pane + $width-sidenav);
+ 	min-height: $min-width-item-pane + $width-sidenav;
+ 
+-	&[collapsed="true"] {
++	&[collapsed] {
+ 		min-width: $width-sidenav;
+ 		min-height: $width-sidenav;
+ 		max-width: $width-sidenav;
+diff --git a/scss/elements/_itemPaneSidenav.scss b/scss/elements/_itemPaneSidenav.scss
+--- a/scss/elements/_itemPaneSidenav.scss
++++ b/scss/elements/_itemPaneSidenav.scss
+@@ -80,7 +80,7 @@
+ 		box-sizing: border-box;
+ 
+ 		&:disabled,
+-		&[disabled="true"] {
++		&[disabled] {
+ 			opacity: 60%;
+ 			pointer-events: none;
+ 		}
+diff --git a/scss/elements/_richlistCheckbox.scss b/scss/elements/_richlistCheckbox.scss
+--- a/scss/elements/_richlistCheckbox.scss
++++ b/scss/elements/_richlistCheckbox.scss
+@@ -12,29 +12,29 @@
+ 	}
+ }
+  
+-richlistcheckbox[selected="true"] {
++richlistcheckbox[selected] {
+ 	background-color: var(--color-accent);
+ 	color: var(--fill-primary);
+ }
+ 
+-richlistbox:where(:focus) > richlistcheckbox[selected="true"] {
++richlistbox:where(:focus) > richlistcheckbox[selected] {
+ 	background-color: var(--color-accent);
+ 	color: var(--color-accent-text);
+ }
+ 
+-richlistbox[seltype="multiple"]:focus > richlistcheckbox[current="true"],
+-richlistbox:focus > richlistcheckbox[current="true"] {
++richlistbox[seltype="multiple"]:focus > richlistcheckbox[current],
++richlistbox:focus > richlistcheckbox[current] {
+ 	outline: var(--default-focusring);
+ 	outline-color: var(--color-accent);
+ 	outline-offset: calc(-1 * var(--default-focusring-width));
+ }
+ 
+-richlistbox[seltype="multiple"]:focus > richlistcheckbox[current="true"][selected="true"],
+-richlistbox:focus > richlistcheckbox[current="true"][selected="true"] {
++richlistbox[seltype="multiple"]:focus > richlistcheckbox[current][selected],
++richlistbox:focus > richlistcheckbox[current][selected] {
+ 	outline-color: #F3D982; /* TODO: find a suitable system color */
+ }
+ 
+-richlistbox:not(:focus) > richlistcheckbox[selected="true"] {
++richlistbox:not(:focus) > richlistcheckbox[selected] {
+ 	background-color: -moz-cellhighlight;
+ 	color: -moz-cellhighlighttext;
+ }
+@@ -48,7 +48,7 @@
+ 	white-space: nowrap;
+ }
+ 
+-richlistcheckbox[selected=true] {
++richlistcheckbox[selected] {
+ 	background-color: -moz-cellhighlight;
+ 	color: -moz-cellhighlighttext;	
+ }
+diff --git a/scss/elements/_styleConfigurator.scss b/scss/elements/_styleConfigurator.scss
+--- a/scss/elements/_styleConfigurator.scss
++++ b/scss/elements/_styleConfigurator.scss
+@@ -52,7 +52,7 @@
+ 		}
+ 		
+ 		@media (-moz-platform: macos) {
+-			&:not(:focus) richlistitem[selected="true"] {
++			&:not(:focus) richlistitem[selected] {
+ 				background-color: -moz-mac-secondaryhighlight;
+ 			}
+ 		}
+diff --git a/scss/linux/_menu.scss b/scss/linux/_menu.scss
+--- a/scss/linux/_menu.scss
++++ b/scss/linux/_menu.scss
+@@ -1,6 +1,6 @@
+ menu,
+ menuitem {
+-	.menu-icon[src] {
++	.menu-icon[srcset] {
+ 		-moz-default-appearance: none;
+ 	}
+ }
+diff --git a/scss/mac/components/_menupopup.scss b/scss/mac/components/_menupopup.scss
+--- a/scss/mac/components/_menupopup.scss
++++ b/scss/mac/components/_menupopup.scss
+@@ -28,7 +28,7 @@
+ 			font-weight: bold;
+ 		}
+ 
+-		&:is([checked="true"], [selected="true"])::before {
++		&:is([checked], [selected])::before {
+ 			visibility: inherit;
+ 		}
+ 	}
+diff --git a/scss/merge.scss b/scss/merge.scss
+--- a/scss/merge.scss
++++ b/scss/merge.scss
+@@ -20,8 +20,8 @@
+ 			flex: 1;
+ 		}
+ 
+-		&[selected=true] h2,
+-		&[selected=true] attachment-box #title {
++		&[selected] h2,
++		&[selected] attachment-box #title {
+ 			color: red;
+ 			font-weight: 600;
+ 			text-decoration: underline;
+@@ -54,10 +54,10 @@
+ 		}
+ 	}
+ 
+-	#left-pane:hover:not([selected=true]) h2,
+-	#left-pane groupbox:focus:not([selected=true]) h2,
+-	#right-pane:hover:not([selected=true]) h2,
+-	#right-pane groupbox:focus:not([selected=true]) h2 {
++	#left-pane:hover:not([selected]) h2,
++	#left-pane groupbox:focus:not([selected]) h2,
++	#right-pane:hover:not([selected]) h2,
++	#right-pane groupbox:focus:not([selected]) h2 {
+ 		text-decoration: underline;
+ 	}
+ 
+diff --git a/scss/preferences.scss b/scss/preferences.scss
+--- a/scss/preferences.scss
++++ b/scss/preferences.scss
+@@ -124,7 +124,7 @@
+ 		fill: currentColor;
+ 		@include inactive-opacity;
+ 
+-		&:is([selected="true"], [data-parent-selected="true"]) {
++		&:is([selected], [data-parent-selected="true"]) {
+ 			@media (-moz-platform: macos) {
+ 				background-color: color-mix(in srgb, var(--color-accent) 80%, transparent);
+ 			}
+@@ -134,7 +134,7 @@
+ 			color: #fff;;
+ 		}
+ 
+-		&:not([selected="true"], [data-parent-selected="true"]):hover {
++		&:not([selected], [data-parent-selected="true"]):hover {
+ 			background-color: color-mix(in srgb, var(--color-accent) 20%, transparent);
+ 		}
+ 	}
+@@ -266,11 +266,11 @@
+ 	max-width: 630px;
+ }
+ 
+-checkbox[disabled="true"] {
++checkbox[disabled] {
+ 	color: gray !important;
+ }
+ 
+-menulist[disabled="true"] {
++menulist[disabled] {
+ 	opacity: 75%;
+ 	/* Disable default hover styling */
+ 	pointer-events: none;
+diff --git a/scss/preferences/_general.scss b/scss/preferences/_general.scss
+--- a/scss/preferences/_general.scss
++++ b/scss/preferences/_general.scss
+@@ -33,7 +33,7 @@
+ // navigation on Windows, but we don't want to display the checkmark in that
+ // case. Only show checkmark if "checked=true".
+ #zotero-prefpane-general #openurl-menu {
+-	menuitem:is([selected="true"]):not([checked="true"])::before {
++	menuitem:is([selected]):not([checked])::before {
+ 		visibility: hidden;
+ 	}
+ }
+diff --git a/scss/scaffold.scss b/scss/scaffold.scss
+--- a/scss/scaffold.scss
++++ b/scss/scaffold.scss
+@@ -83,6 +83,11 @@
+ 		margin: 0 4px;
+ 		
+ 		.toolbarbutton-menu-dropmarker {
++			-moz-default-appearance: none;
++			@include svgicon("chevron-6", "universal", "8");
++			color: var(--fill-secondary);
++			width: 8px;
++			height: 8px;
+ 			margin-inline-start: 4px;
+ 		}
+ 	}
+diff --git a/scss/win/components/_checkbox.scss b/scss/win/components/_checkbox.scss
+--- a/scss/win/components/_checkbox.scss
++++ b/scss/win/components/_checkbox.scss
+@@ -3,7 +3,7 @@
+ 		@include focus-states using ($color) {
+ 			background-image: url('chrome://zotero/skin/win/#{$color}/checkbox-#{$state}.svg');
+ 	
+-			&[checked=true] {
++			&[checked] {
+ 				background-image: url('chrome://zotero/skin/win/#{$color}/checkbox-selected-#{$state}.svg');
+ 			}
+ 		}
+diff --git a/scss/win/components/_menupopup.scss b/scss/win/components/_menupopup.scss
+--- a/scss/win/components/_menupopup.scss
++++ b/scss/win/components/_menupopup.scss
+@@ -21,18 +21,18 @@
+ 	font-size: 11px;
+ }
+ 
+-.menu-icon[disabled="true"] {
++.menu-icon[disabled] {
+ 	opacity: 50%;
+ }
+ 
+-menuitem:is([checked="true"]):is([type="radio"]) > .menu-icon {
+-	list-style-image: url("chrome://zotero/skin/win/menu-radio.svg");
++menuitem:is([checked]):is([type="radio"]) > .menu-icon {
++	content: url("chrome://zotero/skin/win/menu-radio.svg");
+ }
+ 
+ menulist {
+ 	menupopup {
+ 		menu:not([icon], .menu-iconic),
+-		menuitem:not([checked="true"], [icon], .menuitem-iconic) {
++		menuitem:not([checked], [icon], .menuitem-iconic) {
+ 			padding-inline-start: 36px;
+ 
+ 			.menu-icon {
+@@ -40,15 +40,16 @@
+ 			}
+ 		}
+ 
+-		menuitem[selected="true"] {
++		menuitem[selected] {
+ 			padding-inline-start: 12px !important;
+ 	
+ 			& > .menu-icon {
+ 				display: revert;
++				visibility: inherit;
+ 				-moz-context-properties: fill, fill-opacity;
+ 				fill: currentColor;
+-				fill-opacity: var(--menu-icon-opacity);
+-				list-style-image: url("chrome://zotero/skin/win/menu-radio.svg");
++				fill-opacity: var(--menu-arrow-opacity);
++				content: url("chrome://zotero/skin/win/menu-radio.svg");
+ 				width: 16px;
+ 				margin-inline-end: 8px;
+ 			}
+diff --git a/scss/win/components/_radio.scss b/scss/win/components/_radio.scss
+--- a/scss/win/components/_radio.scss
++++ b/scss/win/components/_radio.scss
+@@ -3,7 +3,7 @@
+ 		@include focus-states using ($color) {
+ 			background-image: url('chrome://zotero/skin/win/#{$color}/radio-#{$state}.svg');
+ 	
+-			&[selected=true] {
++			&[selected] {
+ 				background-image: url('chrome://zotero/skin/win/#{$color}/radio-selected-#{$state}.svg');
+ 			}
+ 		}
+diff --git a/scss/xulElementPatches/wizard.scss b/scss/xulElementPatches/wizard.scss
+--- a/scss/xulElementPatches/wizard.scss
++++ b/scss/xulElementPatches/wizard.scss
+@@ -31,11 +31,11 @@
+                 margin-bottom: 0;
+             }
+ 
+-            button:nth-child(1 of :not([hidden=true])) {
++            button:nth-child(1 of :not([hidden])) {
+                 margin-left: 0;
+             }
+ 
+-            button:nth-last-child(1 of :not([hidden=true])) {
++            button:nth-last-child(1 of :not([hidden])) {
+                 margin-right: 0;
+             }
+         }
+diff --git a/test/content/support.js b/test/content/support.js
+--- a/test/content/support.js
++++ b/test/content/support.js
+@@ -177,7 +177,7 @@
+ 		}
+ 		
+ 		Services.ww.unregisterNotification(winobserver);
+-		var win = ev.target.ownerGlobal;
++		var win = ev.target.documentGlobal;
+ 		// Give window code time to run on load
+ 		win.setTimeout(function () {
+ 			if (callback) {
+diff --git a/test/tests/advancedSearchTest.js b/test/tests/advancedSearchTest.js
+--- a/test/tests/advancedSearchTest.js
++++ b/test/tests/advancedSearchTest.js
+@@ -911,7 +911,7 @@
+ 			var row = conditions.firstChild;
+ 
+ 			// With a value entered, the last condition can be removed
+-			assert.notEqual(row.querySelector('#remove').getAttribute('disabled'), 'true');
++			assert.isFalse(row.querySelector('#remove').hasAttribute('disabled'));
+ 
+ 			row.onRemoveClicked();
+ 
+@@ -920,7 +920,7 @@
+ 			var newRow = conditions.firstChild;
+ 			assert.equal(newRow.selectedCondition, 'title');
+ 			assert.equal(newRow.querySelector('#valuefield').value, '');
+-			assert.equal(newRow.querySelector('#remove').getAttribute('disabled'), 'true');
++			assert.isTrue(newRow.querySelector('#remove').hasAttribute('disabled'));
+ 
+ 			// Focus moves to the new condition's drop-down
+ 			assert.equal(win.document.activeElement, newRow.querySelector('#conditionsmenu'));
+diff --git a/test/tests/collectionTreeTest.js b/test/tests/collectionTreeTest.js
+--- a/test/tests/collectionTreeTest.js
++++ b/test/tests/collectionTreeTest.js
+@@ -542,13 +542,13 @@
+ 			
+ 			assert.isFalse(zp.getCollectionTreeRows()[0].editable);
+ 			var cmd = win.document.getElementById('cmd_zotero_newStandaloneNote');
+-			assert.isTrue(cmd.getAttribute('disabled') == 'true');
++			assert.isTrue(cmd.hasAttribute('disabled'));
+ 			
+ 			group.editable = true;
+ 			await group.saveTx();
+ 			
+ 			assert.isTrue(zp.getCollectionTreeRows()[0].editable);
+-			assert.isFalse(cmd.getAttribute('disabled') == 'true');
++			assert.isFalse(cmd.hasAttribute('disabled'));
+ 		});
+ 		
+ 		it("should re-sort a modified collection", async function () {
+@@ -1283,7 +1283,7 @@
+ 				
+ 				function acceptItemsWithoutFiles(win) {
+ 					var doc = win.document;
+-					doc.getElementById('confirm-authorship-checkbox').checked = true;
++					doc.getElementById('confirm-authorship-checkbox').click();
+ 					var wizard = doc.getElementById('publications-dialog-wizard');
+ 					if (!doc.getElementById('include-files').disabled) {
+ 						throw new Error("Include Files checkbox isn't disabled");
+@@ -1293,8 +1293,8 @@
+ 				
+ 				function acceptItemsWithFiles(win) {
+ 					var doc = win.document;
+-					doc.getElementById('include-files').checked = true;
+-					doc.getElementById('confirm-authorship-checkbox').checked = true;
++					doc.getElementById('include-files').click();
++					doc.getElementById('confirm-authorship-checkbox').click();
+ 					var wizard = doc.getElementById('publications-dialog-wizard');
+ 					if (doc.getElementById('include-files').disabled) {
+ 						throw new Error("Include Files checkbox shouldn't be disabled");
+diff --git a/test/tests/preferences_accountTest.js b/test/tests/preferences_accountTest.js
+--- a/test/tests/preferences_accountTest.js
++++ b/test/tests/preferences_accountTest.js
+@@ -77,7 +77,7 @@
+ 				await performLogin("Username");
+ 
+ 				assert.equal(await Zotero.Sync.Data.Local.getAPIKey(), apiKey);
+-				assert.equal(doc.getElementById('sync-unauthorized').getAttribute('hidden'), 'true');
++				assert.isTrue(doc.getElementById('sync-unauthorized').hidden);
+ 				assert.isTrue(launchURLStub.calledOnce);
+ 			});
+ 
+@@ -171,7 +171,7 @@
+ 
+ 				await win.Zotero_Preferences.Sync.unlinkAccount();
+ 				assert.equal(await Zotero.Sync.Data.Local.getAPIKey(), apiKey);
+-				assert.equal(doc.getElementById('sync-unauthorized').getAttribute('hidden'), 'true');
++				assert.isTrue(doc.getElementById('sync-unauthorized').hidden);
+ 			});
+ 
+ 			it("should clear sync errors from the toolbar after logging in", async function () {
+diff --git a/test/tests/retractionsTest.js b/test/tests/retractionsTest.js
+--- a/test/tests/retractionsTest.js
++++ b/test/tests/retractionsTest.js
+@@ -88,7 +88,7 @@
+ 	
+ 	function bannerShown() {
+ 		var container = win.document.getElementById('retracted-items-container');
+-		if (container.getAttribute('collapsed') == 'true') {
++		if (container.hasAttribute('collapsed')) {
+ 			return false;
+ 		}
+ 		if (!container.hasAttribute('collapsed')) {
+diff --git a/test/tests/syncLocalTest.js b/test/tests/syncLocalTest.js
+--- a/test/tests/syncLocalTest.js
++++ b/test/tests/syncLocalTest.js
+@@ -133,22 +133,16 @@
+ 
+ 	describe("#repairLoginManager()", function () {
+ 		it("should reset a key database with a primary password set", async function () {
+-			var token = Components.classes["@mozilla.org/security/pk11tokendb;1"]
+-				.getService(Components.interfaces.nsIPK11TokenDB)
+-				.getInternalKeyToken();
++			var token = Components.classes["@mozilla.org/security/internalkeytoken;1"]
++				.createInstance(Components.interfaces.nsIPKCS11Token);
+ 
+ 			// No-op if no primary password is set
+-			assert.isFalse(Zotero.Sync.Data.Local.repairLoginManager());
++			assert.isFalse(await Zotero.Sync.Data.Local.repairLoginManager());
+ 
+-			if (token.needsUserInit) {
+-				token.initPassword("repair-test");
+-			}
+-			else {
+-				token.changePassword("", "repair-test");
+-			}
++			token.changePassword("", "repair-test");
+ 			try {
+ 				assert.isTrue(token.hasPassword);
+-				assert.isTrue(Zotero.Sync.Data.Local.repairLoginManager());
++				assert.isTrue(await Zotero.Sync.Data.Local.repairLoginManager());
+ 				assert.isFalse(token.hasPassword);
+ 
+ 				// Credentials should be saveable and readable again
+diff --git a/test/tests/readerTest.js b/test/tests/readerTest.js
+--- a/test/tests/readerTest.js
++++ b/test/tests/readerTest.js
+@@ -11,6 +11,16 @@
+ 	after(function () {
+ 		win.Zotero_Tabs.closeAll();
+ 		win.close();
++	});
++
++	it('should render a saved snapshot on ESR153', async function () {
++		// ESR153.2 rejects srcdoc frames in the parent process, leaving snapshots blank.
++		let attachment = await importFileAttachment('test.html');
++		let reader = await Zotero.Reader.open(attachment.id);
++		await reader._initPromise;
++		let view = reader._internalReader._primaryView;
++		await view.initializedPromise;
++		assert.include(view._iframeDocument.body.textContent, 'This is a test.');
+ 	});
+ 
+ 	describe('PDF Reader', function () {

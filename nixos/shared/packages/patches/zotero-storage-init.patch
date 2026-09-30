@@ -1,0 +1,145 @@
+Wait for stored WebDAV password initialization before settings changes.
+Preserve credentials after a failed read while allowing password replacement.
+Regression coverage for delayed initialization and failed-read recovery.
+
+diff --git a/chrome/content/zotero/preferences/preferences_account.jsx b/chrome/content/zotero/preferences/preferences_account.jsx
+--- a/chrome/content/zotero/preferences/preferences_account.jsx
++++ b/chrome/content/zotero/preferences/preferences_account.jsx
+@@ -46,15 +46,22 @@
+ 		this.updateStorageSettingsUI();
+ 		this.updateStorageSettingsGroupsUI();
+ 
++		// Settings changes must not persist a blank field while the stored password loads.
++		this._storagePasswordReady = Zotero.Sync.Runner.getStorageController('webdav')
++			.getPassword().then(pass => {
++				if (pass) {
++					document.getElementById('storage-password').value = pass;
++				}
++			}).catch(e => {
++				Zotero.logError(e);
++				this._storagePasswordReadFailed = true;
++			});
++		await this._storagePasswordReady;
++
+ 		var username = Zotero.Users.getCurrentUsername() || Zotero.Prefs.get('sync.server.username') || " ";
+ 		var apiKey = await Zotero.Sync.Data.Local.getAPIKey();
+ 		let emails = apiKey ? Zotero.Users.getCurrentEmails() : undefined;
+ 		this.displayFields(apiKey ? username : "", { emails });
+-		
+-		var pass = await Zotero.Sync.Runner.getStorageController('webdav').getPassword();
+-		if (pass) {
+-			document.getElementById('storage-password').value = pass;
+-		}
+ 		
+ 		if (apiKey) {
+ 			try {
+@@ -756,6 +763,7 @@
+ 	
+ 	
+ 	onStorageSettingsChange: async function() {
++		await this._storagePasswordReady;
+ 		var oldProtocol = this._lastStorageProtocol;
+ 		var oldURL = this._lastStorageURL;
+ 		
+@@ -781,9 +789,10 @@
+ 			
+ 			var username = document.getElementById('storage-username').value;
+ 			var password = document.getElementById('storage-password').value;
+-			if (username) {
++			if (username && (!this._storagePasswordReadFailed || password)) {
+ 				// Get a new controller
+ 				await Zotero.Sync.Runner.getStorageController('webdav').setPassword(password);
++				this._storagePasswordReadFailed = false;
+ 			}
+ 		}
+ 		
+diff --git a/test/tests/webdavTest.js b/test/tests/webdavTest.js
+--- a/test/tests/webdavTest.js
++++ b/test/tests/webdavTest.js
+@@ -973,6 +973,86 @@
+ 	});
+ 	
+ 	describe("Verify Server", function () {
++		it("should allow password replacement after an initialization read failure", async function () {
++			Zotero.Prefs.set("sync.storage.url", "127.0.0.1:9999");
++			let uiController = Zotero.Sync.Runner.getStorageController('webdav');
++			let stub = sinon.stub(uiController, 'getPassword').rejects(new Error('Keystore read failed'));
++			let prefWin;
++			let verification;
++			try {
++				prefWin = await loadPrefPane('account');
++				await prefWin.Zotero_Preferences.Sync._storagePasswordReady;
++				stub.restore();
++				// An untouched blank field must not overwrite credentials after a failed read.
++				await prefWin.Zotero_Preferences.Sync.onStorageSettingsChange();
++				assert.equal(await controller.getPassword(), davPassword);
++				prefWin.document.getElementById('storage-password').value = 'replacement-password';
++				let dialog = waitForDialog(function (win) {
++					assert.include(win.document.documentElement.textContent,
++						Zotero.getString('sync.storage.error.serverCouldNotBeReached', '127.0.0.1'));
++				});
++				verification = prefWin.Zotero_Preferences.Sync.verifyStorageServer();
++				await dialog;
++				await verification;
++				assert.equal(await controller.getPassword(), 'replacement-password');
++			}
++			finally {
++				try {
++					await verification;
++				}
++				finally {
++					stub.restore();
++					if (prefWin) prefWin.close();
++				}
++			}
++		});
++		
++		it("should wait for password initialization before verifying", async function () {
++			// Async ESR153 login queries can leave the field blank when Verify is clicked.
++			Zotero.Prefs.set("sync.storage.url", "127.0.0.1:9999");
++			let uiController = Zotero.Sync.Runner.getStorageController('webdav');
++			let getPassword = uiController.getPassword.bind(uiController);
++			let releasePassword;
++			let passwordReady = new Promise(resolve => releasePassword = resolve);
++			let lookupStarted;
++			let lookupReady = new Promise(resolve => lookupStarted = resolve);
++			let stub = sinon.stub(uiController, 'getPassword').callsFake(async function () {
++				lookupStarted();
++				await passwordReady;
++				return getPassword();
++			});
++			let prefWin;
++			let verification;
++			try {
++				prefWin = await loadPrefPane('account');
++				await lookupReady;
++				let dialog = waitForDialog(function (win) {
++					assert.include(win.document.documentElement.textContent,
++						Zotero.getString('sync.storage.error.serverCouldNotBeReached', '127.0.0.1'));
++				});
++				let spy = sinon.spy(prefWin.Zotero_Preferences.Sync, 'verifyStorageServer');
++				prefWin.document.getElementById('storage-verify').click();
++				verification = spy.returnValues[0];
++				spy.restore();
++				// Allow the existing 1ms settings-update delay to run while the lookup is held.
++				await Zotero.Promise.delay(50);
++				releasePassword();
++				await dialog;
++				await verification;
++				assert.equal(await controller.getPassword(), davPassword);
++			}
++			finally {
++				releasePassword();
++				try {
++					await verification;
++				}
++				finally {
++					stub.restore();
++					if (prefWin) prefWin.close();
++				}
++			}
++		});
++		
+ 		it("should show an error for a connection error", async function () {
+ 			Zotero.Prefs.set("sync.storage.url", "127.0.0.1:9999");
+ 			

@@ -1,0 +1,153 @@
+Reader iframe compatibility for Firefox ESR153.2 and later.
+Upstream: https://github.com/zotero/reader/commit/e7a93982baaee820e1bf5604dbf7f86400c98272
+
+diff --git a/src/common/components/view-popup/overlay-popup/footnote-popup.js b/src/common/components/view-popup/overlay-popup/footnote-popup.js
+index 6c1190ca5..a1ee5f728 100644
+--- a/src/common/components/view-popup/overlay-popup/footnote-popup.js
++++ b/src/common/components/view-popup/overlay-popup/footnote-popup.js
+@@ -1,6 +1,7 @@
+ import React from 'react';
+ import cx from 'classnames';
+ import ViewPopup from '../common/view-popup';
++import { loadIFrameHTML } from '../../../lib/iframe';
+ 
+ function FootnotePopup({ params, onOpenLink }) {
+ 	let iframeRef = React.useRef(null);
+@@ -8,6 +9,15 @@ function FootnotePopup({ params, onOpenLink }) {
+ 
+ 	React.useEffect(() => {
+ 		setLoading(true);
++		let canceled = false;
++		loadIFrameHTML(iframeRef.current, params.content).then(() => {
++			if (!canceled) {
++				handleLoad();
++			}
++		});
++		return () => {
++			canceled = true;
++		};
+ 	}, [params.content]);
+ 
+ 	let handleLoad = () => {
+@@ -54,8 +64,6 @@ function FootnotePopup({ params, onOpenLink }) {
+ 			<iframe
+ 				ref={iframeRef}
+ 				sandbox="allow-same-origin"
+-				srcDoc={params.content}
+-				onLoad={handleLoad}
+ 			/>
+ 		</ViewPopup>
+ 	);
+diff --git a/src/common/lib/iframe.ts b/src/common/lib/iframe.ts
+new file mode 100644
+index 000000000..5d469e726
+--- /dev/null
++++ b/src/common/lib/iframe.ts
+@@ -0,0 +1,29 @@
++/**
++ * Load an HTML string into an iframe, resolving once the document and its subresources have loaded
++ *
++ * We write into about:blank rather than using srcdoc because Gecko prevents about:srcdoc loads in the parent process
++ * (where the client reader runs) for security reasons.
++ */
++export async function loadIFrameHTML(iframe: HTMLIFrameElement, html: string): Promise<void> {
++	await new Promise((resolve) => {
++		iframe.addEventListener('load', resolve, { once: true });
++		iframe.src = 'about:blank';
++	});
++	let doc = iframe.contentDocument!;
++	doc.open();
++	// Match srcdoc, which never uses quirks mode (the parser ignores any later doctype in the HTML)
++	doc.write('<!DOCTYPE html>');
++	doc.write(html);
++	doc.close();
++	// The iframe doesn't fire another load event after document.open(), so watch readyState instead
++	await new Promise<void>((resolve) => {
++		let check = () => {
++			if (doc.readyState === 'complete') {
++				doc.removeEventListener('readystatechange', check);
++				resolve();
++			}
++		};
++		doc.addEventListener('readystatechange', check);
++		check();
++	});
++}
+diff --git a/src/dom/common/dom-view.tsx b/src/dom/common/dom-view.tsx
+index 76712fcca..e8fb86cba 100644
+--- a/src/dom/common/dom-view.tsx
++++ b/src/dom/common/dom-view.tsx
+@@ -74,6 +74,7 @@ import { History } from "../../common/lib/history";
+ import { closestMathTeX } from "./lib/math";
+ import { DEFAULT_REFLOWABLE_APPEARANCE, PageWidth, type ReflowableAppearance } from "./lib/appearance";
+ import { ReadAloud } from "./lib/read-aloud";
++import { loadIFrameHTML } from "../../common/lib/iframe";
+ 
+ const PEN_ACTIVE_TIMEOUT = 5 * 60 * 1000;
+ 
+@@ -92,6 +93,8 @@ abstract class DOMView<State extends DOMViewState, Data> {
+ 
+ 	protected readonly _iframe: HTMLIFrameElement;
+ 
++	protected _srcDoc!: string;
++
+ 	protected _iframeWindow!: Window & typeof globalThis;
+ 
+ 	protected _iframeDocument!: Document;
+@@ -276,24 +279,12 @@ abstract class DOMView<State extends DOMViewState, Data> {
+ 	}
+ 
+ 	protected async _initialize(): Promise<void> {
+-		let srcdoc = await this._getSrcDoc();
+-		if (window.dev && isSafari) {
+-			// Dev only: Long srcdoc strings make the Safari inspector unusable,
+-			// so use a blob URL instead
+-			this._iframe.src = URL.createObjectURL(new Blob([srcdoc], { type: 'text/html' }));
+-		}
+-		else {
+-			this._iframe.srcdoc = srcdoc;
+-		}
+-		return new Promise<void>((resolve, reject) => {
+-			this._iframe.addEventListener('load', () => {
+-				this._iframeWindow = this._iframe.contentWindow as Window & typeof globalThis;
+-				this._iframeDocument = this._iframe.contentDocument!;
+-				Promise.resolve(this._handleIFrameLoaded())
+-					.then(() => this._iframe.classList.add('loaded'))
+-					.then(resolve, reject);
+-			}, { once: true });
+-		});
++		this._srcDoc = await this._getSrcDoc();
++		await loadIFrameHTML(this._iframe, this._srcDoc);
++		this._iframeWindow = this._iframe.contentWindow as Window & typeof globalThis;
++		this._iframeDocument = this._iframe.contentDocument!;
++		await this._handleIFrameLoaded();
++		this._iframe.classList.add('loaded');
+ 	}
+ 
+ 	protected _getCSP(): string {
+diff --git a/src/dom/epub/epub-view.ts b/src/dom/epub/epub-view.ts
+index 0ea6f968e..10a03761f 100644
+--- a/src/dom/epub/epub-view.ts
++++ b/src/dom/epub/epub-view.ts
+@@ -1553,7 +1553,7 @@ class EPUBView extends DOMView<EPUBViewState, EPUBViewData> {
+ 				overrideSettings: {
+ 					// Set title based on the book's title
+ 					title: this.book.packaging.metadata.title || '',
+-					// Remove 'about:srcdoc' URL
++					// Remove the frame's URL
+ 					docURL: '',
+ 					// And disable printing either of those things in the margins by default
+ 					headerStrLeft: '',
+diff --git a/src/dom/snapshot/snapshot-view.ts b/src/dom/snapshot/snapshot-view.ts
+index d28bf7703..d8f12a5b6 100644
+--- a/src/dom/snapshot/snapshot-view.ts
++++ b/src/dom/snapshot/snapshot-view.ts
+@@ -103,7 +103,7 @@ class SnapshotView extends DOMView<SnapshotViewState, SnapshotViewData> {
+ 
+ 	getData() {
+ 		return {
+-			srcDoc: this._iframe.srcdoc,
++			srcDoc: this._srcDoc,
+ 			url: this._iframeDocument.head.querySelector('base')?.href,
+ 			importedFromURL: this._options.data.importedFromURL,
+ 		};
