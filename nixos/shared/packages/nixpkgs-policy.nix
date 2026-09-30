@@ -25,6 +25,15 @@
         '';
       });
 
+      # Removing rpaths leaves empty space-separated elements, which Qt6's
+      # binary wrapper rejects. Normalize the remaining linker flags.
+      lazarus-qt6 = prev.lazarus-qt6.overrideAttrs (old: {
+        postInstall = builtins.replaceStrings
+          [ "s/-rpath [^ ]+//g" ]
+          [ "s/-rpath [^ ]+//g; s/ +/ /g; s/^ //; s/ $//" ]
+          old.postInstall;
+      });
+
       vscode = prev.vscode.overrideAttrs (old: {
         nativeBuildInputs = (old.nativeBuildInputs or [ ]) ++ [ final.jq.bin ];
       });
