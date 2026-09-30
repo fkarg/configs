@@ -245,11 +245,9 @@
   systemd.services.systemd-rfkill.enable = false;
   systemd.sockets.systemd-rfkill.enable = false;
 
-  # Logitech peripheral manager. `enable` only gives ltunify + the udev rules
-  # the receiver needs; `enableGraphical` is what installs solaar itself.
-  # (There is no services.solaar module in nixpkgs — hardware.logitech is it.)
+  # Logitech receiver tools and the Solaar peripheral manager.
   hardware.logitech.wireless.enable = true;
-  hardware.logitech.wireless.enableGraphical = true;
+  programs.solaar.enable = true;
 
   # T300RS force feedback and wheel settings. The bundled hid-tminit handles
   # initialization before hid-tmff-new binds the operational wheel.

@@ -8,7 +8,7 @@
     pdftk
 
     # office and content creation
-    libreoffice-fresh
+    libreoffice-stable
     languagetool
     tinymist
     gimp

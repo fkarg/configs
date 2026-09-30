@@ -52,7 +52,7 @@
     pkgs.sl
     pkgs.doge
     pkgs.opencode
-    pkgs.gemini-cli
+    pkgs.antigravity-cli
 
     pkgs.xdg-user-dirs
   ];

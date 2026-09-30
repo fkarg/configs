@@ -49,7 +49,7 @@
     bubblewrap
     claude-code
     codex
-    gemini-cli
+    antigravity-cli
     opencode
     ccusage
 
