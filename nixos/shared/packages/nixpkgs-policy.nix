@@ -17,6 +17,14 @@
         '';
       });
 
+      # C++20 rejects template arguments on constructor names.
+      grantlee = prev.grantlee.overrideAttrs (old: {
+        postPatch = (old.postPatch or "") + ''
+          substituteInPlace templates/defaulttags/cycle.h \
+            --replace-fail 'RingIterator<T>(' 'RingIterator('
+        '';
+      });
+
       vscode = prev.vscode.overrideAttrs (old: {
         nativeBuildInputs = (old.nativeBuildInputs or [ ]) ++ [ final.jq.bin ];
       });
