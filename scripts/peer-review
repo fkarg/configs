@@ -156,7 +156,7 @@ peer_failed() {
 peer_status=0
 if [ "$peer_cli" = "codex" ]; then
     # codex --output-schema takes a FILE.
-    peer_model="${peer_model:-gpt-6-sol}"
+    peer_model="${peer_model:-gpt-6.1-sol}"
     set -- exec --sandbox read-only --ephemeral \
         --output-schema "$schema_file" -o "$result_file" -m "$peer_model"
     [ -n "$workdir" ] && set -- "$@" --cd "$workdir"
