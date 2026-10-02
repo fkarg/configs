@@ -33,7 +33,7 @@ Currently available `client_role`s are:
 
 each has it's own modifications.
 
-### Usage
+## Usage
 
 **Fresh server, single-paste pull-mode** (installs ansible if missing, runs base + terminal_dotfiles):
 
@@ -98,7 +98,7 @@ ansible-playbook ansible/playbooks/bootstrap.yml -l new-host \
 
 After this completes, the host is reachable as `pars@<bootstrap_ssh_port>` (default 2244). Update `~/.ssh/config`, add `ansible/inventory/host_vars/new-host.yml`, then run `site.yml`.
 
-### Overwriting Existing Config Directories
+## Overwriting Existing Config Directories
 
 Some applications (fish, kitty, nvim, broot, lf) create their own config directories on first launch. If these exist as real directories (not symlinks), the playbook skips the symlink by default to avoid data loss. To force the symlink (deleting the existing directory first):
 
