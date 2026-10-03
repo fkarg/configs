@@ -16,6 +16,8 @@
 ; repo on this machine, harness-independent. A repo that sets its own
 ; core.hooksPath (husky, .githooks, ...) overrides this.
     hooksPath = {{ home_dir }}/.config/git/hooks
+[alias]
+    yolo = !git add . && git commit -m \"$(wtc)\"
 [merge]
     tool = vimdiff
 [mergetool]

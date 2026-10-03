@@ -52,6 +52,20 @@
     dest: ~/.gitconfig
   tags: [git]
 
+# `wtc` backs the `git yolo` alias in gitconfig.j2.
+- name: Ensure ~/.local/bin exists
+  file:
+    path: ~/.local/bin
+    state: directory
+  tags: [git]
+
+- name: Install wtc (random commit message)
+  copy:
+    src: wtc
+    dest: ~/.local/bin/wtc
+    mode: "0755"
+  tags: [git]
+
 # Global git hooks: enforce "no AI attribution in git history" on every repo,
 # harness-independently. The dispatcher strips AI co-author/footer lines on
 # commit-msg and delegates to each repo's own hook (so per-project hooks are

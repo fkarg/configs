@@ -1,0 +1,3 @@
+#!/bin/sh
+# Random commit message from whatthecommit.com (used by `git yolo`).
+curl -fsS --max-time 5 "https://whatthecommit.com/index.txt"
