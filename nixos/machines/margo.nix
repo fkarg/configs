@@ -16,6 +16,13 @@
   # boot.kernelParams = [ "mem_sleep_default=deep" ];
   # run `sudo powertop --auto-tune` on startup. Reduces power consumption on idle
   powerManagement.powertop.enable = true;
+  # CPU power policy (EPP / platform profile); without it intel_pstate sits on balance_performance
+  services.power-profiles-daemon.enable = true;
+  # switch to power-saver on battery, back to balanced on AC
+  services.udev.extraRules = ''
+    SUBSYSTEM=="power_supply", KERNEL=="ACAD", ATTR{online}=="0", RUN+="${pkgs.power-profiles-daemon}/bin/powerprofilesctl set power-saver"
+    SUBSYSTEM=="power_supply", KERNEL=="ACAD", ATTR{online}=="1", RUN+="${pkgs.power-profiles-daemon}/bin/powerprofilesctl set balanced"
+  '';
 
   fileSystems."/" =
     { device = "/dev/disk/by-uuid/ba2ef340-5436-4a5e-a39c-791de5bf38a7";
