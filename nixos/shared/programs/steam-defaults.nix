@@ -2,17 +2,22 @@
 
 {
   environment.systemPackages = with pkgs; [
-    # Steam and Proton compatibility tools
-    steam-run
+    # Proton compatibility tools (the Steam module also installs steam-run).
     protonup-qt
     mangohud
     goverlay
   ];
 
   # Modern Steam defaults based on the current NixOS Steam module.
-  # Prefer supported module options over per-machine steam.override hacks.
   programs.steam = {
     enable = true;
+    package = pkgs.steam.override {
+      # Keep Steam's older fontconfig away from incompatible shared caches.
+      # https://issues.chromium.org/issues/565475896
+      extraProfile = ''
+        export XDG_CACHE_HOME="$HOME/.cache/steam-runtime"
+      '';
+    };
     protontricks.enable = true;
     extraCompatPackages = with pkgs; [
       proton-ge-bin
