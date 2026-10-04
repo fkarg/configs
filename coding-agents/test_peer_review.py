@@ -10,6 +10,7 @@ from __future__ import annotations
 import json
 import os
 import shutil
+import signal
 import subprocess
 import tempfile
 import unittest
@@ -67,6 +68,30 @@ printf '%s' '"modelUsage":{{"claude-fable-5":{{"costUSD":0.1}}}},'
 printf '%s' '"result":"{{}}","structured_output":{ANSWER}}}]'
 """
 
+CATALOG_CODEX_STUB = """
+[ "$*" = 'debug models' ] || exit 99
+printf 'cli=codex\\n' >>"$RECORD_FILE"
+printf '%s' '{"models":[{"slug":"visible-gpt","display_name":"Visible GPT","description":"Visible choice","visibility":"list"},{"slug":"hidden-gpt","display_name":"Hidden GPT","description":"Hidden choice","visibility":"hide"}]}'
+"""
+
+CATALOG_CLAUDE_STUB = """
+[ "$*" = '-p --input-format stream-json --output-format stream-json --verbose --strict-mcp-config --no-session-persistence' ] || exit 99
+printf 'cli=claude base=%s\\n' "${ANTHROPIC_BASE_URL:-unset}" >>"$RECORD_FILE"
+python3 -c '
+import json, sys
+request = json.load(sys.stdin)
+assert request["type"] == "control_request"
+assert request["request"]["subtype"] == "initialize"
+print(json.dumps({"type": "control_response", "response": {
+    "subtype": "success", "request_id": request["request_id"], "response": {
+        "account": {"email": "PRIVATE-ACCOUNT-MARKER"},
+        "models": [{"value": "opus", "resolvedModel": "claude-test-id",
+                    "displayName": "Opus", "description": "Claude choice"}]
+    }}}))'
+"""
+
+RECORD_INPUT = 'printf "material:%s\\n" "$(cat)" >>"$RECORD_FILE"\n'
+
 
 def write_executable(path: Path, body: str) -> None:
     path.write_text("#!/bin/sh\nset -eu\n" + body)
@@ -77,9 +102,158 @@ class PeerReviewTests(unittest.TestCase):
     def test_launcher_is_directly_executable(self) -> None:
         self.assertTrue(os.access(LAUNCHER, os.X_OK))
 
+    def test_bare_call_ignores_open_inherited_stdin(self) -> None:
+        """An open harness pipe used to hang in cat before launching a peer."""
+        for family in ("gpt", "claude"):
+            with self.subTest(family=family):
+                proc, _, _ = self.run_launcher(
+                    ["--from", family, "brief"], {}, open_stdin=True,
+                )
+                self.assertEqual(proc.returncode, 0, proc.stderr)
+
+    def test_material_requires_explicit_input(self) -> None:
+        for family in ("gpt", "claude"):
+            for explicit in (False, True):
+                with self.subTest(family=family, explicit=explicit):
+                    args = ["--from", family, "brief"]
+                    if explicit:
+                        args.insert(0, "--stdin")
+                    proc, lines, _ = self.run_launcher(
+                        args, {}, input_text="unique-material-ä\nsecond-line",
+                        codex_stub=CODEX_STUB + RECORD_INPUT,
+                        claude_stub=CLAUDE_STUB + RECORD_INPUT,
+                    )
+                    self.assertEqual(proc.returncode, 0, proc.stderr)
+                    self.assertEqual("unique-material-ä" in "\n".join(lines), explicit)
+
+    def test_file_material_does_not_read_inherited_stdin(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "material with spaces.md"
+            path.write_text("file-material-ä\nsecond-line")
+            for family in ("gpt", "claude"):
+                for flag in ("-f", "--file"):
+                    with self.subTest(family=family, flag=flag):
+                        proc, lines, _ = self.run_launcher(
+                            ["--from", family, flag, str(path), "brief"], {},
+                            open_stdin=True,
+                            codex_stub=CODEX_STUB + RECORD_INPUT,
+                            claude_stub=CLAUDE_STUB + RECORD_INPUT,
+                        )
+                        self.assertEqual(proc.returncode, 0, proc.stderr)
+                        self.assertIn(path.read_text(), "\n".join(lines))
+
+    def test_input_sources_are_mutually_exclusive(self) -> None:
+        proc, _, _ = self.run_launcher(
+            ["--stdin", "-f", "file", "brief"], {}, open_stdin=True,
+        )
+        self.assertEqual(proc.returncode, 1)
+        self.assertIn("cannot combine", proc.stderr)
+
+    def test_unreadable_material_file_fails(self) -> None:
+        proc, _, _ = self.run_launcher(
+            ["-f", "/does-not-exist-peer-material", "brief"], {}, open_stdin=True,
+        )
+        self.assertEqual(proc.returncode, 1)
+        self.assertIn("file", proc.stderr)
+
+    def test_diff_review_requires_explicit_material(self) -> None:
+        proc, _, _ = self.run_launcher(
+            ["--mode", "diff-review", "brief"], {}, input_text="implicit diff",
+        )
+        self.assertEqual(proc.returncode, 1)
+        self.assertIn("--stdin", proc.stderr)
+
+    def test_target_models_preserve_alias_and_resolved_id_only(self) -> None:
+        proc, _, _ = self.run_launcher(
+            ["--mode", "models"], {"CODEX_THREAD_ID": "test"},
+            claude_stub=CATALOG_CLAUDE_STUB, open_stdin=True,
+        )
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        payload = json.loads(proc.stdout)
+        self.assertEqual(set(payload), {"target"})
+        self.assertEqual(payload["target"]["cli"], "claude")
+        self.assertEqual(payload["target"]["models"], [{
+            "id": "opus", "resolved_model": "claude-test-id",
+            "display_name": "Opus", "description": "Claude choice",
+        }])
+        self.assertNotIn("PRIVATE-ACCOUNT-MARKER", proc.stdout + proc.stderr)
+
+    def test_model_listing_can_include_self_and_catalog_visibility(self) -> None:
+        proc, _, _ = self.run_launcher(
+            ["--mode", "models", "--include-self"], {"CODEX_THREAD_ID": "test"},
+            claude_stub=CATALOG_CLAUDE_STUB, codex_stub=CATALOG_CODEX_STUB,
+            open_stdin=True,
+        )
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        own = json.loads(proc.stdout)["self"]
+        self.assertEqual(own["cli"], "codex")
+        self.assertEqual([(m["id"], m["visibility"]) for m in own["models"]],
+                         [("visible-gpt", "list"), ("hidden-gpt", "hide")])
+
+    def test_claudex_model_listing_strips_proxy_only_for_target(self) -> None:
+        proc, lines, _ = self.run_launcher(
+            ["--mode", "models", "--include-self"],
+            {"ANTHROPIC_BASE_URL": "http://127.0.0.1:8317"},
+            claude_stub=CATALOG_CLAUDE_STUB, open_stdin=True,
+        )
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        self.assertEqual(lines, ["cli=claude base=unset",
+                                 "cli=claude base=http://127.0.0.1:8317"])
+
+    def test_unknown_self_harness_is_not_guessed_from_family_override(self) -> None:
+        proc, _, _ = self.run_launcher(
+            ["--mode", "models", "--include-self", "--from", "gpt"], {},
+            claude_stub=CATALOG_CLAUDE_STUB, open_stdin=True,
+        )
+        self.assertEqual(proc.returncode, 1)
+        self.assertIn("harness", proc.stderr)
+
+    def test_listing_rejects_review_input_and_include_self_requires_models(self) -> None:
+        for args, error in ((["--mode", "models", "--stdin"], "does not accept"),
+                            (["--mode", "models", "brief"], "does not accept"),
+                            (["--include-self", "brief"], "requires --mode models")):
+            with self.subTest(args=args):
+                proc, _, _ = self.run_launcher(args, {}, open_stdin=True)
+                self.assertEqual(proc.returncode, 1)
+                self.assertIn(error, proc.stderr)
+
+    def test_model_catalog_cli_failure_is_not_success(self) -> None:
+        proc, _, _ = self.run_launcher(
+            ["--mode", "models"], {"CODEX_THREAD_ID": "test"},
+            claude_stub="exit 7\n", open_stdin=True,
+        )
+        self.assertEqual(proc.returncode, 1)
+        self.assertIn("claude", proc.stderr)
+
+    def test_model_discovery_error_does_not_echo_initialization_metadata(self) -> None:
+        for response in (
+            {"subtype": "error", "request_id": "peer-models",
+             "error": "PRIVATE-ACCOUNT-MARKER"},
+            {"subtype": "success", "request_id": "peer-models",
+             "response": {"account": "PRIVATE-ACCOUNT-MARKER"}},
+        ):
+            with self.subTest(response=response["subtype"]):
+                event = json.dumps({"type": "control_response", "response": response})
+                proc, _, _ = self.run_launcher(
+                    ["--mode", "models"], {"CODEX_THREAD_ID": "test"},
+                    claude_stub=f"printf '%s\\n' '{event}'\n", open_stdin=True,
+                )
+                self.assertEqual(proc.returncode, 1)
+                self.assertEqual(proc.stdout, "")
+                self.assertNotIn("PRIVATE-ACCOUNT-MARKER", proc.stderr)
+
+    def test_help_documents_actions_without_reading_stdin(self) -> None:
+        for flag in ("-h", "--help"):
+            with self.subTest(flag=flag):
+                proc, _, _ = self.run_launcher([flag], {}, open_stdin=True)
+                self.assertEqual(proc.returncode, 0, proc.stderr)
+                for option in ("--stdin", "--file", "--include-self", "models"):
+                    self.assertIn(option, proc.stdout)
+
     def run_launcher(
         self, args: list[str], env_overrides: dict[str, str],
-        *, claude_stub: str = CLAUDE_STUB,
+        *, claude_stub: str = CLAUDE_STUB, codex_stub: str = CODEX_STUB,
+        input_text: str | None = None, open_stdin: bool = False,
     ) -> tuple[subprocess.CompletedProcess[str], list[str], Path]:
         with tempfile.TemporaryDirectory() as tmp:
             tmpdir = Path(tmp)
@@ -87,7 +261,7 @@ class PeerReviewTests(unittest.TestCase):
             bin_dir.mkdir()
             record = tmpdir / "record"
 
-            write_executable(bin_dir / "codex", CODEX_STUB)
+            write_executable(bin_dir / "codex", codex_stub)
             write_executable(bin_dir / "claude", claude_stub)
 
             # Prepend the stubs to the real PATH: this host is NixOS, so
@@ -99,14 +273,24 @@ class PeerReviewTests(unittest.TestCase):
             }
             env.update(env_overrides)
 
-            proc = subprocess.run(
+            child = subprocess.Popen(
                 [str(LAUNCHER), *args],
-                capture_output=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
                 text=True,
                 env=env,
-                stdin=subprocess.DEVNULL,
-                timeout=60,
+                stdin=subprocess.PIPE,
+                start_new_session=True,
             )
+            try:
+                if open_stdin:
+                    child.wait(timeout=60)
+                stdout, stderr = child.communicate(input_text, timeout=60)
+                proc = subprocess.CompletedProcess(args, child.returncode, stdout, stderr)
+            finally:
+                if child.poll() is None:
+                    os.killpg(child.pid, signal.SIGKILL)
+                    child.communicate()
             lines = (
                 record.read_text().splitlines() if record.exists() else []
             )
@@ -197,11 +381,11 @@ class PeerReviewTests(unittest.TestCase):
         # rather than its contents, which the end-to-end result already proves.
         self.assertTrue(schema_path)
 
-    def test_codex_peer_defaults_to_gpt_6_sol(self) -> None:
+    def test_codex_peer_defaults_to_gpt_6_1_sol(self) -> None:
         proc, lines, _ = self.run_launcher(["--from", "claude", "brief"], {})
         self.assertIn("-m", lines)
-        self.assertEqual(lines[lines.index("-m") + 1], "gpt-6-sol")
-        self.assertEqual(json.loads(proc.stdout)["peer_model"], "gpt-6-sol")
+        self.assertEqual(lines[lines.index("-m") + 1], "gpt-6.1-sol")
+        self.assertEqual(json.loads(proc.stdout)["peer_model"], "gpt-6.1-sol")
 
     def test_result_reports_which_model_answered(self) -> None:
         proc, lines, _ = self.run_launcher(["--model", "gpt-5.6-sol", "brief"], {})
@@ -231,11 +415,12 @@ class PeerReviewTests(unittest.TestCase):
         self.assertEqual(lines[lines.index("--model") + 1], "claude-opus-5-5")
 
     def test_claude_peer_model_override_is_preserved(self) -> None:
-        _, lines, _ = self.run_launcher(
+        proc, lines, _ = self.run_launcher(
             ["--from", "gpt", "--model", "claude-sonnet-5", "brief"], {}
         )
         self.assertEqual(lines.count("--model"), 1)
         self.assertEqual(lines[lines.index("--model") + 1], "claude-sonnet-5")
+        self.assertEqual(json.loads(proc.stdout)["peer_model"], "claude-fable-5")
 
     def test_claude_stdout_error_is_surfaced_on_nonzero_exit(self) -> None:
         """Real quota failures exit 1 with JSON on stdout and empty stderr.
@@ -285,6 +470,19 @@ class PeerReviewTests(unittest.TestCase):
         payload = json.loads(proc.stdout)
         self.assertEqual(payload["result"]["verdict"], "challenges")
         self.assertEqual(payload["peer_model"], "claude-fable-5")
+
+    def test_multiple_usage_models_do_not_misreport_a_helper(self) -> None:
+        usage = {"claude-haiku-helper": {"outputTokens": 1},
+                 "claude-opus-5-5": {"outputTokens": 300}}
+        event = json.dumps({"structured_output": json.loads(ANSWER), "modelUsage": usage})
+        for requested in ("claude-opus-5-5", "opus"):
+            with self.subTest(requested=requested):
+                proc, _, _ = self.run_launcher(
+                    ["--from", "gpt", "--model", requested, "brief"], {},
+                    claude_stub=f"printf '%s' '{event}'\n",
+                )
+                self.assertEqual(proc.returncode, 0, proc.stderr)
+                self.assertEqual(json.loads(proc.stdout)["peer_model"], requested)
 
     def test_claude_peer_cannot_edit(self) -> None:
         _, lines, _ = self.run_launcher(["--from", "gpt", "brief"], {})
@@ -361,6 +559,12 @@ class PeerReviewTests(unittest.TestCase):
 
 
 class PeerReviewWiringTests(unittest.TestCase):
+    def test_piped_diff_examples_opt_in_to_stdin(self) -> None:
+        for name in ("ic", "super-review", "understanding-prs-for-approval"):
+            with self.subTest(agent=name):
+                text = (REPO / "coding-agents" / "source" / f"{name}.md").read_text()
+                self.assertIn("| peer-review --stdin --mode diff-review", text)
+
     def test_shared_instructions_warn_about_harness_routing(self) -> None:
         text = SHARED_AGENTS.read_text()
         self.assertIn("peer-review", text)

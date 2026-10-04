@@ -103,7 +103,7 @@ Dispatch fresh-context reviewers **in parallel** — they haven't seen this conv
 **Cross-model pass — run it in the same parallel wave as the reviewers, not after:**
 
 ```
-git diff $(git merge-base <default> HEAD) | peer-review --mode diff-review --cd <worktree> \
+git diff $(git merge-base <default> HEAD) | peer-review --stdin --mode diff-review --cd <worktree> \
   "Intent: <one line>. Invariants this must preserve: <list>. Tests run and their result: <summary>. Known non-goals: <list>."
 ```
 

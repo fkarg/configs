@@ -63,7 +63,7 @@ Run one peer check **only when approval rests on something you could not verify*
 When it does apply, aim it at the specific unverified thing rather than the PR as a whole:
 
 ```bash
-git diff <base>...<head> | peer-review --mode diff-review --cd <worktree> \
+git diff <base>...<head> | peer-review --stdin --mode diff-review --cd <worktree> \
   "Approval rests on this unverified claim: <the judgment call or untested invariant>. \
 Established and already verified: <invariants pinned by tests you read>. \
 Attack that one claim; ignore what is already pinned."

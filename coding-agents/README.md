@@ -63,6 +63,29 @@ unchanged. CLIProxyAPI is a third-party compatibility layer, so a Claude Code or
 Codex protocol change may require bumping the pinned proxy release and rerunning
 the role.
 
+## Peer reviews
+
+`peer-review` selects a peer from the other serving model family. Bare calls
+ignore stdin; supporting material is explicit:
+
+```sh
+peer-review --mode premise "Do we need a cache for this latency target?"
+peer-review --mode design -f design.md "Review the proposed design"
+git diff | peer-review --stdin --mode diff-review "Intent: add CLI help"
+peer-review --mode models
+peer-review --mode models --include-self
+```
+
+`--stdin` waits for EOF; `-f/--file` reads a file instead. Choose one input source.
+Model listing uses each harness's native catalog without sending a user prompt.
+It returns JSON, preserves Claude aliases and resolved IDs, and includes Codex
+visibility metadata. See `peer-review --help` for catalog limitations.
+`--include-self` requires a recognized caller harness; `--from` changes peer
+routing, not harness detection.
+
+Run launcher contract tests with
+`python3 -m unittest discover -s coding-agents -p test_peer_review.py`.
+
 ## Global tool settings (`configs/`)
 
 Each tool's global config splits into two layers:

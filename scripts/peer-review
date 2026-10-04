@@ -8,10 +8,11 @@
 #
 # Usage:
 #   peer-review [--mode MODE] [--cd DIR] [--from FAMILY] [--model M] BRIEF
-#   git diff ... | peer-review --mode diff-review --cd "$PWD" "Intent: ..."
+#   git diff ... | peer-review --stdin --mode diff-review --cd "$PWD" "Intent: ..."
 #
-# MODE is premise | diagnosis | design | diff-review (default: premise).
-# Material piped on stdin is appended to the brief. Emits one JSON object:
+# Review MODE is premise | diagnosis | design | diff-review (default: premise).
+# Use --mode models [--include-self] for inference-free model discovery.
+# Supporting material requires --stdin or -f FILE. Emits one JSON object:
 #   {"peer_cli": ..., "peer_model": ..., "peer_family": ..., "result": {...}}
 
 set -eu
@@ -21,6 +22,13 @@ workdir=""
 from_family=""
 peer_model=""
 help_requested=false
+read_stdin=false
+material_path=""
+include_self=false
+# Strip these only for a real Anthropic peer; self discovery keeps its provider.
+proxy_env_vars="ANTHROPIC_BASE_URL ANTHROPIC_AUTH_TOKEN ANTHROPIC_MODEL
+ANTHROPIC_DEFAULT_OPUS_MODEL ANTHROPIC_DEFAULT_SONNET_MODEL
+ANTHROPIC_DEFAULT_HAIKU_MODEL _CLAUDE_CODE_ASSUME_FIRST_PARTY_BASE_URL"
 
 fail() {
     printf 'peer-review: %s\n' "$*" >&2
@@ -34,6 +42,9 @@ while [ $# -gt 0 ]; do
         --cd) workdir="${2:?--cd needs a value}"; shift 2 ;;
         --from) from_family="${2:?--from needs a value}"; shift 2 ;;
         --model) peer_model="${2:?--model needs a value}"; shift 2 ;;
+        --stdin) read_stdin=true; shift ;;
+        -f|--file) material_path="${2:?--file needs a path}"; shift 2 ;;
+        --include-self) include_self=true; shift ;;
         --) shift; break ;;
         -*) fail "unknown option: $1" ;;
         *) break ;;
@@ -41,8 +52,8 @@ while [ $# -gt 0 ]; do
 done
 
 case "$mode" in
-    premise|diagnosis|design|diff-review) ;;
-    *) fail "unknown mode: $mode (want premise|diagnosis|design|diff-review)" ;;
+    premise|diagnosis|design|diff-review|models) ;;
+    *) fail "unknown mode: $mode (want premise|diagnosis|design|diff-review|models)" ;;
 esac
 
 # --- serving family detection -------------------------------------------
@@ -89,10 +100,11 @@ esac
 if [ "$help_requested" = true ]; then
     cat <<'HELP'
 Usage: peer-review [OPTIONS] BRIEF
-       git diff | peer-review --mode diff-review --cd "$PWD" "Intent: ..."
+       peer-review --mode models [--include-self] [--from FAMILY]
+       git diff | peer-review --stdin --mode diff-review --cd "$PWD" "Intent: ..."
 
 Ask a read-only peer from a different serving model family to challenge a brief.
-Options must precede BRIEF. Piped stdin is appended as supporting material.
+Options must precede BRIEF. Stdin is ignored unless --stdin is supplied.
 
 Options:
   -h, --help       Show this help and exit without invoking a peer.
@@ -101,11 +113,16 @@ Options:
                     diagnosis   Rank causes and propose falsifying observations.
                     design      Produce an independent design and tradeoffs.
                     diff-review Review a supplied diff for correctness and simplicity.
-  --cd DIR        Give the peer access to this directory.
+                    models      List the target harness's model catalog; no brief.
+  --include-self  Also list the detected caller harness's models (models mode).
+  --stdin         Append all stdin as supporting material; waits for EOF.
+  -f, --file PATH  Append a file as supporting material instead of reading stdin.
+                  Cannot combine with --stdin. diff-review requires one of them.
+  --cd DIR        Give the peer access to this directory (review modes only).
   --from FAMILY   Declare the caller's OWN serving family: claude or gpt.
                   Defaults to PEER_REVIEW_FROM, then automatic detection.
                   A gpt caller uses Claude; a claude caller uses Codex.
-  --model MODEL   Override the selected peer's model.
+  --model MODEL   Override the selected peer's model (review modes only).
                   Defaults: claude-opus-5-5 (Claude), gpt-6.1-sol (Codex).
   --              End options (for a brief beginning with a dash).
 
@@ -114,11 +131,16 @@ Output:
   The result contains verdict, findings, counterproposal,
   attempted_falsifications and unverified. Errors go to stderr; exit is nonzero.
   Requires the selected peer CLI and python3. Never include secrets in input.
+  Models mode emits target (and optional self) catalogs as JSON without a
+  model inference. Catalogs may be cached; entries do not prove account access
+  or validate custom --model IDs. Claude aliases retain their resolved model IDs.
 
 Examples:
   peer-review --mode premise "Do we need a cache to meet this latency target?"
   peer-review --mode diagnosis --cd "$PWD" "The worker exits after its first job."
-  git diff | peer-review --mode diff-review --cd "$PWD" "Intent: add CLI help"
+  peer-review --mode design -f design.md "Review the proposed design"
+  git diff | peer-review --stdin --mode diff-review --cd "$PWD" "Intent: add CLI help"
+  peer-review --mode models --include-self
 HELP
     printf '\nCurrent routing:\n'
     printf '  Detected harness: %s\n' "$detected_harness"
@@ -128,6 +150,83 @@ HELP
     exit 0
 fi
 
+if [ "$read_stdin" = true ] && [ -n "$material_path" ]; then
+    fail "cannot combine --stdin and --file"
+fi
+
+if [ "$mode" = models ]; then
+    [ $# -eq 0 ] && [ "$read_stdin" = false ] && [ -z "$material_path" ] ||
+        fail "models mode does not accept a brief, --stdin or --file"
+    python3 - "$peer_cli" "$include_self" "$detected_harness" "$proxy_env_vars" <<'PY'
+import json, os, subprocess, sys
+
+peer_cli, include_self, harness, proxy_vars = sys.argv[1:]
+self_cli = {"Codex": "codex", "Claude Code": "claude",
+            "Claude Code (claudex)": "claude"}.get(harness)
+if include_self == "true" and self_cli is None:
+    sys.exit("peer-review: caller harness unknown; cannot list its models")
+
+def catalog(cli, *, target=False):
+    env = os.environ.copy()
+    if cli == "claude" and target:
+        for name in proxy_vars.split():
+            env.pop(name, None)
+    if cli == "codex":
+        command = [cli, "debug", "models"]
+        request = ""
+    else:
+        command = [cli, "-p", "--input-format", "stream-json",
+                   "--output-format", "stream-json", "--verbose",
+                   "--strict-mcp-config", "--no-session-persistence"]
+        # Initialization discovers models without sending a user message.
+        request = json.dumps({"type": "control_request", "request_id": "peer-models",
+                              "request": {"subtype": "initialize"}}) + "\n"
+    proc = subprocess.run(command, input=request, capture_output=True, text=True, env=env)
+    if proc.returncode:
+        raise ValueError(f"{cli} model discovery failed (exit {proc.returncode})")
+    if cli == "codex":
+        models = [{"id": m["slug"], "display_name": m["display_name"],
+                   "description": m["description"], "visibility": m["visibility"]}
+                  for m in json.loads(proc.stdout)["models"]]
+    else:
+        # Initialize also returns account metadata. Keep the response in memory
+        # and emit only model fields, including on malformed/error responses.
+        response = None
+        for line in proc.stdout.splitlines():
+            event = json.loads(line)
+            if event.get("type") == "control_response":
+                candidate = event["response"]
+                if candidate.get("request_id") == "peer-models":
+                    response = candidate
+                    break
+        if response is None or response.get("subtype") != "success":
+            raise ValueError("claude model discovery returned no successful initialization")
+        models = []
+        for m in response["response"]["models"]:
+            entry = {"id": m["value"], "display_name": m["displayName"],
+                     "description": m["description"]}
+            if "resolvedModel" in m:
+                entry["resolved_model"] = m["resolvedModel"]
+            models.append(entry)
+    return {"cli": cli, "models": models}
+
+try:
+    output = {"target": catalog(peer_cli, target=True)}
+    if include_self == "true":
+        output["self"] = catalog(self_cli)
+except (OSError, ValueError, KeyError, TypeError) as exc:
+    # Do not echo CLI output or initialization values in diagnostics.
+    detail = str(exc) if type(exc) is ValueError else type(exc).__name__
+    sys.exit(f"peer-review: model discovery failed: {detail}")
+json.dump(output, sys.stdout, indent=2)
+print()
+PY
+    exit 0
+fi
+
+[ "$include_self" = false ] || fail "--include-self requires --mode models"
+[ "$mode" != diff-review ] || [ "$read_stdin" = true ] || [ -n "$material_path" ] ||
+    fail "diff-review requires --stdin or --file"
 [ $# -ge 1 ] || fail "a brief is required"
 brief="$*"
 
@@ -153,7 +252,11 @@ schema_file=$(mktemp) || fail "cannot create temp file"
 result_file=$(mktemp) || fail "cannot create temp file"
 trap 'rm -f "$material_file" "$schema_file" "$result_file"' EXIT INT TERM
 
-[ -t 0 ] || cat >"$material_file"
+if [ "$read_stdin" = true ]; then
+    cat >"$material_file"
+elif [ -n "$material_path" ]; then
+    cat <"$material_path" >"$material_file" || fail "cannot read material file: $material_path"
+fi
 
 cat >"$schema_file" <<'SCHEMA'
 {
@@ -216,9 +319,7 @@ else
     # A peer running through claudex would be GPT again. Force real Anthropic.
     # Leave ANTHROPIC_API_KEY alone: without it the CLI falls back to the
     # keychain/OAuth session, which is how this host normally authenticates.
-    unset ANTHROPIC_BASE_URL ANTHROPIC_AUTH_TOKEN ANTHROPIC_MODEL
-    unset ANTHROPIC_DEFAULT_OPUS_MODEL ANTHROPIC_DEFAULT_SONNET_MODEL
-    unset ANTHROPIC_DEFAULT_HAIKU_MODEL _CLAUDE_CODE_ASSUME_FIRST_PARTY_BASE_URL
+    unset $proxy_env_vars
     # claude --json-schema takes the schema INLINE, not a path -- handing it a
     # filename fails with "not valid JSON: Unrecognized token '/'".
     # The prompt goes on stdin, not as a positional: --disallowed-tools is
@@ -271,7 +372,12 @@ if isinstance(payload, dict) and "verdict" not in payload:
             f"peer-review: peer reported an error ({payload.get('subtype', 'unknown')}): "
             + "; ".join(details)
         )
-    reported = next(iter(payload.get("modelUsage") or {}), None)
+    usage = payload.get("modelUsage") or {}
+    requested = os.environ["PEER_MODEL"]
+    # Helpers can also appear in modelUsage; ordering is not answer provenance.
+    reported = requested if requested in usage else (
+        next(iter(usage)) if len(usage) == 1 else None
+    )
     # structured_output is the schema-validated object; `result` is its string.
     result = payload.get("structured_output")
     if result is None:
@@ -288,7 +394,7 @@ caller, detected = os.environ["PEER_FAMILY"], os.environ["PEER_DETECTED"]
 out = {
     "peer_cli": os.environ["PEER_CLI"],
     "peer_family": "gpt" if caller == "claude" else "claude",
-    "peer_model": os.environ["PEER_MODEL"] or reported or "cli default",
+    "peer_model": reported or os.environ["PEER_MODEL"] or "cli default",
     "caller_family": caller,
     "result": result,
 }

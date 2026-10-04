@@ -42,7 +42,7 @@ Dispatch fresh-context reviewers in parallel, each with the intent, the diff, an
 **Cross-model pass — dispatch it in the same wave as the fleet above:**
 
 ```
-git diff $(git merge-base <default> HEAD) | peer-review --mode diff-review --cd <worktree> \
+git diff $(git merge-base <default> HEAD) | peer-review --stdin --mode diff-review --cd <worktree> \
   "Intent: <one line>. Invariants this must preserve: <list from step 2>. Tests run and their result: <summary>. Known non-goals: <list>."
 ```
 
