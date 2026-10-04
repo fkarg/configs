@@ -82,8 +82,9 @@ command-line order, with a newline between inputs.
 Model listing uses each harness's native catalog without sending a user prompt.
 It returns JSON, preserves Claude aliases and resolved IDs, and includes Codex
 visibility metadata. See `peer-review --help` for catalog limitations.
-`--include-self` requires a recognized caller harness; `--from` changes peer
-routing, not harness detection.
+`--include-self` adds the detected caller harness's catalog. From a terminal,
+it adds the other CLI's catalog, so both Codex and Claude are listed.
+`--from` changes peer routing, not harness detection.
 
 Run launcher contract tests with
 `python3 -m unittest discover -s coding-agents -p test_peer_review.py`.

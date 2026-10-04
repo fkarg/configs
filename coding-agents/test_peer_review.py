@@ -245,13 +245,19 @@ class PeerReviewTests(unittest.TestCase):
         self.assertEqual(lines, ["cli=claude base=unset",
                                  "cli=claude base=http://127.0.0.1:8317"])
 
-    def test_unknown_self_harness_is_not_guessed_from_family_override(self) -> None:
-        proc, _, _ = self.run_launcher(
-            ["--models", "--include-self", "--from", "gpt"], {},
-            claude_stub=CATALOG_CLAUDE_STUB, open_stdin=True,
-        )
-        self.assertEqual(proc.returncode, 1)
-        self.assertIn("harness", proc.stderr)
+    def test_terminal_include_self_lists_both_harnesses(self) -> None:
+        for options, target, own in (([], "codex", "claude"),
+                                     (["--from", "gpt"], "claude", "codex")):
+            with self.subTest(options=options):
+                proc, _, _ = self.run_launcher(
+                    ["--models", "--include-self", *options], {},
+                    claude_stub=CATALOG_CLAUDE_STUB,
+                    codex_stub=CATALOG_CODEX_STUB, open_stdin=True,
+                )
+                self.assertEqual(proc.returncode, 0, proc.stderr)
+                payload = json.loads(proc.stdout)
+                self.assertEqual(payload["target"]["cli"], target)
+                self.assertEqual(payload["self"]["cli"], own)
 
     def test_listing_rejects_review_input_and_include_self_requires_models(self) -> None:
         for args, error in ((["--models", "--stdin"], "does not accept"),

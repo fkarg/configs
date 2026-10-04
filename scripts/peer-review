@@ -128,7 +128,8 @@ Options:
                     design      Produce an independent design and tradeoffs.
                     diff-review Review a supplied diff for correctness and simplicity.
   --models        List the target harness's model catalog; no brief.
-  --include-self  Also list the detected caller harness's models (with --models).
+  --include-self  Also list the caller harness's models (with --models).
+                  Outside a harness, list the other CLI's models too.
   --stdin         Append all stdin as supporting material; waits for EOF.
   -f, --file PATH  Append a file as supporting material (repeatable).
                   Files and --stdin combine in command-line order, separated
@@ -174,9 +175,8 @@ import json, os, subprocess, sys
 
 peer_cli, include_self, harness, proxy_vars = sys.argv[1:]
 self_cli = {"Codex": "codex", "Claude Code": "claude",
-            "Claude Code (claudex)": "claude"}.get(harness)
-if include_self == "true" and self_cli is None:
-    sys.exit("peer-review: caller harness unknown; cannot list its models")
+            "Claude Code (claudex)": "claude"}.get(
+                harness, "claude" if peer_cli == "codex" else "codex")
 
 def catalog(cli, *, target=False):
     env = os.environ.copy()
