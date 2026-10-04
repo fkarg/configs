@@ -112,6 +112,17 @@ stdenv.mkDerivation {
     makeWrapper
   ];
 
+  # orcad-template is uploaded to remote hosts and verified against its bundled
+  # hashes. Keep it byte-for-byte intact, including its foreign-libc binaries.
+  dontAutoPatchelf = true;
+  postFixup = ''
+    mapfile -d "" -t patchPaths < <(
+      find "$out/share/orca-ide" -mindepth 1 -maxdepth 1 ! -name resources -print0
+      find "$out/share/orca-ide/resources" -mindepth 1 -maxdepth 1 ! -name orcad-template -print0
+    )
+    autoPatchelf "''${patchPaths[@]}"
+  '';
+
   buildInputs = [
     alsa-lib
     at-spi2-atk

@@ -8,14 +8,6 @@
   # paths pulled into this desktop configuration.
   nixpkgs.overlays = [
     (final: prev: {
-      # C++20 rejects template arguments on constructor names.
-      grantlee = prev.grantlee.overrideAttrs (old: {
-        postPatch = (old.postPatch or "") + ''
-          substituteInPlace templates/defaulttags/cycle.h \
-            --replace-fail 'RingIterator<T>(' 'RingIterator('
-        '';
-      });
-
       # Removing rpaths leaves empty space-separated elements, which Qt6's
       # binary wrapper rejects. Normalize the remaining linker flags.
       lazarus-qt6 = prev.lazarus-qt6.overrideAttrs (old: {
