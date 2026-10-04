@@ -1,50 +1,8 @@
 ---
-# Graphical-host dotfiles: kitty, hyprland, i3, broot, fonts, background,
+# Graphical-host dotfiles: kitty, hyprland, broot, fonts, background,
 # todo (config only — the gtd/finances repos themselves are cloned by the
-# `personal` role). Most tasks are Linux-only (i3, hyprland, fonts);
+# `personal` role). Most tasks are Linux-only (hyprland, fonts);
 # kitty is cross-platform. Each tool has a concern tag.
-
-# ============================================
-# I3 (Linux only)
-# ============================================
-- name: Create config/i3 directory
-  file:
-    path: ~/.config/i3
-    state: directory
-  when: ansible_facts['system'] == 'Linux'
-  tags: [i3]
-
-- name: Template on_startup.sh
-  template:
-    src: on_startup.j2
-    dest: ~/on_startup.sh
-    mode: '0500'
-  notify: "restart i3"
-  when: ansible_facts['system'] == 'Linux'
-  tags: [i3]
-
-- name: Template i3 config
-  template:
-    src: i3config.j2
-    dest: ~/.config/i3/config
-  notify: "restart i3"
-  when: ansible_facts['system'] == 'Linux'
-  tags: [i3]
-
-- name: Create config/i3status directory
-  file:
-    path: ~/.config/i3status
-    state: directory
-  when: ansible_facts['system'] == 'Linux'
-  tags: [i3]
-
-- name: Template i3status config
-  template:
-    src: i3statusconfig.j2
-    dest: ~/.config/i3status/config.toml
-  notify: "restart i3"
-  when: ansible_facts['system'] == 'Linux'
-  tags: [i3]
 
 # ============================================
 # KITTY (cross-platform)
@@ -306,8 +264,8 @@
   tags: [todo]
 
 # NOTE: gtd and finances repos are cloned by the `personal` role —
-# graphical_dotfiles only sets up the matching GUI config (todo.sh,
-# i3 fava launcher) and assumes those repos exist.
+# graphical_dotfiles only sets up the matching GUI config (todo.sh)
+# and assumes those repos exist.
 
 # ============================================
 # FONTS (Linux only)

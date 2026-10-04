@@ -70,7 +70,7 @@ See `ansible/inventory/host_vars/terminal.yml` for the knobs it exposes.
 | `server_hardening` | Opt-in server lockdown: UFW (deny incoming), fail2ban, swap file, hostname-set (when `server_hostname` is defined). | Production-facing servers only. Add to `host_roles` and set `ufw_rules_extra` with your sshd port. |
 | `terminal_dotfiles` | Generic dotfiles: configs repo clone, `.gitconfig` template (identity comes from `group_vars/all.yml`), fish/nvim/vim symlinks, templated fish config. | Every host that wants the shell setup, including the generic `terminal` profile. |
 | `personal` | Private repos (`text_zeug`, `gtd`, `finances`) and the optional passive-update cron that pulls/pushes them. | Personal machines only. |
-| `graphical_dotfiles` | i3/Hyprland/X resources, GUI dotfiles. | Workstations with a display. |
+| `graphical_dotfiles` | Hyprland/Waybar, kitty, GUI dotfiles. | Workstations with a display. |
 | `os_macos` | Homebrew package + cask management, macOS defaults. | macOS hosts. |
 | `coding_agents` | Symlinks for global config of various coding-agent CLIs (claude, etc.). | Hosts that run those agents. |
 
