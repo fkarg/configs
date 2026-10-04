@@ -72,11 +72,13 @@ ignore stdin; supporting material is explicit:
 peer-review --mode premise "Do we need a cache for this latency target?"
 peer-review --mode design -f design.md "Review the proposed design"
 git diff | peer-review --stdin --mode diff-review "Intent: add CLI help"
+git diff | peer-review -f design.md --stdin -f notes.md "Review this change"
 peer-review --mode models
 peer-review --mode models --include-self
 ```
 
-`--stdin` waits for EOF; `-f/--file` reads a file instead. Choose one input source.
+`--stdin` waits for EOF; `-f/--file` is repeatable. Files and stdin combine in
+command-line order, with a newline between inputs.
 Model listing uses each harness's native catalog without sending a user prompt.
 It returns JSON, preserves Claude aliases and resolved IDs, and includes Codex
 visibility metadata. See `peer-review --help` for catalog limitations.

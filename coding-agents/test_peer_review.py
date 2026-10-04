@@ -142,12 +142,57 @@ class PeerReviewTests(unittest.TestCase):
                         self.assertEqual(proc.returncode, 0, proc.stderr)
                         self.assertIn(path.read_text(), "\n".join(lines))
 
-    def test_input_sources_are_mutually_exclusive(self) -> None:
-        proc, _, _ = self.run_launcher(
-            ["--stdin", "-f", "file", "brief"], {}, open_stdin=True,
-        )
-        self.assertEqual(proc.returncode, 1)
-        self.assertIn("cannot combine", proc.stderr)
+    def test_file_and_stdin_material_follow_option_order(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "material with spaces.md"
+            path.write_text("file-material")
+            for family in ("gpt", "claude"):
+                for stdin_first in (False, True):
+                    with self.subTest(family=family, stdin_first=stdin_first):
+                        inputs = ["--stdin", "-f", str(path)] if stdin_first else [
+                            "-f", str(path), "--stdin",
+                        ]
+                        proc, lines, _ = self.run_launcher(
+                            ["--from", family, *inputs, "brief"], {},
+                            input_text="stdin-material",
+                            codex_stub=CODEX_STUB + RECORD_INPUT,
+                            claude_stub=CLAUDE_STUB + RECORD_INPUT,
+                        )
+                        self.assertEqual(proc.returncode, 0, proc.stderr)
+                        expected = "stdin-material\nfile-material" if stdin_first else (
+                            "file-material\nstdin-material"
+                        )
+                        self.assertIn(expected, "\n".join(lines))
+
+    def test_repeated_files_and_stdin_follow_option_order(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            first = Path(tmp) / "first material.md"
+            second = Path(tmp) / "second\nmaterial.md"
+            first.write_text("first-file")
+            second.write_text("second-file")
+            for family in ("gpt", "claude"):
+                with self.subTest(family=family):
+                    proc, lines, _ = self.run_launcher(
+                        ["--from", family, "-f", str(first), "--stdin",
+                         "--file", str(second), "brief"], {}, input_text="stdin-middle",
+                        codex_stub=CODEX_STUB + RECORD_INPUT,
+                        claude_stub=CLAUDE_STUB + RECORD_INPUT,
+                    )
+                    self.assertEqual(proc.returncode, 0, proc.stderr)
+                    self.assertIn("first-file\nstdin-middle\nsecond-file", "\n".join(lines))
+
+    def test_repeated_files_do_not_read_inherited_stdin(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            first = Path(tmp) / "first.md"
+            second = Path(tmp) / "second.md"
+            first.write_text("first-file")
+            second.write_text("second-file")
+            proc, lines, _ = self.run_launcher(
+                ["-f", str(first), "-f", str(second), "brief"], {}, open_stdin=True,
+                codex_stub=CODEX_STUB + RECORD_INPUT,
+            )
+            self.assertEqual(proc.returncode, 0, proc.stderr)
+            self.assertIn("first-file\nsecond-file", "\n".join(lines))
 
     def test_unreadable_material_file_fails(self) -> None:
         proc, _, _ = self.run_launcher(
@@ -249,6 +294,8 @@ class PeerReviewTests(unittest.TestCase):
                 self.assertEqual(proc.returncode, 0, proc.stderr)
                 for option in ("--stdin", "--file", "--include-self", "models"):
                     self.assertIn(option, proc.stdout)
+                self.assertIn("repeatable", proc.stdout)
+                self.assertIn("command-line order", proc.stdout)
 
     def run_launcher(
         self, args: list[str], env_overrides: dict[str, str],

@@ -22,9 +22,15 @@ workdir=""
 from_family=""
 peer_model=""
 help_requested=false
-read_stdin=false
-material_path=""
+input_sources=""
+material_file=""
+schema_file=""
+result_file=""
+err_file=""
+combined_file=""
 include_self=false
+trap 'rm -f "$input_sources" "$material_file" "$schema_file" "$result_file" \
+    "$err_file" "$combined_file"' EXIT INT TERM
 # Strip these only for a real Anthropic peer; self discovery keeps its provider.
 proxy_env_vars="ANTHROPIC_BASE_URL ANTHROPIC_AUTH_TOKEN ANTHROPIC_MODEL
 ANTHROPIC_DEFAULT_OPUS_MODEL ANTHROPIC_DEFAULT_SONNET_MODEL
@@ -42,8 +48,14 @@ while [ $# -gt 0 ]; do
         --cd) workdir="${2:?--cd needs a value}"; shift 2 ;;
         --from) from_family="${2:?--from needs a value}"; shift 2 ;;
         --model) peer_model="${2:?--model needs a value}"; shift 2 ;;
-        --stdin) read_stdin=true; shift ;;
-        -f|--file) material_path="${2:?--file needs a path}"; shift 2 ;;
+        --stdin)
+            [ -n "$input_sources" ] || input_sources=$(mktemp)
+            printf '%s\0' --stdin >>"$input_sources"
+            shift ;;
+        -f|--file)
+            [ -n "$input_sources" ] || input_sources=$(mktemp)
+            printf '%s\0' --file "${2:?--file needs a path}" >>"$input_sources"
+            shift 2 ;;
         --include-self) include_self=true; shift ;;
         --) shift; break ;;
         -*) fail "unknown option: $1" ;;
@@ -116,8 +128,9 @@ Options:
                     models      List the target harness's model catalog; no brief.
   --include-self  Also list the detected caller harness's models (models mode).
   --stdin         Append all stdin as supporting material; waits for EOF.
-  -f, --file PATH  Append a file as supporting material instead of reading stdin.
-                  Cannot combine with --stdin. diff-review requires one of them.
+  -f, --file PATH  Append a file as supporting material (repeatable).
+                  Files and --stdin combine in command-line order, separated
+                  by a newline. diff-review requires at least one input source.
   --cd DIR        Give the peer access to this directory (review modes only).
   --from FAMILY   Declare the caller's OWN serving family: claude or gpt.
                   Defaults to PEER_REVIEW_FROM, then automatic detection.
@@ -139,6 +152,7 @@ Examples:
   peer-review --mode premise "Do we need a cache to meet this latency target?"
   peer-review --mode diagnosis --cd "$PWD" "The worker exits after its first job."
   peer-review --mode design -f design.md "Review the proposed design"
+  git diff | peer-review -f design.md --stdin -f notes.md "Review this change"
   git diff | peer-review --stdin --mode diff-review --cd "$PWD" "Intent: add CLI help"
   peer-review --mode models --include-self
 HELP
@@ -150,12 +164,8 @@ HELP
     exit 0
 fi
 
-if [ "$read_stdin" = true ] && [ -n "$material_path" ]; then
-    fail "cannot combine --stdin and --file"
-fi
-
 if [ "$mode" = models ]; then
-    [ $# -eq 0 ] && [ "$read_stdin" = false ] && [ -z "$material_path" ] ||
+    [ $# -eq 0 ] && [ -z "$input_sources" ] ||
         fail "models mode does not accept a brief, --stdin or --file"
     python3 - "$peer_cli" "$include_self" "$detected_harness" "$proxy_env_vars" <<'PY'
 import json, os, subprocess, sys
@@ -225,7 +235,7 @@ PY
 fi
 
 [ "$include_self" = false ] || fail "--include-self requires --mode models"
-[ "$mode" != diff-review ] || [ "$read_stdin" = true ] || [ -n "$material_path" ] ||
+[ "$mode" != diff-review ] || [ -n "$input_sources" ] ||
     fail "diff-review requires --stdin or --file"
 [ $# -ge 1 ] || fail "a brief is required"
 brief="$*"
@@ -250,12 +260,27 @@ discipline="Recommend nothing beyond the facts supplied. Do not spawn subagents.
 material_file=$(mktemp) || fail "cannot create temp file"
 schema_file=$(mktemp) || fail "cannot create temp file"
 result_file=$(mktemp) || fail "cannot create temp file"
-trap 'rm -f "$material_file" "$schema_file" "$result_file"' EXIT INT TERM
+if [ -n "$input_sources" ]; then
+    # NUL-delimited options preserve arbitrary file names and their ordering.
+    # Use -c so stdin remains the caller's material, not the Python program.
+    python3 -c '
+import os, shutil, sys
 
-if [ "$read_stdin" = true ]; then
-    cat >"$material_file"
-elif [ -n "$material_path" ]; then
-    cat <"$material_path" >"$material_file" || fail "cannot read material file: $material_path"
+with open(sys.argv[1], "rb") as manifest:
+    sources = iter(manifest.read().split(b"\0")[:-1])
+try:
+    with open(sys.argv[2], "wb") as output:
+        for index, source in enumerate(sources):
+            if index:
+                output.write(b"\n")
+            if source == b"--stdin":
+                shutil.copyfileobj(sys.stdin.buffer, output)
+            else:
+                with open(os.fsdecode(next(sources)), "rb") as material:
+                    shutil.copyfileobj(material, output)
+except OSError as exc:
+    sys.exit(f"peer-review: cannot read material file: {exc.filename}")
+' "$input_sources" "$material_file"
 fi
 
 cat >"$schema_file" <<'SCHEMA'
@@ -297,9 +322,6 @@ $discipline"
 # "peer failed", which is how a broken flag survived unnoticed.
 err_file=$(mktemp) || fail "cannot create temp file"
 combined_file=$(mktemp) || fail "cannot create temp file"
-trap 'rm -f "$material_file" "$schema_file" "$result_file" "$err_file" \
-    "$combined_file"' EXIT INT TERM
-
 peer_failed() {
     printf 'peer-review: %s\n' "$1" >&2
     printf -- '--- %s stderr ---\n' "$peer_cli" >&2
