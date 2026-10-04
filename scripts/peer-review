@@ -20,6 +20,7 @@ mode="premise"
 workdir=""
 from_family=""
 peer_model=""
+help_requested=false
 
 fail() {
     printf 'peer-review: %s\n' "$*" >&2
@@ -28,8 +29,65 @@ fail() {
 
 while [ $# -gt 0 ]; do
     case "$1" in
-        -h|--help)
-            cat <<'HELP'
+        -h|--help) help_requested=true; shift; break ;;
+        --mode) mode="${2:?--mode needs a value}"; shift 2 ;;
+        --cd) workdir="${2:?--cd needs a value}"; shift 2 ;;
+        --from) from_family="${2:?--from needs a value}"; shift 2 ;;
+        --model) peer_model="${2:?--model needs a value}"; shift 2 ;;
+        --) shift; break ;;
+        -*) fail "unknown option: $1" ;;
+        *) break ;;
+    esac
+done
+
+case "$mode" in
+    premise|diagnosis|design|diff-review) ;;
+    *) fail "unknown mode: $mode (want premise|diagnosis|design|diff-review)" ;;
+esac
+
+# --- serving family detection -------------------------------------------
+# Detect what is actually serving this session. claudex points the Anthropic
+# SDK at its own CLIProxyAPI on a fixed loopback port, so that exact endpoint
+# means GPT answers despite the Claude harness. Match only that endpoint: an
+# arbitrary local Anthropic relay is still Claude, and treating it as GPT
+# would route the peer back to the caller's own family.
+#
+# Codex is GPT regardless of harness. Detect it via the per-session vars it
+# actually exports into a spawned shell -- CODEX_SESSION_ID / CODEX_THREAD_ID.
+# CODEX_HOME and CODEX_SANDBOX are NOT set in that shell, so keying on them
+# made every Codex session fall through to "claude" and pick Codex as its own
+# peer. CODEX_HOME may also be exported by a user shell that merely configures
+# Codex, which would misreport a Claude session as GPT; ignore it either way.
+claudex_endpoint="127.0.0.1:8317"
+
+if printf '%s' "${ANTHROPIC_BASE_URL:-}" | grep -qF "$claudex_endpoint"; then
+    detected="gpt"
+    detected_harness="Claude Code (claudex)"
+elif [ -n "${CODEX_SESSION_ID:-}${CODEX_THREAD_ID:-}" ]; then
+    detected="gpt"
+    detected_harness="Codex"
+else
+    detected="claude"
+    if [ -n "${CLAUDECODE:-}" ]; then
+        detected_harness="Claude Code"
+    else
+        detected_harness="unknown (Claude serving family assumed)"
+    fi
+fi
+
+# The override is the escape hatch for when detection is wrong; it declares
+# the caller's OWN family. It cannot be verified, so a disagreement with
+# detection is surfaced in the result rather than silently trusted.
+[ -n "$from_family" ] || from_family="${PEER_REVIEW_FROM:-$detected}"
+
+case "$from_family" in
+    claude) peer_cli="codex"; peer_model="${peer_model:-gpt-6.1-sol}" ;;
+    gpt) peer_cli="claude"; peer_model="${peer_model:-claude-opus-5-5}" ;;
+    *) fail "unknown family: $from_family (want claude|gpt)" ;;
+esac
+
+if [ "$help_requested" = true ]; then
+    cat <<'HELP'
 Usage: peer-review [OPTIONS] BRIEF
        git diff | peer-review --mode diff-review --cd "$PWD" "Intent: ..."
 
@@ -62,59 +120,16 @@ Examples:
   peer-review --mode diagnosis --cd "$PWD" "The worker exits after its first job."
   git diff | peer-review --mode diff-review --cd "$PWD" "Intent: add CLI help"
 HELP
-            exit 0
-            ;;
-        --mode) mode="${2:?--mode needs a value}"; shift 2 ;;
-        --cd) workdir="${2:?--cd needs a value}"; shift 2 ;;
-        --from) from_family="${2:?--from needs a value}"; shift 2 ;;
-        --model) peer_model="${2:?--model needs a value}"; shift 2 ;;
-        --) shift; break ;;
-        -*) fail "unknown option: $1" ;;
-        *) break ;;
-    esac
-done
+    printf '\nCurrent routing:\n'
+    printf '  Detected harness: %s\n' "$detected_harness"
+    printf '  Detected serving family: %s\n' "$detected"
+    printf '  Effective caller family: %s\n' "$from_family"
+    printf '  Target peer: %s (model: %s)\n' "$peer_cli" "$peer_model"
+    exit 0
+fi
 
 [ $# -ge 1 ] || fail "a brief is required"
 brief="$*"
-
-case "$mode" in
-    premise|diagnosis|design|diff-review) ;;
-    *) fail "unknown mode: $mode (want premise|diagnosis|design|diff-review)" ;;
-esac
-
-# --- serving family detection -------------------------------------------
-# Detect what is actually serving this session. claudex points the Anthropic
-# SDK at its own CLIProxyAPI on a fixed loopback port, so that exact endpoint
-# means GPT answers despite the Claude harness. Match only that endpoint: an
-# arbitrary local Anthropic relay is still Claude, and treating it as GPT
-# would route the peer back to the caller's own family.
-#
-# Codex is GPT regardless of harness. Detect it via the per-session vars it
-# actually exports into a spawned shell -- CODEX_SESSION_ID / CODEX_THREAD_ID.
-# CODEX_HOME and CODEX_SANDBOX are NOT set in that shell, so keying on them
-# made every Codex session fall through to "claude" and pick Codex as its own
-# peer. CODEX_HOME may also be exported by a user shell that merely configures
-# Codex, which would misreport a Claude session as GPT; ignore it either way.
-claudex_endpoint="127.0.0.1:8317"
-
-if printf '%s' "${ANTHROPIC_BASE_URL:-}" | grep -qF "$claudex_endpoint"; then
-    detected="gpt"
-elif [ -n "${CODEX_SESSION_ID:-}${CODEX_THREAD_ID:-}" ]; then
-    detected="gpt"
-else
-    detected="claude"
-fi
-
-# The override is the escape hatch for when detection is wrong; it declares
-# the caller's OWN family. It cannot be verified, so a disagreement with
-# detection is surfaced in the result rather than silently trusted.
-[ -n "$from_family" ] || from_family="${PEER_REVIEW_FROM:-$detected}"
-
-case "$from_family" in
-    claude) peer_cli="codex" ;;
-    gpt) peer_cli="claude" ;;
-    *) fail "unknown family: $from_family (want claude|gpt)" ;;
-esac
 
 command -v "$peer_cli" >/dev/null 2>&1 ||
     fail "peer CLI '$peer_cli' is not installed; skip the pass and say so"
@@ -192,7 +207,6 @@ peer_failed() {
 peer_status=0
 if [ "$peer_cli" = "codex" ]; then
     # codex --output-schema takes a FILE.
-    peer_model="${peer_model:-gpt-6.1-sol}"
     set -- exec --sandbox read-only --ephemeral \
         --output-schema "$schema_file" -o "$result_file" -m "$peer_model"
     [ -n "$workdir" ] && set -- "$@" --cd "$workdir"
@@ -213,7 +227,7 @@ else
     # one-shot call; the peer reviews, so it must not edit.
     { printf '%s\n' "$prompt"; cat "$material_file"; } >"$combined_file"
     # Keep peer availability independent of the interactive model's quota.
-    set -- -p --model "${peer_model:-claude-opus-5-5}" \
+    set -- -p --model "$peer_model" \
         --json-schema "$(cat "$schema_file")" --output-format json \
         --strict-mcp-config
     [ -n "$workdir" ] && set -- "$@" --add-dir "$workdir"
