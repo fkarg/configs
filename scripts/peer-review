@@ -120,26 +120,34 @@ Usage: peer-review [OPTIONS] BRIEF
 Ask a read-only peer from a different serving model family to challenge a brief.
 Options must precede BRIEF. Stdin is ignored unless --stdin is supplied.
 
-Options:
-  -h, --help       Show this help and exit without invoking a peer.
+Review settings:
   --mode MODE     Review mode (default: premise):
                     premise     Challenge assumptions and identify alternatives.
                     diagnosis   Rank causes and propose falsifying observations.
                     design      Produce an independent design and tradeoffs.
                     diff-review Review a supplied diff for correctness and simplicity.
-  --models        List the target harness's model catalog; no brief.
-  --include-self  Also list the caller harness's models (with --models).
-                  Outside a harness, list the other CLI's models too.
+  --cd DIR        Give the peer access to this directory (review modes only).
+
+Supporting material:
   --stdin         Append all stdin as supporting material; waits for EOF.
   -f, --file PATH  Append a file as supporting material (repeatable).
                   Files and --stdin combine in command-line order, separated
                   by a newline. diff-review requires at least one input source.
-  --cd DIR        Give the peer access to this directory (review modes only).
+
+Peer selection:
   --from FAMILY   Declare the caller's OWN serving family: claude or gpt.
                   Defaults to PEER_REVIEW_FROM, then automatic detection.
                   A gpt caller uses Claude; a claude caller uses Codex.
   --model MODEL   Override the selected peer's model (review modes only).
                   Defaults: claude-opus-5-5 (Claude), gpt-6.1-sol (Codex).
+
+Model discovery:
+  --models        List the target harness's model catalog; no brief.
+  --include-self  Also list the caller harness's models (with --models).
+                  Outside a harness, list the other CLI's models too.
+
+General:
+  -h, --help      Show this help and exit without invoking a peer.
   --              End options (for a brief beginning with a dash).
 
 Output:
