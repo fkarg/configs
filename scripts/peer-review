@@ -28,6 +28,42 @@ fail() {
 
 while [ $# -gt 0 ]; do
     case "$1" in
+        -h|--help)
+            cat <<'HELP'
+Usage: peer-review [OPTIONS] BRIEF
+       git diff | peer-review --mode diff-review --cd "$PWD" "Intent: ..."
+
+Ask a read-only peer from a different serving model family to challenge a brief.
+Options must precede BRIEF. Piped stdin is appended as supporting material.
+
+Options:
+  -h, --help       Show this help and exit without invoking a peer.
+  --mode MODE     Review mode (default: premise):
+                    premise     Challenge assumptions and identify alternatives.
+                    diagnosis   Rank causes and propose falsifying observations.
+                    design      Produce an independent design and tradeoffs.
+                    diff-review Review a supplied diff for correctness and simplicity.
+  --cd DIR        Give the peer access to this directory.
+  --from FAMILY   Declare the caller's OWN serving family: claude or gpt.
+                  Defaults to PEER_REVIEW_FROM, then automatic detection.
+                  A gpt caller uses Claude; a claude caller uses Codex.
+  --model MODEL   Override the selected peer's model.
+                  Defaults: claude-opus-5-5 (Claude), gpt-6.1-sol (Codex).
+  --              End options (for a brief beginning with a dash).
+
+Output:
+  One validated JSON object with peer_cli, peer_model, peer_family and result.
+  The result contains verdict, findings, counterproposal,
+  attempted_falsifications and unverified. Errors go to stderr; exit is nonzero.
+  Requires the selected peer CLI and python3. Never include secrets in input.
+
+Examples:
+  peer-review --mode premise "Do we need a cache to meet this latency target?"
+  peer-review --mode diagnosis --cd "$PWD" "The worker exits after its first job."
+  git diff | peer-review --mode diff-review --cd "$PWD" "Intent: add CLI help"
+HELP
+            exit 0
+            ;;
         --mode) mode="${2:?--mode needs a value}"; shift 2 ;;
         --cd) workdir="${2:?--cd needs a value}"; shift 2 ;;
         --from) from_family="${2:?--from needs a value}"; shift 2 ;;
