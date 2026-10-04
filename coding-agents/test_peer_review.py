@@ -210,7 +210,7 @@ class PeerReviewTests(unittest.TestCase):
 
     def test_target_models_preserve_alias_and_resolved_id_only(self) -> None:
         proc, _, _ = self.run_launcher(
-            ["--mode", "models"], {"CODEX_THREAD_ID": "test"},
+            ["--models"], {"CODEX_THREAD_ID": "test"},
             claude_stub=CATALOG_CLAUDE_STUB, open_stdin=True,
         )
         self.assertEqual(proc.returncode, 0, proc.stderr)
@@ -225,7 +225,7 @@ class PeerReviewTests(unittest.TestCase):
 
     def test_model_listing_can_include_self_and_catalog_visibility(self) -> None:
         proc, _, _ = self.run_launcher(
-            ["--mode", "models", "--include-self"], {"CODEX_THREAD_ID": "test"},
+            ["--models", "--include-self"], {"CODEX_THREAD_ID": "test"},
             claude_stub=CATALOG_CLAUDE_STUB, codex_stub=CATALOG_CODEX_STUB,
             open_stdin=True,
         )
@@ -237,7 +237,7 @@ class PeerReviewTests(unittest.TestCase):
 
     def test_claudex_model_listing_strips_proxy_only_for_target(self) -> None:
         proc, lines, _ = self.run_launcher(
-            ["--mode", "models", "--include-self"],
+            ["--models", "--include-self"],
             {"ANTHROPIC_BASE_URL": "http://127.0.0.1:8317"},
             claude_stub=CATALOG_CLAUDE_STUB, open_stdin=True,
         )
@@ -247,24 +247,29 @@ class PeerReviewTests(unittest.TestCase):
 
     def test_unknown_self_harness_is_not_guessed_from_family_override(self) -> None:
         proc, _, _ = self.run_launcher(
-            ["--mode", "models", "--include-self", "--from", "gpt"], {},
+            ["--models", "--include-self", "--from", "gpt"], {},
             claude_stub=CATALOG_CLAUDE_STUB, open_stdin=True,
         )
         self.assertEqual(proc.returncode, 1)
         self.assertIn("harness", proc.stderr)
 
     def test_listing_rejects_review_input_and_include_self_requires_models(self) -> None:
-        for args, error in ((["--mode", "models", "--stdin"], "does not accept"),
-                            (["--mode", "models", "brief"], "does not accept"),
-                            (["--include-self", "brief"], "requires --mode models")):
+        for args, error in ((["--models", "--stdin"], "does not accept"),
+                            (["--models", "brief"], "does not accept"),
+                            (["--include-self", "brief"], "requires --models")):
             with self.subTest(args=args):
                 proc, _, _ = self.run_launcher(args, {}, open_stdin=True)
                 self.assertEqual(proc.returncode, 1)
                 self.assertIn(error, proc.stderr)
 
+    def test_models_is_not_a_review_mode(self) -> None:
+        proc, _, _ = self.run_launcher(["--mode", "models"], {}, open_stdin=True)
+        self.assertEqual(proc.returncode, 1)
+        self.assertIn("unknown mode: models", proc.stderr)
+
     def test_model_catalog_cli_failure_is_not_success(self) -> None:
         proc, _, _ = self.run_launcher(
-            ["--mode", "models"], {"CODEX_THREAD_ID": "test"},
+            ["--models"], {"CODEX_THREAD_ID": "test"},
             claude_stub="exit 7\n", open_stdin=True,
         )
         self.assertEqual(proc.returncode, 1)
@@ -280,7 +285,7 @@ class PeerReviewTests(unittest.TestCase):
             with self.subTest(response=response["subtype"]):
                 event = json.dumps({"type": "control_response", "response": response})
                 proc, _, _ = self.run_launcher(
-                    ["--mode", "models"], {"CODEX_THREAD_ID": "test"},
+                    ["--models"], {"CODEX_THREAD_ID": "test"},
                     claude_stub=f"printf '%s\\n' '{event}'\n", open_stdin=True,
                 )
                 self.assertEqual(proc.returncode, 1)
@@ -292,7 +297,7 @@ class PeerReviewTests(unittest.TestCase):
             with self.subTest(flag=flag):
                 proc, _, _ = self.run_launcher([flag], {}, open_stdin=True)
                 self.assertEqual(proc.returncode, 0, proc.stderr)
-                for option in ("--stdin", "--file", "--include-self", "models"):
+                for option in ("--stdin", "--file", "--include-self", "--models"):
                     self.assertIn(option, proc.stdout)
                 self.assertIn("repeatable", proc.stdout)
                 self.assertIn("command-line order", proc.stdout)

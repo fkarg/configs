@@ -73,8 +73,8 @@ peer-review --mode premise "Do we need a cache for this latency target?"
 peer-review --mode design -f design.md "Review the proposed design"
 git diff | peer-review --stdin --mode diff-review "Intent: add CLI help"
 git diff | peer-review -f design.md --stdin -f notes.md "Review this change"
-peer-review --mode models
-peer-review --mode models --include-self
+peer-review --models
+peer-review --models --include-self
 ```
 
 `--stdin` waits for EOF; `-f/--file` is repeatable. Files and stdin combine in

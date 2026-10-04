@@ -11,7 +11,7 @@
 #   git diff ... | peer-review --stdin --mode diff-review --cd "$PWD" "Intent: ..."
 #
 # Review MODE is premise | diagnosis | design | diff-review (default: premise).
-# Use --mode models [--include-self] for inference-free model discovery.
+# Use --models [--include-self] for inference-free model discovery.
 # Supporting material requires --stdin or -f FILE. Emits one JSON object:
 #   {"peer_cli": ..., "peer_model": ..., "peer_family": ..., "result": {...}}
 
@@ -29,6 +29,7 @@ result_file=""
 err_file=""
 combined_file=""
 include_self=false
+list_models=false
 trap 'rm -f "$input_sources" "$material_file" "$schema_file" "$result_file" \
     "$err_file" "$combined_file"' EXIT INT TERM
 # Strip these only for a real Anthropic peer; self discovery keeps its provider.
@@ -56,6 +57,7 @@ while [ $# -gt 0 ]; do
             [ -n "$input_sources" ] || input_sources=$(mktemp)
             printf '%s\0' --file "${2:?--file needs a path}" >>"$input_sources"
             shift 2 ;;
+        --models) list_models=true; shift ;;
         --include-self) include_self=true; shift ;;
         --) shift; break ;;
         -*) fail "unknown option: $1" ;;
@@ -64,8 +66,8 @@ while [ $# -gt 0 ]; do
 done
 
 case "$mode" in
-    premise|diagnosis|design|diff-review|models) ;;
-    *) fail "unknown mode: $mode (want premise|diagnosis|design|diff-review|models)" ;;
+    premise|diagnosis|design|diff-review) ;;
+    *) fail "unknown mode: $mode (want premise|diagnosis|design|diff-review)" ;;
 esac
 
 # --- serving family detection -------------------------------------------
@@ -112,7 +114,7 @@ esac
 if [ "$help_requested" = true ]; then
     cat <<'HELP'
 Usage: peer-review [OPTIONS] BRIEF
-       peer-review --mode models [--include-self] [--from FAMILY]
+       peer-review --models [--include-self] [--from FAMILY]
        git diff | peer-review --stdin --mode diff-review --cd "$PWD" "Intent: ..."
 
 Ask a read-only peer from a different serving model family to challenge a brief.
@@ -125,8 +127,8 @@ Options:
                     diagnosis   Rank causes and propose falsifying observations.
                     design      Produce an independent design and tradeoffs.
                     diff-review Review a supplied diff for correctness and simplicity.
-                    models      List the target harness's model catalog; no brief.
-  --include-self  Also list the detected caller harness's models (models mode).
+  --models        List the target harness's model catalog; no brief.
+  --include-self  Also list the detected caller harness's models (with --models).
   --stdin         Append all stdin as supporting material; waits for EOF.
   -f, --file PATH  Append a file as supporting material (repeatable).
                   Files and --stdin combine in command-line order, separated
@@ -144,7 +146,7 @@ Output:
   The result contains verdict, findings, counterproposal,
   attempted_falsifications and unverified. Errors go to stderr; exit is nonzero.
   Requires the selected peer CLI and python3. Never include secrets in input.
-  Models mode emits target (and optional self) catalogs as JSON without a
+  --models emits target (and optional self) catalogs as JSON without a
   model inference. Catalogs may be cached; entries do not prove account access
   or validate custom --model IDs. Claude aliases retain their resolved model IDs.
 
@@ -154,7 +156,7 @@ Examples:
   peer-review --mode design -f design.md "Review the proposed design"
   git diff | peer-review -f design.md --stdin -f notes.md "Review this change"
   git diff | peer-review --stdin --mode diff-review --cd "$PWD" "Intent: add CLI help"
-  peer-review --mode models --include-self
+  peer-review --models --include-self
 HELP
     printf '\nCurrent routing:\n'
     printf '  Detected harness: %s\n' "$detected_harness"
@@ -164,9 +166,9 @@ HELP
     exit 0
 fi
 
-if [ "$mode" = models ]; then
+if [ "$list_models" = true ]; then
     [ $# -eq 0 ] && [ -z "$input_sources" ] ||
-        fail "models mode does not accept a brief, --stdin or --file"
+        fail "--models does not accept a brief, --stdin or --file"
     python3 - "$peer_cli" "$include_self" "$detected_harness" "$proxy_env_vars" <<'PY'
 import json, os, subprocess, sys
 
@@ -234,7 +236,7 @@ PY
     exit 0
 fi
 
-[ "$include_self" = false ] || fail "--include-self requires --mode models"
+[ "$include_self" = false ] || fail "--include-self requires --models"
 [ "$mode" != diff-review ] || [ -n "$input_sources" ] ||
     fail "diff-review requires --stdin or --file"
 [ $# -ge 1 ] || fail "a brief is required"
