@@ -75,6 +75,8 @@ allow_local_binding = true
 "ssh.github.com" = "allow"
 "static.crates.io" = "allow"
 "sum.golang.org" = "allow"
+# Public shareholder filings used by the PTV research archive.
+"www.porsche-se.com" = "allow"
 
 [tui]
 status_line = ["model-with-reasoning", "current-dir", "git-branch", "branch-changes", "run-state", "context-used", "five-hour-limit", "weekly-limit", "used-tokens", "total-input-tokens", "total-output-tokens", "task-progress"]
