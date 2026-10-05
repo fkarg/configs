@@ -63,10 +63,11 @@ if [ -n "$rl5_pct$rl7_pct" ]; then
 elif [ -r "$RL_CACHE" ]; then
   IFS='|' read -r rl5_pct rl5_reset rl7_pct rl7_reset < "$RL_CACHE"
 fi
-# A window whose reset has passed is fully available again (cached or a long-idle
-# session's last payload alike); its next window only starts on the next request.
+# A window whose reset has passed (cached or a long-idle session's last payload
+# alike) is over. No 5h window is running until the next request opens one, so
+# drop that segment; the 7d one is simply fully available again.
 now=$(date +%s)
-if [[ "$rl5_reset" =~ ^[0-9]+$ ]] && [ "$rl5_reset" -le "$now" ]; then rl5_pct=0; rl5_reset=""; fi
+if [[ "$rl5_reset" =~ ^[0-9]+$ ]] && [ "$rl5_reset" -le "$now" ]; then rl5_pct=""; rl5_reset=""; fi
 if [[ "$rl7_reset" =~ ^[0-9]+$ ]] && [ "$rl7_reset" -le "$now" ]; then rl7_pct=0; rl7_reset=""; fi
 
 abs_cwd="$cwd"   # keep the absolute path for git lookups
