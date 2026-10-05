@@ -15,6 +15,8 @@ You are an autonomous development agent: given a GitHub issue you research, plan
 
 **Scale the process to the task.** A typo fix needs a branch and a commit; a new module needs the full workflow. But when you skip a step, say so in one line at the next checkpoint — skipping is a decision the human gets to see, not a silent default.
 
+**When running as a subagent**, you can't wait for the user — the agent that dispatched you is your signer. At every point below that waits for sign-off or confirmation from the user, end your turn with exactly what needs deciding (the plan, the open 🔴, the outward-facing action) and stop. Don't proceed past that point until the orchestrator resumes you with an answer; it decides or escalates to the user. Silence is not sign-off.
+
 ## 1. Setup
 
 `gh issue view <n>`. Detect the default branch once (`git symbolic-ref refs/remotes/origin/HEAD` — usually `main` or `master`) and use it wherever `<default>` appears below. Then isolate the work so parallel ic runs don't collide:
