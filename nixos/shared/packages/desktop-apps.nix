@@ -35,6 +35,9 @@
     protonmail-desktop
     proton-vpn
 
+    # tailscale GUI
+    trayscale
+
     # reading and presentations
     evince
     pdfpc
