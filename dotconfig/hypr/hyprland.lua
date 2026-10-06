@@ -66,9 +66,19 @@ local menu        = "fuzzel"
 -- reload (the Lua replacement for exec-once). Keep session-specific tools here
 -- instead of systemd user services when they only work under a Hyprland
 -- compositor.
+-- The "Hyprland (Dank)" GDM session (nixos/shared/desktops/dms.nix) sets
+-- HYPRLAND_SHELL=dms. DankMaterialShell then provides the bar, notifications,
+-- polkit agent, network/bluetooth controls and clipboard history, so the
+-- standalone tools for those are skipped.
+local dms = os.getenv("HYPRLAND_SHELL") == "dms"
+
 hl.on("hyprland.start", function()
     hl.exec_cmd("systemctl --user start hyprland-session.target")
-    hl.exec_cmd("mako")
+    if dms then
+        hl.exec_cmd("systemctl --user start dms-session.target")
+    else
+        hl.exec_cmd("mako")
+    end
     -- Load the hy3 layout only when its plugin is present in the system
     -- profile, i.e. when booted into jolly's `i2c-hy3` specialisation. Guarded
     -- by a file test so the default boot and other hosts sharing this config
@@ -87,15 +97,17 @@ hl.on("hyprland.start", function()
     end
     hl.exec_cmd("hyprlauncher -d")
     hl.exec_cmd("hypridle")
-    local waybar_config = os.getenv("HYPRLAND_WAYBAR_CONFIG") or "~/.config/waybar/hyprland.jsonc"
-    hl.exec_cmd("waybar -c " .. waybar_config .. " -s ~/.config/waybar/style.css")
-    hl.exec_cmd("hyprpolkitagent")
-    hl.exec_cmd("nm-applet --indicator")
-    hl.exec_cmd("blueman-applet")
-    hl.exec_cmd("wl-paste --type text --watch cliphist store")
-    hl.exec_cmd("wl-paste --type image --watch cliphist store")
-    -- Auto-dismiss mako notifications when the matching window gains focus.
-    hl.exec_cmd("~/.config/hypr/notification-focus-dismiss.sh")
+    if not dms then
+        local waybar_config = os.getenv("HYPRLAND_WAYBAR_CONFIG") or "~/.config/waybar/hyprland.jsonc"
+        hl.exec_cmd("waybar -c " .. waybar_config .. " -s ~/.config/waybar/style.css")
+        hl.exec_cmd("hyprpolkitagent")
+        hl.exec_cmd("nm-applet --indicator")
+        hl.exec_cmd("blueman-applet")
+        hl.exec_cmd("wl-paste --type text --watch cliphist store")
+        hl.exec_cmd("wl-paste --type image --watch cliphist store")
+        -- Auto-dismiss mako notifications when the matching window gains focus.
+        hl.exec_cmd("~/.config/hypr/notification-focus-dismiss.sh")
+    end
     -- Per-host startup window layout (hostname-guarded inside the script;
     -- currently jolly-only). Re-runnable by hand to restore the layout
     -- mid-session.

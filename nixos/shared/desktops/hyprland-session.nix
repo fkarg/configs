@@ -1,6 +1,8 @@
 { config, lib, pkgs, ... }:
 
 {
+  imports = [ ./dms.nix ];
+
   # Shared baseline for Hyprland/Wayland hosts.
   # This is intentionally not imported globally; non-Wayland machines can keep
   # a different audio or desktop stack.
