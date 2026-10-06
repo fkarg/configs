@@ -28,6 +28,17 @@
   };
   services.cron.systemCronJobs = lib.mkForce [ ];
 
+  # Remote builder and LAN package cache for margo (client side in margo.nix).
+  # nix-ssh is restricted to the nix daemon protocol, no shell; trusted so
+  # margo can hand it unsigned build inputs.
+  nix.sshServe = {
+    enable = true;
+    write = true;
+    trusted = true;
+    protocol = "ssh-ng";
+    keys = [ "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDyDA2cHtmensFRYojE+5UUiwrWTCHaTTUmNNwzlklPs root@margo-nix-builder" ];
+  };
+
   nixpkgs.overlays = [
     # The nvidia driver build shells out to jq; add it to nativeBuildInputs for
     # both kernel sets nixos-rebuild builds here — latest (default boot) and 6.18

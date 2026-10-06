@@ -11,6 +11,35 @@
   imports = [ ../shared/desktops/hyprland-session.nix ];
 
   nix.settings.experimental-features = [ "nix-command" "flakes" ];
+
+  # Offload builds to jolly over Tailscale (its nix.sshServe side lives in
+  # jolly.nix). The nix-daemon connects as root, hence the dedicated
+  # passphrase-less /root/.ssh/nix-builder key. When jolly is unreachable,
+  # builds fall back to local after the short ConnectTimeout below.
+  nix.distributedBuilds = true;
+  nix.buildMachines = [{
+    hostName = "jolly.ts.kolai.eu";
+    sshUser = "nix-ssh";
+    sshKey = "/root/.ssh/nix-builder";
+    protocol = "ssh-ng";
+    publicHostKey = "c3NoLWVkMjU1MTkgQUFBQUMzTnphQzFsWkRJMU5URTVBQUFBSU5RdENIeEpIRWc1cHlqUXlqenlVUFoxS0tzQTFaNTcvZmxzaEdKVlhrOVE=";
+    systems = [ "x86_64-linux" "i686-linux" ];
+    maxJobs = 16;
+    speedFactor = 4;
+    supportedFeatures = [ "benchmark" "big-parallel" "kvm" "nixos-test" ];
+  }];
+  # jolly fetches cache.nixos.org paths itself instead of margo uploading them
+  nix.settings.builders-use-substitutes = true;
+  # jolly as a LAN cache, preferred over cache.nixos.org (priority 40). Only
+  # paths jolly itself substituted carry cache.nixos.org signatures, so its
+  # own unsigned builds are not pulled from here.
+  nix.settings.extra-substituters = [
+    "ssh-ng://nix-ssh@jolly.ts.kolai.eu?ssh-key=/root/.ssh/nix-builder&priority=30&base64-ssh-public-host-key=c3NoLWVkMjU1MTkgQUFBQUMzTnphQzFsWkRJMU5URTVBQUFBSU5RdENIeEpIRWc1cHlqUXlqenlVUFoxS0tzQTFaNTcvZmxzaEdKVlhrOVE="
+  ];
+  programs.ssh.extraConfig = ''
+    Host jolly.ts.kolai.eu
+      ConnectTimeout 3
+  '';
   networking.networkmanager.wifi.scanRandMacAddress = false;
   zramSwap.enable = true;
 
