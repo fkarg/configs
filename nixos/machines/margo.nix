@@ -5,9 +5,36 @@
 #
 # modify startup script:
 # - setting background
-{ config, pkgs, ... }: with pkgs; rec
+{ config, lib, pkgs, ... }: with pkgs; rec
 
 {
+  imports = [ ../shared/desktops/hyprland-session.nix ];
+
+  nix.settings.experimental-features = [ "nix-command" "flakes" ];
+  networking.networkmanager.wifi.scanRandMacAddress = false;
+  zramSwap.enable = true;
+
+  services.displayManager = {
+    gdm.enable = true;
+    defaultSession = "hyprland";
+  };
+
+  services.gnome.gnome-keyring.enable = true;
+  security.pam.services.gdm-password.enableGnomeKeyring = true;
+  programs.ssh.startAgent = lib.mkForce false;
+
+  environment.sessionVariables = {
+    HYPRLAND_HOST_CONFIG = "${/home/pars/configs/dotconfig/hypr/margo.lua}";
+    HYPRLAND_WAYBAR_CONFIG = "${config.users.users.pars.home}/.config/waybar/margo.jsonc";
+    LIBVA_DRIVER_NAME = "iHD";
+  };
+
+  system.autoUpgrade = {
+    enable = true;
+    operation = "boot";
+    allowReboot = false;
+    channel = "https://nixos.org/channels/nixpkgs-unstable";
+  };
 
   # `i915.enable_psr=1`:  force-enable psr (should be enabled default in >=5.14) to reach deeper suspend states on idle
   # `mem_sleep_default=deep`: 'shutdown' system and go to deep suspension instead of `s2idle`. This trades reduced energy consumption for increased resume time delay.
@@ -70,6 +97,7 @@
   services.libinput = {
     enable = true;
     touchpad.disableWhileTyping = true;
+    touchpad.naturalScrolling = true;
   };
 
   # enable fingerprent sensor
@@ -107,7 +135,25 @@
   # steam
   environment.systemPackages = with pkgs; [
     # (steam.override { extraPkgs = pkgs: [ mono gtk3 gtk3-x11 libgdiplus zlib ]; nativeOnly = true; }).run
-    (steam.override { extraPkgs = pkgs: [ mono gtk3 gtk3-x11 libgdiplus zlib ]; }).run
+    # (steam.override { extraPkgs = pkgs: [
+    #     mono
+    #     gtk3
+    #     gtk3-x11
+    #     libgdiplus
+    #     zlib
+    #     dbus
+    #     glib
+    #     atk
+    #     cairo
+    #     pango
+    #     fontconfig
+    #     libxcb
+    #     mesa
+    #     libva
+    #     intel-media-driver
+    #     vaapiIntel
+    #     libvdpau-va-gl
+    # ]; }).run
     # actually non-steam
     acpilight
     # lxd
@@ -129,7 +175,7 @@
         cairo
         pango
         fontconfig
-        xorg.libxcb
+        libxcb
         mesa
         libva
         intel-media-driver
@@ -153,7 +199,7 @@
 
   # experiment to enable more hardware accel and lower power draw on videos?
   nixpkgs.config.packageOverrides = pkgs: {
-    vaapiIntel = pkgs.vaapiIntel.override { enableHybridCodec = true; };
+    intel-vaapi-driver = pkgs.intel-vaapi-driver.override { enableHybridCodec = true; };
   };
   hardware.graphics = {
     enable = true;

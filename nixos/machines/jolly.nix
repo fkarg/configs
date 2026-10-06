@@ -414,6 +414,7 @@
   # simpledrm as card0. Aquamarine otherwise selects that ghost output as the
   # primary GPU and tries to blit the NVIDIA-rendered desktop to it.
   environment.sessionVariables.AQ_DRM_DEVICES = "/dev/dri/card1";
+  environment.sessionVariables.HYPRLAND_NVIDIA = "1";
   # Blacklist the AMD Granite Ridge iGPU. The monitor lives on the NVIDIA dGPU,
   # but with amdgpu loaded aquamarine enumerates the iGPU as a secondary GPU,
   # flags every buffer "multigpu, forcing linear", and repeatedly spins up then

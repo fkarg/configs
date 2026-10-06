@@ -19,17 +19,20 @@ hl.config({
 
 -- On this 32:9 setup the explicit 5120x1440@75 entries make the preferred
 -- ultrawide mode obvious even when a display reports odd EDID data.
-hl.monitor({ output = "DP-1", mode = "5120x1440@75", position = "auto", scale = 1.07 })
-hl.monitor({ output = "DP-2", mode = "5120x1440@75", position = "auto", scale = 1.07 })
-hl.monitor({ output = "DP-3", mode = "5120x1440@75", position = "auto", scale = 1.07 })
-hl.monitor({ output = "DP-4", mode = "5120x1440@75", position = "auto", scale = 1.07 })
--- Fallback for any other connected monitor: pick the highest available mode.
-hl.monitor({ output = "", mode = "highres", position = "auto", scale = 1.07 })
--- These outputs are intentionally disabled. Keep this when the GPU/monitor
--- exposes a ghost HDMI connector or a TV/AVR creates an unwanted desktop
--- surface.
-hl.monitor({ output = "HDMI-A-1", disabled = true })
-hl.monitor({ output = "HDMI-A-2", disabled = true })
+local host_config = os.getenv("HYPRLAND_HOST_CONFIG")
+if not host_config then
+    hl.monitor({ output = "DP-1", mode = "5120x1440@75", position = "auto", scale = 1.07 })
+    hl.monitor({ output = "DP-2", mode = "5120x1440@75", position = "auto", scale = 1.07 })
+    hl.monitor({ output = "DP-3", mode = "5120x1440@75", position = "auto", scale = 1.07 })
+    hl.monitor({ output = "DP-4", mode = "5120x1440@75", position = "auto", scale = 1.07 })
+    -- Fallback for any other connected monitor: pick the highest available mode.
+    hl.monitor({ output = "", mode = "highres", position = "auto", scale = 1.07 })
+    -- These outputs are intentionally disabled. Keep this when the GPU/monitor
+    -- exposes a ghost HDMI connector or a TV/AVR creates an unwanted desktop
+    -- surface.
+    hl.monitor({ output = "HDMI-A-1", disabled = true })
+    hl.monitor({ output = "HDMI-A-2", disabled = true })
+end
 
 -- Popular monitor variants to consider later:
 -- - Force a primary-like position: hl.monitor({ output = "DP-1", mode = "5120x1440@75", position = "0x0", scale = 1 })
@@ -83,8 +86,9 @@ hl.on("hyprland.start", function()
         hl.config({ general = { layout = "hy3" } })
     end
     hl.exec_cmd("hyprlauncher -d")
-    hl.exec_cmd("waybar -c ~/.config/waybar/hyprland.jsonc -s ~/.config/waybar/style.css")
     hl.exec_cmd("hypridle")
+    local waybar_config = os.getenv("HYPRLAND_WAYBAR_CONFIG") or "~/.config/waybar/hyprland.jsonc"
+    hl.exec_cmd("waybar -c " .. waybar_config .. " -s ~/.config/waybar/style.css")
     hl.exec_cmd("hyprpolkitagent")
     hl.exec_cmd("nm-applet --indicator")
     hl.exec_cmd("blueman-applet")
@@ -125,10 +129,12 @@ hl.env("XCURSOR_THEME", "Bibata-Modern-Classic")
 -- blacklist, multi-GPU buffer sharing flaked out (workspaces stuck at a
 -- degraded resolution, windows flashing and vanishing); see that comment for
 -- the detail.
-hl.env("LIBVA_DRIVER_NAME", "nvidia")
-hl.env("__GLX_VENDOR_LIBRARY_NAME", "nvidia")
-hl.env("GBM_BACKEND", "nvidia")
-hl.env("NVD_BACKEND", "direct")
+if os.getenv("HYPRLAND_NVIDIA") == "1" then
+    hl.env("LIBVA_DRIVER_NAME", "nvidia")
+    hl.env("__GLX_VENDOR_LIBRARY_NAME", "nvidia")
+    hl.env("GBM_BACKEND", "nvidia")
+    hl.env("NVD_BACKEND", "direct")
+end
 -- If you ever need both GPUs live, do NOT set AQ_DRM_DEVICES to a
 -- /dev/dri/by-path PCI name here: Aquamarine treats ':' as a device-list
 -- separator, so pci-0000:01:00.0-card is split into invalid paths and Hyprland
@@ -142,7 +148,9 @@ hl.env("ELECTRON_OZONE_PLATFORM_HINT", "auto")
 -- pixels (crisp, no fractional-upscaling blur) but at 1x, so it looks ~7% small
 -- on this 1.07-scaled output. Scale its client UI back up to match. Keep this
 -- in sync with the monitor scale at the top of this file.
-hl.env("STEAM_FORCE_DESKTOPUI_SCALING", "1.07")
+if not host_config then
+    hl.env("STEAM_FORCE_DESKTOPUI_SCALING", "1.07")
+end
 
 -- Popular environment options:
 -- hl.env("MOZ_ENABLE_WAYLAND", "1")
@@ -556,3 +564,7 @@ hl.window_rule({
 -- hl.workspace_rule({ workspace = "2", monitor = "DP-1" })
 -- hl.workspace_rule({ workspace = "special:magic", gaps_out = 20 })
 -- hl.workspace_rule({ workspace = "10", on_created_empty = terminal })
+
+if host_config then
+    dofile(host_config)
+end

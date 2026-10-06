@@ -1,0 +1,25 @@
+{
+  "include": ["~/.config/waybar/hyprland.jsonc"],
+  "modules-right": [
+    "custom/screenshot",
+    "tray",
+    "idle_inhibitor",
+    "network",
+    "pulseaudio",
+    "cpu",
+    "memory",
+    "disk",
+    "battery",
+    "clock#date",
+    "clock"
+  ],
+  "battery": {
+    "format": "bat {capacity}%",
+    "format-charging": "bat {capacity}% +",
+    "tooltip-format": "{timeTo} ({power:.1f} W)",
+    "states": {
+      "warning": 20,
+      "critical": 10
+    }
+  }
+}
