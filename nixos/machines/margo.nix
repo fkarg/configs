@@ -41,7 +41,6 @@
       ConnectTimeout 3
   '';
   networking.networkmanager.wifi.scanRandMacAddress = false;
-  zramSwap.enable = true;
 
   services.displayManager = {
     gdm.enable = true;
@@ -95,7 +94,7 @@
   # Disk backing for zswap, stored on the encrypted root filesystem.
   swapDevices = [{
     device = "/var/lib/swapfile";
-    size = 8 * 1024; # MiB (8 GiB)
+    size = 16 * 1024; # MiB (16 GiB)
   }];
 
   # Use the systemd-boot EFI boot loader.
