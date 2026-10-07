@@ -43,6 +43,7 @@
     pdfpc
 
     # desktop applications
+    seahorse
     kdePackages.dolphin
     kdePackages.kio-extras
     marktext
