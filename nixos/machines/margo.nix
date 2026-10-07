@@ -92,7 +92,11 @@
       fsType = "vfat";
     };
 
-  swapDevices = [ ];
+  # Disk backing for zswap, stored on the encrypted root filesystem.
+  swapDevices = [{
+    device = "/var/lib/swapfile";
+    size = 8 * 1024; # MiB (8 GiB)
+  }];
 
   # Use the systemd-boot EFI boot loader.
   boot.loader.systemd-boot.enable = true;
