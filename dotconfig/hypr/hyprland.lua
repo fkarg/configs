@@ -367,11 +367,33 @@ local mainMod = "SUPER"
 -- - bindr: { release = true }
 -- Modifiers combine inside the key string: "SUPER + SHIFT + X" etc.
 
+-- Close the focused window and quit its app: many apps (Electron ones like
+-- Teams, also Karere) only hide to the tray on close and keep their GPU/renderer
+-- helpers alive. If the process has no mapped window left shortly after the
+-- close, SIGTERM its main process, which tears down the helpers cleanly —
+-- unlike `pkill electron`, whose per-helper kills crash the main process.
+-- Multi-window apps (firefox, kitty) and unsaved-changes dialogs keep a window,
+-- so they are left alone. SUPER+C stays a plain close (hide to tray).
+local keep_running = {} -- window classes allowed to stay in the tray, e.g. ["steam"] = true
+local function close_app()
+    local win = hl.get_active_window()
+    if not win then return end
+    local pid, class = win.pid, win.class
+    hl.dispatch(hl.dsp.window.close())
+    if keep_running[class] then return end
+    hl.timer(function()
+        for _, w in ipairs(hl.get_windows()) do
+            if w.pid == pid and w.mapped then return end
+        end
+        hl.exec_cmd(string.format("kill -TERM %d && sleep 5 && kill -KILL %d", pid, pid))
+    end, { timeout = 1500, type = "oneshot" })
+end
+
 -- Launchers and basic window control.
 hl.bind(mainMod .. " + Return", hl.dsp.exec_cmd(terminal))
-hl.bind(mainMod .. " + Q", hl.dsp.window.close())
+hl.bind(mainMod .. " + Q", close_app)
 hl.bind(mainMod .. " + C", hl.dsp.window.close())
-hl.bind(mainMod .. " + X", hl.dsp.window.close())
+hl.bind(mainMod .. " + X", close_app)
 hl.bind(mainMod .. " + A", hl.dsp.exec_cmd("hyprlock"))
 hl.bind(mainMod .. " + E", hl.dsp.exec_cmd(fileManager))
 hl.bind(mainMod .. " + CTRL + E", hl.dsp.exec_cmd("kitty --class lf -e lf"))
