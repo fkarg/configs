@@ -66,6 +66,8 @@
     alacritty
     tmux
 
+    nix-index
+
     # nix tooling. Documented here because the fish abbrs that drive these live
     # in dotconfig/fish/fish_variables, which fish rewrites wholesale on any
     # universal-variable change — comments there would not survive.
