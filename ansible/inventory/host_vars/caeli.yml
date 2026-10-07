@@ -108,6 +108,7 @@ brew_packages_common:
   - git
   - git-filter-repo
   - glow
+  - jj
   - lazygit
   - tokei
   # programming languages & runtimes

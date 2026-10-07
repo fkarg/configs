@@ -28,6 +28,7 @@
 
     # general developer utilities
     actionlint
+    jujutsu
     lazygit
     pre-commit
     graphviz
