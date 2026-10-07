@@ -30,6 +30,10 @@ err_file=""
 combined_file=""
 include_self=false
 list_models=false
+history_action=""
+history_value=""
+history_all=false
+cache_dir="${XDG_CACHE_HOME:-$HOME/.cache}/peer-review"
 trap 'rm -f "$input_sources" "$material_file" "$schema_file" "$result_file" \
     "$err_file" "$combined_file"' EXIT INT TERM
 # Strip these only for a real Anthropic peer; self discovery keeps its provider.
@@ -59,6 +63,16 @@ while [ $# -gt 0 ]; do
             shift 2 ;;
         --models) list_models=true; shift ;;
         --include-self) include_self=true; shift ;;
+        --recent)
+            [ -z "$history_action" ] || fail "choose only one of --recent and --show"
+            history_action=recent; history_value=5; shift
+            case "${1:-}" in
+                [0-9]*) history_value="$1"; shift ;;
+            esac ;;
+        --show)
+            [ -z "$history_action" ] || fail "choose only one of --recent and --show"
+            history_action=show; history_value="${2:?--show needs an ID}"; shift 2 ;;
+        --all) history_all=true; shift ;;
         --) shift; break ;;
         -*) fail "unknown option: $1" ;;
         *) break ;;
@@ -69,6 +83,71 @@ case "$mode" in
     premise|diagnosis|design|diff-review) ;;
     *) fail "unknown mode: $mode (want premise|diagnosis|design|diff-review)" ;;
 esac
+
+# History works without either peer CLI and never consumes inherited stdin.
+[ "$history_all" = false ] || [ "$history_action" = recent ] ||
+    [ "$help_requested" = true ] || fail "--all requires --recent"
+if [ -n "$history_action" ] && [ "$help_requested" = false ]; then
+    [ $# -eq 0 ] && [ -z "$input_sources" ] && [ "$list_models" = false ] &&
+        [ "$include_self" = false ] && [ -z "$peer_model$from_family" ] &&
+        [ "$mode" = premise ] || fail "history does not accept review input or model options"
+    python3 - "$cache_dir" "$history_action" "$history_value" "$history_all" "$workdir" <<'PY'
+import json, re, subprocess, sys
+from pathlib import Path
+
+cache, action, value, all_repos, directory = sys.argv[1:]
+cache = Path(cache)
+try:
+    if action == "show":
+        if not re.fullmatch(r"[0-9a-f]{32}", value):
+            sys.exit("peer-review: invalid review ID (use --recent to list IDs)")
+        path = cache / f"{value}.json"
+        if not path.exists():
+            sys.exit(f"peer-review: no saved review {value}")
+        sys.stdout.write(json.loads(path.read_text())["response"])
+    else:
+        if not value.isascii() or not value.isdecimal() or int(value) < 1:
+            sys.exit("peer-review: --recent count must be a positive integer")
+        directory = str(Path(directory or Path.cwd()).resolve())
+        try:
+            repo = subprocess.run(["git", "-C", directory, "rev-parse", "--show-toplevel"],
+                                  capture_output=True, text=True)
+            if repo.returncode == 0:
+                directory = str(Path(repo.stdout.strip()).resolve())
+        except FileNotFoundError:
+            pass  # Outside Git (or without git), scope to the directory itself.
+        records = []
+        for path in cache.glob("*.json"):
+            try:
+                records.append(json.loads(path.read_text()))
+            except (OSError, ValueError) as exc:
+                print(f"peer-review: skipping unreadable review {path} "
+                      f"({type(exc).__name__})", file=sys.stderr)
+        records = [record for record in records
+                   if all_repos == "true" or record["directory"] == directory]
+        records.sort(key=lambda record: (record["created_at"], record["id"]), reverse=True)
+        for record in records[:int(value)]:
+            output = json.loads(record["response"])
+            result = output["result"]
+            summary = result["verdict"]
+            if result["findings"]:
+                summary += ": " + result["findings"][0]["claim"]
+            elif result["counterproposal"]:
+                summary += ": " + result["counterproposal"]
+            # Listings are deliberately brief; --show preserves every field.
+            brief = " ".join(record["brief"].split())[:160]
+            summary = " ".join(summary.split())[:160]
+            print(f'{record["id"]}  {record["created_at"]}  '
+                  f'{record["directory"]}  {record["mode"]}  {output["peer_model"]}')
+            print(f"  Brief: {brief}\n  Outcome: {summary}")
+        if not records:
+            print("No saved reviews." if all_repos == "true" else
+                  f"No saved reviews for {directory}.")
+except (OSError, ValueError, KeyError, TypeError) as exc:
+    sys.exit(f"peer-review: cannot read review history: {type(exc).__name__}")
+PY
+    exit 0
+fi
 
 # --- serving family detection -------------------------------------------
 # Detect what is actually serving this session. claudex points the Anthropic
@@ -115,6 +194,8 @@ if [ "$help_requested" = true ]; then
     cat <<'HELP'
 Usage: peer-review [OPTIONS] BRIEF
        peer-review --models [--include-self] [--from FAMILY]
+       peer-review --recent [N] [--all] [--cd DIR]
+       peer-review --show ID
        git diff | peer-review --stdin --mode diff-review --cd "$PWD" "Intent: ..."
 
 Ask a read-only peer from a different serving model family to challenge a brief.
@@ -146,6 +227,15 @@ Model discovery:
   --include-self  Also list the caller harness's models (with --models).
                   Outside a harness, list the other CLI's models too.
 
+Saved reviews (no peer invocation):
+  --recent [N]    List newest saved reviews in this repository (default: 5).
+                  Outside Git, scope to the current directory; --cd sets scope.
+                  Each entry shows ID, UTC time, directory, mode, answering
+                  model, brief and a short outcome. Summaries may be truncated.
+  --all           With --recent, list reviews from all repositories/directories.
+  --show ID       Print the complete original JSON response for a saved ID.
+                  Consume the full response before drawing conclusions.
+
 General:
   -h, --help      Show this help and exit without invoking a peer.
   --              End options (for a brief beginning with a dash).
@@ -158,6 +248,10 @@ Output:
   --models emits target (and optional self) catalogs as JSON without a
   model inference. Catalogs may be cached; entries do not prove account access
   or validate custom --model IDs. Claude aliases retain their resolved model IDs.
+  Successful reviews are saved before printing under
+  ${XDG_CACHE_HOME:-$HOME/.cache}/peer-review, with private file permissions.
+  Supporting material is not saved separately. Cache failures warn on stderr
+  without discarding the answer. An ID and retrieval command go to stderr.
 
 Examples:
   peer-review --mode premise "Do we need a cache to meet this latency target?"
@@ -166,6 +260,8 @@ Examples:
   git diff | peer-review -f design.md --stdin -f notes.md "Review this change"
   git diff | peer-review --stdin --mode diff-review --cd "$PWD" "Intent: add CLI help"
   peer-review --models --include-self
+  peer-review --recent 10 --all
+  peer-review --show <ID-from-recent>
 HELP
     printf '\nCurrent routing:\n'
     printf '  Detected harness: %s\n' "$detected_harness"
@@ -377,8 +473,10 @@ fi
 
 PEER_CLI="$peer_cli" PEER_FAMILY="$from_family" PEER_MODEL="$peer_model" \
 PEER_DETECTED="$detected" PEER_STATUS="$peer_status" \
-    python3 - "$result_file" <<'PY'
-import json, os, sys
+    python3 - "$result_file" "$cache_dir" "$workdir" "$mode" "$brief" <<'PY'
+import json, os, subprocess, sys, tempfile, uuid
+from datetime import datetime, timezone
+from pathlib import Path
 
 raw = open(sys.argv[1]).read().strip()
 if not raw:
@@ -435,6 +533,45 @@ if caller != detected:
         f"caller declared '{caller}' but detection says '{detected}'; "
         "if the declaration is wrong this peer is the caller's own family"
     )
-json.dump(out, sys.stdout, indent=2)
-print()
+response = json.dumps(out, indent=2) + "\n"
+cache = Path(sys.argv[2])
+temporary = None
+try:
+    directory = str(Path(sys.argv[3] or Path.cwd()).resolve())
+    try:
+        repo = subprocess.run(["git", "-C", directory, "rev-parse", "--show-toplevel"],
+                              capture_output=True, text=True)
+        if repo.returncode == 0:
+            directory = str(Path(repo.stdout.strip()).resolve())
+    except FileNotFoundError:
+        pass
+    record = {
+        "id": uuid.uuid4().hex,
+        "created_at": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S.%f UTC"),
+        "directory": directory,
+        "mode": sys.argv[4],
+        "brief": sys.argv[5],
+        "response": response,
+    }
+    cache.mkdir(parents=True, exist_ok=True, mode=0o700)
+    # Readers only see complete files; concurrent reviews have separate IDs.
+    with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", dir=cache,
+                                     prefix=".review-", delete=False) as handle:
+        temporary = Path(handle.name)
+        json.dump(record, handle, indent=2)
+        handle.write("\n")
+    temporary.replace(cache / f'{record["id"]}.json')
+    temporary = None
+    print(f'peer-review: saved review {record["id"]}; retrieve with: '
+          f'peer-review --show {record["id"]}', file=sys.stderr)
+except OSError as exc:
+    print(f"peer-review: could not save review ({type(exc).__name__}); "
+          "returning answer without a saved copy", file=sys.stderr)
+finally:
+    if temporary is not None:
+        try:
+            temporary.unlink(missing_ok=True)
+        except OSError:
+            pass  # Cache cleanup must not discard the peer's answer either.
+sys.stdout.write(response)
 PY

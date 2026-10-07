@@ -75,6 +75,9 @@ git diff | peer-review --stdin --mode diff-review "Intent: add CLI help"
 git diff | peer-review -f design.md --stdin -f notes.md "Review this change"
 peer-review --models
 peer-review --models --include-self
+peer-review --recent
+peer-review --recent 10 --all
+peer-review --show <ID-from-recent>
 ```
 
 `--stdin` waits for EOF; `-f/--file` is repeatable. Files and stdin combine in
@@ -85,6 +88,27 @@ visibility metadata. See `peer-review --help` for catalog limitations.
 `--include-self` adds the detected caller harness's catalog. From a terminal,
 it adds the other CLI's catalog, so both Codex and Claude are listed.
 `--from` changes peer routing, not harness detection.
+
+Successful reviews are saved before stdout is printed, so a response piped through
+`tail` or truncated by a tool can be recovered without another model call.
+`--recent [N]` lists the newest reviews (default five) for the current Git
+repository, including from its subdirectories. Outside Git it filters by the
+current directory. Linked worktrees have separate checkout scopes.
+Use `--cd DIR` to select the repository/directory and `--all`
+to list across repositories. Entries show an ID, UTC completion time, directory,
+mode, answering model, brief and a short outcome. Listings are summaries;
+`--show ID` reproduces the full original JSON response, including provenance and
+falsification attempts. Both commands work without a peer CLI and ignore stdin.
+Read the complete response before drawing conclusions.
+
+The local cache is `${XDG_CACHE_HOME:-$HOME/.cache}/peer-review`, outside Git.
+Each review has an atomic JSON file with private permissions. The brief and
+answer are retained; supplied files and stdin are not stored separately (the
+answer can quote them). Failed reviews and model catalogs are not saved.
+A retrieval command with the exact ID is printed to stderr. Cache write failures
+warn without discarding the peer's answer. There is no automatic expiration;
+remove the cache directory to clear the history.
+Recent listings warn and skip unreadable or invalid JSON cache files.
 
 Run launcher contract tests with
 `python3 -m unittest discover -s coding-agents -p test_peer_review.py`.

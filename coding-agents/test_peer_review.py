@@ -14,6 +14,7 @@ import signal
 import subprocess
 import tempfile
 import unittest
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 
@@ -99,6 +100,206 @@ def write_executable(path: Path, body: str) -> None:
 
 
 class PeerReviewTests(unittest.TestCase):
+    def test_history_round_trip_preserves_full_response_for_both_peers(self) -> None:
+        for family in ("claude", "gpt"):
+            with self.subTest(family=family), tempfile.TemporaryDirectory() as tmp:
+                env = {"XDG_CACHE_HOME": tmp}
+                proc, _, _ = self.run_launcher(
+                    ["--from", family, "unique history brief"], env,
+                )
+                self.assertEqual(proc.returncode, 0, proc.stderr)
+                records = list((Path(tmp) / "peer-review").glob("*.json"))
+                self.assertEqual(len(records), 1)
+                review_id = records[0].stem
+                self.assertIn(f"--show {review_id}", proc.stderr)
+                self.assertEqual(records[0].stat().st_mode & 0o777, 0o600)
+                self.assertEqual(records[0].parent.stat().st_mode & 0o777, 0o700)
+                recent, calls, _ = self.run_launcher(["--recent"], env, open_stdin=True)
+                self.assertEqual(recent.returncode, 0, recent.stderr)
+                self.assertEqual(calls, [])
+                for expected in (review_id, "unique history brief", "challenges",
+                                 json.loads(proc.stdout)["peer_model"], "UTC"):
+                    self.assertIn(expected, recent.stdout)
+                shown, calls, _ = self.run_launcher(
+                    ["--show", review_id], env, open_stdin=True,
+                )
+                self.assertEqual(shown.returncode, 0, shown.stderr)
+                self.assertEqual(calls, [])
+                self.assertEqual(shown.stdout, proc.stdout)
+
+    def test_recent_scopes_to_repository_root_and_all_spans_repositories(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            env = {"XDG_CACHE_HOME": str(Path(tmp) / "cache")}
+            first, second = Path(tmp) / "first", Path(tmp) / "second"
+            for repo in (first, second):
+                repo.mkdir()
+                subprocess.run(["git", "init", "-q", str(repo)], check=True)
+            subdir = first / "nested"
+            subdir.mkdir()
+            for directory, brief in ((subdir, "first review"), (second, "second review")):
+                proc, _, _ = self.run_launcher(["--cd", str(directory), brief], env)
+                self.assertEqual(proc.returncode, 0, proc.stderr)
+            proc, _, _ = self.run_launcher(["--recent", "--cd", str(first)], env)
+            self.assertEqual(proc.returncode, 0, proc.stderr)
+            self.assertIn("first review", proc.stdout)
+            self.assertNotIn("second review", proc.stdout)
+            proc, _, _ = self.run_launcher(["--recent", "--all"], env)
+            self.assertEqual(proc.returncode, 0, proc.stderr)
+            self.assertIn("first review", proc.stdout)
+            self.assertIn("second review", proc.stdout)
+            self.assertLess(proc.stdout.index("second review"), proc.stdout.index("first review"))
+            proc, _, _ = self.run_launcher(["--recent", "1", "--all"], env)
+            self.assertEqual(proc.returncode, 0, proc.stderr)
+            self.assertIn("second review", proc.stdout)
+            self.assertNotIn("first review", proc.stdout)
+
+    def test_recent_defaults_to_five_and_collapses_multiline_briefs(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            env = {"XDG_CACHE_HOME": tmp}
+            for index in range(6):
+                proc, _, _ = self.run_launcher([f"brief-{index}\nsecond line"], env)
+                self.assertEqual(proc.returncode, 0, proc.stderr)
+            proc, _, _ = self.run_launcher(["--recent"], env)
+            self.assertEqual(proc.returncode, 0, proc.stderr)
+            self.assertNotIn("brief-0", proc.stdout)
+            self.assertIn("brief-5 second line", proc.stdout)
+            self.assertEqual(proc.stdout.count("Brief:"), 5)
+
+    def test_parallel_reviews_are_all_retrievable_and_material_is_not_saved(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            env = {"XDG_CACHE_HOME": tmp}
+            with ThreadPoolExecutor(max_workers=4) as pool:
+                results = list(pool.map(lambda index: self.run_launcher(
+                    ["--stdin", f"parallel-{index}"], env,
+                    input_text="DO-NOT-CACHE-SUPPORTING-MATERIAL",
+                )[0], range(4)))
+            records = list((Path(tmp) / "peer-review").iterdir())
+            self.assertEqual(len(records), 4)
+            self.assertTrue(all(path.suffix == ".json" for path in records))
+            recovered = []
+            for record in records:
+                self.assertNotIn("DO-NOT-CACHE-SUPPORTING-MATERIAL", record.read_text())
+                proc, _, _ = self.run_launcher(["--show", record.stem], env)
+                self.assertEqual(proc.returncode, 0, proc.stderr)
+                recovered.append(proc.stdout)
+            self.assertCountEqual(recovered, [proc.stdout for proc in results])
+
+    def test_history_errors_do_not_invoke_peer(self) -> None:
+        for args in (["--show", "../outside"], ["--show", "a" * 32],
+                     ["--recent", "0"], ["--recent", "3", "extra"],
+                     ["--recent", "--models"], ["--all"],
+                     ["--recent", "--stdin"], ["--recent", "--show", "a" * 32]):
+            with self.subTest(args=args):
+                proc, calls, _ = self.run_launcher(args, {}, open_stdin=True)
+                self.assertEqual(proc.returncode, 1)
+                self.assertEqual(proc.stdout, "")
+                self.assertEqual(calls, [])
+
+    def test_empty_history_is_successful_and_does_not_create_cache(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            proc, calls, _ = self.run_launcher(
+                ["--recent"], {"XDG_CACHE_HOME": tmp}, open_stdin=True,
+            )
+            self.assertEqual(proc.returncode, 0, proc.stderr)
+            self.assertIn("No saved reviews", proc.stdout)
+            self.assertEqual(calls, [])
+            self.assertFalse((Path(tmp) / "peer-review").exists())
+
+    def test_failed_reviews_and_model_discovery_are_not_cached(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            env = {"XDG_CACHE_HOME": tmp}
+            proc, _, _ = self.run_launcher(["brief"], env, codex_stub="exit 1\n")
+            self.assertEqual(proc.returncode, 1)
+            proc, _, _ = self.run_launcher(
+                ["--models"], env, codex_stub=CATALOG_CODEX_STUB,
+            )
+            self.assertEqual(proc.returncode, 0, proc.stderr)
+            self.assertFalse((Path(tmp) / "peer-review").exists())
+
+    def test_cache_failure_warns_without_losing_answer(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            blocked = Path(tmp) / "blocked"
+            blocked.write_text("not a directory")
+            proc, _, _ = self.run_launcher(["brief"], {"XDG_CACHE_HOME": str(blocked)})
+            self.assertEqual(proc.returncode, 0, proc.stderr)
+            self.assertEqual(json.loads(proc.stdout)["result"], json.loads(ANSWER))
+            self.assertIn("could not save review", proc.stderr)
+
+    def test_recent_shows_finding_and_show_preserves_long_response(self) -> None:
+        answer = json.loads(ANSWER)
+        answer["findings"] = [{
+            "severity": "must", "claim": "Distinctive defect: " + "detail " * 100,
+            "evidence": "full evidence " * 100, "next_check": "run the check",
+        }]
+        with tempfile.TemporaryDirectory() as tmp:
+            env = {"XDG_CACHE_HOME": tmp}
+            proc, _, _ = self.run_launcher(
+                ["brief"], env, codex_stub=CODEX_STUB.replace(ANSWER, json.dumps(answer)),
+            )
+            self.assertEqual(proc.returncode, 0, proc.stderr)
+            recent, _, _ = self.run_launcher(["--recent"], env)
+            self.assertEqual(recent.returncode, 0, recent.stderr)
+            self.assertIn("challenges: Distinctive defect:", recent.stdout)
+            self.assertNotIn("full evidence", recent.stdout)
+            review_id = next((Path(tmp) / "peer-review").glob("*.json")).stem
+            shown, _, _ = self.run_launcher(["--show", review_id], env)
+            self.assertEqual(shown.stdout, proc.stdout)
+            self.assertEqual(json.loads(shown.stdout)["result"], answer)
+
+    def test_corrupt_cache_file_does_not_hide_valid_reviews(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            env = {"XDG_CACHE_HOME": tmp}
+            proc, _, _ = self.run_launcher(["valid cached review"], env)
+            self.assertEqual(proc.returncode, 0, proc.stderr)
+            broken = Path(tmp) / "peer-review" / "broken.json"
+            broken.write_text("{")
+            recent, _, _ = self.run_launcher(["--recent"], env)
+            self.assertEqual(recent.returncode, 0, recent.stderr)
+            self.assertIn("valid cached review", recent.stdout)
+            self.assertIn(str(broken), recent.stderr)
+
+    def test_cache_cleanup_failure_still_returns_answer(self) -> None:
+        # A filesystem turning read-only can reject both publication and cleanup.
+        # Inject failures only at those filesystem boundaries in the child CLI.
+        with tempfile.TemporaryDirectory() as tmp:
+            fault_dir = Path(tmp) / "faults"
+            fault_dir.mkdir()
+            (fault_dir / "sitecustomize.py").write_text(
+                "from pathlib import Path\n"
+                "def read_only(*args, **kwargs):\n"
+                "    raise OSError('Synthetic read-only filesystem')\n"
+                "Path.replace = read_only\n"
+                "Path.unlink = read_only\n"
+            )
+            proc, _, _ = self.run_launcher(["brief"], {
+                "XDG_CACHE_HOME": str(Path(tmp) / "cache"),
+                "PYTHONPATH": str(fault_dir),
+            })
+            self.assertEqual(proc.returncode, 0, proc.stderr)
+            self.assertEqual(json.loads(proc.stdout)["result"], json.loads(ANSWER))
+            self.assertIn("could not save review", proc.stderr)
+
+    def test_history_works_without_peer_clis_or_git(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            env = {"XDG_CACHE_HOME": tmp}
+            proc, _, _ = self.run_launcher(["brief"], env)
+            self.assertEqual(proc.returncode, 0, proc.stderr)
+            review_id = next((Path(tmp) / "peer-review").glob("*.json")).stem
+            utils = Path(tmp) / "utils"
+            utils.mkdir()
+            for tool in ("rm", "python3"):
+                (utils / tool).symlink_to(shutil.which(tool))
+            for args in (["--recent"], ["--show", review_id]):
+                with self.subTest(args=args):
+                    retrieved = subprocess.run(
+                        [str(LAUNCHER), *args], capture_output=True, text=True,
+                        env={"PATH": str(utils), "HOME": tmp, **env},
+                        stdin=subprocess.DEVNULL, timeout=60,
+                    )
+                    self.assertEqual(retrieved.returncode, 0, retrieved.stderr)
+                    if args[0] == "--show":
+                        self.assertEqual(retrieved.stdout, proc.stdout)
+
     def test_launcher_is_directly_executable(self) -> None:
         self.assertTrue(os.access(LAUNCHER, os.X_OK))
 
@@ -303,7 +504,8 @@ class PeerReviewTests(unittest.TestCase):
             with self.subTest(flag=flag):
                 proc, _, _ = self.run_launcher([flag], {}, open_stdin=True)
                 self.assertEqual(proc.returncode, 0, proc.stderr)
-                for option in ("--stdin", "--file", "--include-self", "--models"):
+                for option in ("--stdin", "--file", "--include-self", "--models",
+                               "--recent", "--show", "--all"):
                     self.assertIn(option, proc.stdout)
                 self.assertIn("repeatable", proc.stdout)
                 self.assertIn("command-line order", proc.stdout)
