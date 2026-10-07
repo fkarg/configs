@@ -7,6 +7,7 @@ host_roles:
   - personal
   - graphical_dotfiles
   - coding_agents
+  - agent_sessions_sync
 
 username: pars
 cowfile: default
