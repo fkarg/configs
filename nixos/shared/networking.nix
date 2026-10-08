@@ -1,4 +1,4 @@
-{ ... }:
+{ pkgs, ... }:
 
 {
   # enable networkmanager
@@ -26,6 +26,38 @@
       DNSOverTLS = "opportunistic";
     };
   };
+
+  # Captive portals: while NM reports PORTAL/LIMITED, also route all lookups
+  # to the default-route link's own DNS (resolved queries tied scopes in
+  # parallel), so the portal's DNS answers; drop that again once FULL.
+  # NM's check resolves per-link, so it detects portals despite the global ~.
+  # Without a check URI NM never leaves an assumed FULL.
+  networking.networkmanager.settings.connectivity.uri =
+    "http://nmcheck.gnome.org/check_network_status.txt";
+  networking.networkmanager.dispatcherScripts = [
+    {
+      source = pkgs.writeShellScript "captive-portal-dns" ''
+        [ "$2" = connectivity-change ] || exit 0
+        PATH=${pkgs.iproute2}/bin:${pkgs.gawk}/bin:${pkgs.gnused}/bin:${pkgs.systemd}/bin
+        dev=$(ip -o route show default | awk '{for (i = 1; i < NF; i++) if ($i == "dev") { print $(i + 1); exit }}')
+        [ -n "$dev" ] || exit 0
+        domains=$(resolvectl domain "$dev" | sed 's/^[^:]*: *//')
+        case "$CONNECTIVITY_STATE" in
+          PORTAL|LIMITED)
+            case " $domains " in *" ~. "*) exit 0 ;; esac
+            resolvectl domain "$dev" $domains '~.'
+            ;;
+          FULL)
+            case " $domains " in *" ~. "*) ;; *) exit 0 ;; esac
+            rest=$(echo "$domains" | awk '{for (i = 1; i <= NF; i++) if ($i != "~.") printf "%s ", $i}')
+            resolvectl domain "$dev" ''${rest:-""}
+            ;;
+          *) exit 0 ;;
+        esac
+        resolvectl flush-caches
+      '';
+    }
+  ];
 
   # tailscaled; the operator flag lets the tray/GUI clients run unprivileged
   services.tailscale = {
