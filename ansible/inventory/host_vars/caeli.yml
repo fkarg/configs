@@ -202,6 +202,10 @@ brew_casks_common:
   - proton-mail
   - proton-pass
   - protonvpn
+  # networking
+  # Standalone GUI variant only. Not the `tailscale` formula alongside it: two
+  # daemons register two nodes, and the formula's CLI shadows the app's.
+  - tailscale-app
   # microsoft office
   - microsoft-excel
   - microsoft-outlook
