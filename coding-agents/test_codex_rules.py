@@ -24,6 +24,22 @@ def decision_for(*command: str) -> str | None:
 
 
 class CodexRulesTests(unittest.TestCase):
+    def test_allows_peer_reviews_on_the_host(self) -> None:
+        for launcher in ("peer-review", "scripts/peer-review", "./scripts/peer-review"):
+            with self.subTest(launcher=launcher):
+                self.assertEqual(
+                    decision_for(launcher, "--mode", "design", "Review this design"),
+                    "allow",
+                )
+        self.assertEqual(
+            # execpolicy check accepts parsed argv; shell splitting belongs
+            # to Codex's execution layer, not this CLI subcommand.
+            decision_for("peer-review", "--stdin", "--mode", "diff-review", "Review"),
+            "allow",
+        )
+        self.assertIsNone(decision_for("peer-review-untrusted", "--mode", "design"))
+        self.assertIsNone(decision_for("bash", "unrelated-script.sh"))
+
     def test_allows_all_git_commands(self) -> None:
         self.assertEqual(decision_for("git", "status"), "allow")
         self.assertEqual(decision_for("git", "fetch", "origin", "main"), "allow")

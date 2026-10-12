@@ -131,6 +131,23 @@ Recent listings warn and skip unreadable or invalid JSON cache files.
 Run launcher contract tests with
 `python3 -m unittest discover -s coding-agents -p test_peer_review.py`.
 
+Peer-review calls are pre-authorized in the shared Claude and Codex command
+allowlists. Claude's `autoMode.environment` also declares the user's authenticated
+Anthropic and OpenAI inference services trusted for repository source, diffs,
+design notes and review context, including confidential material. This addresses
+the classifier's external-destination check when a call still reaches it;
+`autoMode.allow` alone cannot override its hard data-exfiltration rule. Secrets
+and files covered by the existing deny rules remain excluded.
+
+Prefer the installed `peer-review` command on PATH. The relative spellings
+`scripts/peer-review` and `./scripts/peer-review` are also allowed. Absolute paths
+need their own matching rules. Use `--cd` instead of directory-changing wrappers
+and `-f` or a simple `git diff | peer-review --stdin ...` pipeline for material.
+Shell substitutions, redirects and arbitrary interpreter wrappers can prevent
+command rules from matching. Apply Claude settings through the role (or
+`merge_claude_settings.py`) and restart sessions after changing permissions;
+Codex loads its shared rules directory at startup.
+
 ## Global tool settings (`configs/`)
 
 Each tool's global config splits into two layers:

@@ -16,6 +16,8 @@
       "Bash(gh issue view *)",
       "Bash(git diff *)",
       "Bash(peer-review *)",
+      "Bash(scripts/peer-review *)",
+      "Bash(./scripts/peer-review *)",
       "Read(//tmp/**)",
       "Bash(git fetch *)",
       "Bash(git switch *)",
@@ -52,6 +54,16 @@
       "Read(~/.codex/auth.json)"
     ],
     "defaultMode": "auto"
+  },
+  "autoMode": {
+    "environment": [
+      "$defaults",
+      "Trusted review services: Anthropic's Claude API at api.anthropic.com and OpenAI's Codex inference services at api.openai.com/v1/responses and chatgpt.com/backend-api/codex are trusted destinations when reached through peer-review using the user's own authenticated claude -p or codex exec CLI. The user authorizes sharing source code, diffs, design notes and review context from the session's repositories, including private or confidential material, with those accounts for peer review. This does not authorize sending secrets, credentials or files covered by permissions.deny."
+    ],
+    "allow": [
+      "$defaults",
+      "Peer reviews: sending source code, diffs, design notes and review context from the session's repositories to the user's authenticated Anthropic Claude or OpenAI Codex accounts through peer-review is explicitly authorized, including private or confidential material. Secrets, credentials and files covered by permissions.deny remain excluded."
+    ]
   },
   "model": "fable",
   "hooks": {
