@@ -8,7 +8,7 @@ Date: 2026-10-12 · Goal: merge the two interview skills and fit the user's deve
 - Highlight the current session's assessment and an independent peer opinion. Ask the peer before presenting each round.
 - Offer subagent implementation kickoff between rounds for sufficiently settled work.
 - Decide checkout/worktree strategy once from repository and session guidance.
-- Canonical source is coding-agents/source/grill-me.md (mode: skill). The second source is currently untracked. Preserve unrelated checkout changes.
+- Canonical source is coding-agents/source/grill-me.md (mode: skill). The second source was initially untracked, was preserved in commit 3a4b289, and is now removed from the working tree. Preserve unrelated checkout changes.
 - Peer derives options from shared facts/conditions and neutral questions; never send pre-selected session options. Session merges materially equivalent options and states tradeoffs.
 - Kickoff proposals go below the questions with stable P identifiers. Acceptance is required each time; a brief response such as "P1, P2 ok" is sufficient.
 - Cleanup primarily diffuses lasting what/why information into relevant maintained docs. Usually retain detailed brainstorms; they must be recoverable from Git before removal. Do not make brainstorms the sole home of implementation knowledge.
@@ -22,7 +22,7 @@ Date: 2026-10-12 · Goal: merge the two interview skills and fit the user's deve
 - [x] Q4: clearly labeled fresh-context same-model fallback.
 - [x] Q5: finish accepted implementation before next round by default; explicit concurrent mode allows independent questions during implementation.
 - [x] Q6: prepare independent, topic-related questions ahead where possible/reasonable; wait for situation-specific questions when dependent answers or implementation would improve them.
-- Downstream: write merged skill, consolidate second source, validate generation and realistic workflow behavior; installation cleanup depends on existing artifacts.
+- Delivered scope: merged canonical skill, duplicate removal, maintained documentation, generation/validation and realistic workflow checks. No orphaned duplicate installation was found.
 
 ## Q&A log
 ### Initial requirements
@@ -48,6 +48,12 @@ Date: 2026-10-12 · Goal: merge the two interview skills and fit the user's deve
 - Q6: "prepare independent questions ahead", "prepared ahead where possible/reasonable", and "topic-related".
 - User prefers related questions and accepts waiting for better situation-specific questions, particularly with sequential implementation as the default.
 - No artificial queue filling, speculative answer combinations, or mandatory advance round when no relevant independent questions are ready.
+
+### Final scope clarification
+- User: "grill-me should still have the full exploration, research and planning (subagentic) approach as the IC skill/approach" with "more tightly manual involvement"; IC is for already-defined, less-open/more-autonomous tasks.
+- Preserve IC's investigation/research/premise/design/plan/review/delivery depth; the difference is interaction and decision authority, not research quality. Do not inherit conflicting IC-specific worktree rules, authorship assumptions, or peer-call quotas.
+- Accepted task plans carry explicit invariants, file ownership, verification/docs, change budget, and operational stopping point. Architectural/budget changes return to the interview. Appropriate review and CI followthrough remain part of orchestration.
+- Further user clarification: IC is a mostly autonomous single-task full process (exploration, few manual decisions, implementation and PR). Grill-me is an ongoing high-oversight workstream of substantial research/design and substantially smaller, constrained/defined implementation steps. Step completion feeds the workstream rather than closing it or bundling it into an IC task.
 
 ## Peer reviews
 - Round 1 peer: Claude Opus 5.5 (claude-opus-5-5), supplied source texts and user requirements without session recommendations. Complete JSON read; peer cache save failed with PermissionError, so material findings are recorded here.
@@ -99,11 +105,11 @@ Date: 2026-10-12 · Goal: merge the two interview skills and fit the user's deve
 
 ## Implementation plan
 - [x] Observe the old workflow in a fresh-context behavioral scenario before editing.
-- [ ] Rewrite coding-agents/source/grill-me.md with the settled workflow; consolidate grill-me-2.md.
-- [ ] Document canonical usage and the what/why in coding-agents/README.md, beyond this capture.
-- [ ] Forward-test with fresh-context agents: capped frontier/dependent question, independent peer inputs/options, partial answers and P acceptance, knowledge diffusion/Git recovery.
-- [ ] Run python3 -m unittest discover -s coding-agents -p test_build.py; verify rendering without resetting unrelated generated artifacts.
-- [ ] Review final diff, address defects, commit only task files on master; record outcome here.
+- [x] Rewrite coding-agents/source/grill-me.md with the settled workflow; consolidate grill-me-2.md.
+- [x] Document canonical usage and the what/why in coding-agents/README.md, beyond this capture.
+- [x] Forward-test with fresh-context agents: capped frontier/dependent question, independent peer inputs/options, partial answers and P acceptance, knowledge diffusion/Git recovery.
+- [x] Run python3 -m unittest discover -s coding-agents -p test_build.py; rebuild through the canonical generator and verify single-skill rendering.
+- [x] Review final diff, address defects, commit only task files on master; record outcome here.
 
 ## Session assessment before final design check
 - Keep a single mode: skill source and remove the duplicate after consolidation.
@@ -116,6 +122,36 @@ Date: 2026-10-12 · Goal: merge the two interview skills and fit the user's deve
 - Existing-skill behavioral baseline (fresh-context subagent): with six independent ready questions and one dependent question, it asks all six, provides no durable capture, and defers even an agreed serializer task until whole-session confirmation. These are observed gaps against the requested merged behavior.
 - External guidance: distinguish observations from interpretations; keep question context focused on why the decision matters. Source: https://www.gov.uk/service-manual/user-research/analyse-a-research-session and https://design-system.service.gov.uk/patterns/question-pages/.
 - External divergence: GOV.UK's phase-based discovery discourages building during discovery. This user explicitly wants branch-level implementation offers; the relevant safeguard to decide is readiness of that branch, rather than importing a whole-project phase gate.
+- Original inputs and full decision capture preserved by commit 3a4b289 before removing the duplicate source.
+- Generator contract test: 1 test passed. Generator rebuilt 19 agents and 8 skills; only pre-existing commit-agent permission-translation warnings.
+- Rendering checks: Claude, Codex, and Pi each contain the complete canonical grill-me body and name; no grill-me-2 source or generated artifact remains.
+- Existing Claude and Codex skill symlinks already point to canonical generated directories, so the rebuild applies the new skill without an Ansible run touching unrelated settings.
+- Lasting workflow mechanics and rationale diffused into coding-agents/README.md; detailed Q&A retained here.
+- Forward round simulation passed: coherent 2-question round under the cap; blocked dependency omitted; neutral peer brief without session options; partial answers preserved; scope change forces re-peer; factual implementation finding prevents displaying stale options.
+- Forward handoff simulation passed: checkpoint before P1 launch, P2 remains unaccepted; sequential mode blocks next display, explicit concurrent selection permits independent interviewing; fallback labeled; docs diffusion and Git protection precede pruning; unresolved delivery prevents blanket completion.
+- Unique defect from forward handoff review: require user agreement to deferrals so an agent cannot manufacture closure. Fixed. Added verification: label unknown answering-model identity rather than guessing.
+- Other review observations (reasonable preparation threshold, no default stopping point, broad disjoint-ownership concept) had no decision impact: these are deliberate context-dependent choices under applicable repository guidance. The existing prohibition on discarding uncommitted detail already covers minor pruning.
+- Fresh-context final diff reviewer: no concrete defects found; coverage and README/source agreement inspected independently.
+- Final cross-model diff reviewer: Claude Opus 5.5, supports. Complete JSON read. Added verification: peer-review uses fixed review-shaped JSON, so request Q-ID-labeled options/tradeoffs/recommendations within counterproposal and clarify missing assessments. Implemented; real 3-question call pending.
+- Changed decision from cross-model diff review: shrink README to canonical pointer and rationale instead of duplicating the protocol. Removed redundant delegation/policy/revalidation wording from the source.
+- Rejected false positive: asking for attempted falsifications is useful even though the tool schema requires that field; an empty field passes schema, and fresh-context fallback has no guaranteed schema. Keep the substantive request.
+- No decision impact: retain short complete-response and review-impact rules so the peer gate is self-contained, including fallback behavior. These are critical to this workflow rather than generic process padding.
+- Real 3-Q option-generation check: Claude Opus 5.5 returned clearly labeled Q1/Q2/Q3 sections with independently generated options, tradeoffs, and recommendations within counterproposal. Findings challenged dependencies and missing facts; attempted falsifications were substantive. Added verification confirms the mapping works without inventing peer views.
+- Skill validator initially could not import yaml under default python3. Ran the same validator with the installed Ansible Python, which already provides PyYAML: Skill is valid. No dependency or host configuration changes made.
+- Independent IC comparison found the missing investigation/planning/review depth: read-only subsystem/stack exploration, separate cited web research, outcome-versus-solution premise/diagnosis checks, concrete invariants/change budget, independent post-green review, CI followthrough, and architecture/reading-guide deliverables. These unique gaps are now addressed.
+- Fresh-context reviewer re-read the updated source and README and found no remaining concrete defects, including against the new IC-depth requirement.
+- IC-depth forward simulation exercised read-only call-path exploration, separate cited external research, premise/diagnosis challenge, manual freshness-contract decisions, concrete P plans, and a queue-semantics scope expansion requiring pause and user decision. This confirmed the desired depth is present.
+- Unique defect: sequential finish-before-next-round could deadlock when implementation needs a reopened decision. Added an explicit exception for required blocker-resolution rounds, with affected agents paused and partial edits reported. Added verification: run/record diagnostic falsification observations and prohibit completion with failing required checks/blocking findings.
+- No decision impact from other simulation observations: IC is a depth comparison, not a requirement to load its conflicting execution rules; repository-specific stopping points and specialized review criteria remain supplied by applicable guidance and task briefs.
+- Targeted recheck confirmed the sequential blocker-resolution exception and pause/report mechanics resolve the simulated P1 queue-semantics deadlock.
+- Final IC-depth cross-model diff review: Claude Opus 5.5 supports; complete JSON read. Unique defect: an unrestricted implementation-agent choice could invoke autonomous IC, duplicating gates and conflicting checkout/shipping rules. Fixed by scoped worker/stack implementers, with main session retaining peer/review/decision/delivery gates.
+- Corrected stale capture wording about the initially untracked second source; its recovery commit is now explicit.
+- Rejected false positive: unconditional P-task delegation is intentional here; user explicitly gives main session interviewing/architecture/orchestration and asks for subagent kickoffs. Do not introduce main-thread implementation exceptions or autonomous task expansion.
+- No decision impact: keep concise peer-integrity and accepted-work authority instructions as critical self-contained gates. No further generic process additions from redundancy suggestions.
+- Final fresh-context review found no defects in the ongoing-workstream distinction or earlier gates. Final behavior simulation confirmed that P1 completion does not close a workstream with pending investigations/blocked decisions, and P2 uses scoped implementers while main retains gates.
+- Final generator test passed (1 test), rebuild succeeded, and the generated skill passed frontmatter validation. Existing permission-translation warnings are unrelated to this change. Task-scoped whitespace check passed.
+- Complete current decisions and detailed Q&A retained here. Lasting workflow/interaction semantics live in coding-agents/source/grill-me.md; coding-agents/README.md explains the IC/grill-me distinction and points to the canonical protocol.
+- Final delivery is a local master commit of the canonical source, duplicate deletion, README, and this capture. No PR/remote CI is in scope; local checks and workflow simulations are the validation evidence.
 
 ## Open flags
 - None. All material workflow choices are settled.

@@ -20,6 +20,24 @@ thread. `mode: skill` sources are *pure* skills — guidance the main agent load
 while doing the work itself (e.g. `writing-tests`) — and emit no agent files;
 the ansible role also skips them for opencode, which has no skill concept.
 
+## Grill Me: decision discovery and implementation
+
+[`source/grill-me.md`](source/grill-me.md) is the canonical pure skill for
+an ongoing research/design workstream with close user oversight. It combines
+dependency-frontier rounds, independently generated peer options, and durable capture so decisions survive
+long sessions and become individually accepted implementation tasks. The main
+session keeps interviewing and the architecture overview while orchestrating
+small, constrained steps. It retains IC's exploration, external research,
+planning, and review depth. IC is a mostly autonomous full process taking a single
+task through exploration and a few manual decisions to implementation and PR;
+grill-me keeps developing the workstream as individual steps finish.
+"Branches" here means **decision branches**, not Git branches.
+
+See the source for the interview and handoff protocol. Captures live in
+`docs/brainstorms/YYYY-MM-DD-topic.md`; after implementation, lasting what/why
+belongs in relevant maintained docs as well. Keep detailed captures by default,
+and commit them before optional removal so Git history preserves the process.
+
 ## Codex account switching
 
 `scripts/codex-account` snapshots file-based Codex credentials into
