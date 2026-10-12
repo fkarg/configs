@@ -19,12 +19,19 @@ Before questioning, create `docs/brainstorms/YYYY-MM-DD-topic.md` and tell the u
 
 - Goal/scope, architecture summary, execution mode, checkout policy and source.
 - Settled decisions and rationale; facts/evidence separate from recommendations.
+- User policies with scope, rationale, source answer, and decisions resolved by applying them.
 - Question backlog with stable Q IDs, prerequisite IDs, and ready/blocked/deferred status.
 - Round records: relevant context, session assessment before peer, peer identity/options, merged options, user answers, and material disagreements.
 - Implementation proposals with stable P IDs, acceptance, ownership, progress, verification, and commit/PR references.
 - Open flags with owners; maintained docs that should receive lasting knowledge.
 
 Checkpoint **after every user reply**, before launching accepted work or preparing another round. Log each answered question separately within that write; preserve partial answers and unanswered questions. Never treat a recommendation, silence, or an ambiguous answer as a decision or kickoff acceptance. Add relevant follow-ups, update dependencies, and explicitly reopen affected decisions if an answer contradicts earlier ones. On resume, read the capture and inspect actual implementation state before continuing.
+
+## Record and apply user policies
+
+An answer may establish a general policy, not just resolve the question asked. Recognize that broader intent without requiring special wording. Record the policy and its stated scope, rationale, and source answer in the capture; preserve relevant exceptions. Do not broaden a one-off choice into a policy or extend a policy beyond the user's meaning.
+
+Apply recorded policies to matching backlog questions and new questions before preparing or presenting a round, including on resume. Record each resulting decision as resolved by the policy and update dependencies. Tell the user briefly what policy you recorded and which decisions it resolves; when applying it later, identify the policy and its consequence. **Do not re-ask a covered question in slightly different words or request confirmation of a straightforward application.** Ask only about a real unresolved distinction, ambiguous scope, conflict, or changed constraint, explaining what the policy does not settle. Applying a policy settles design decisions; it does not by itself accept an implementation proposal or grant additional authority.
 
 ## Select and prepare rounds
 
@@ -48,12 +55,12 @@ Research and question-generation agents supply candidate questions, not decision
 
 Prepare the next round, **including peer-generated options**, ahead of current answers when relevant independent questions are available and preparation is reasonable. Do not guess current answers or generate speculative conditional rounds. Waiting for answers or implementation to produce better situation-specific questions is fine.
 
-Record each prepared round's prerequisites and relevant factual basis. Immediately before displaying it, revalidate against new answers and implementation findings. Drop out-of-scope questions; rebuild and re-peer materially changed questions/context/options, noting the revision.
+Record each prepared round's prerequisites and relevant factual basis. Immediately before displaying it, revalidate against new answers, recorded policies, and implementation findings. Drop out-of-scope questions and questions resolved by policy; rebuild and re-peer materially changed remaining questions/context/options, noting the revision.
 
 ## Independent peer before every round
 
 1. Record your own options, tradeoffs, and recommendation **before reading the peer response**.
-2. Give the peer the goal, constraints, relevant facts/evidence (including facts against your preference), settled user decisions, and neutral question wording/context. Pending decisions are explicitly unanswered. **Do not send your options, recommendations, predicted answers, or the unfiltered capture file.**
+2. Give the peer the goal, constraints, relevant facts/evidence (including facts against your preference), settled user decisions and applicable policies, and neutral question wording/context. Pending decisions are explicitly unanswered. **Do not send your options, recommendations, predicted answers, or the unfiltered capture file.**
 3. Use `peer-review --mode design` with explicitly supplied material via `--stdin` and/or `--file`. Ask the peer to independently generate options, tradeoffs, and a recommendation for each Q ID, challenge framing/dependencies, identify missing alternatives, and name attempted falsifications. The tool returns review-shaped JSON: request Q-ID-labeled sections for options/tradeoffs/recommendations in its `counterproposal` string, with challenges in `findings`. If a question's assessment is missing or unclear, clarify it rather than inventing the peer's view. Follow applicable peer-review routing/auth guidance; wait for the call without invented limits.
 4. If the cross-model peer is unavailable, use a fresh-context same-model subagent with the same neutral brief. **Label that fallback**, including the actual answering model when known; report unknown identity rather than guessing. Do not present it as cross-model. If no reviewer is available, report the blocker and ask before presenting an unreviewed round.
 5. Read the complete response; recover truncated output before using it. Merge materially equivalent options, preserving meaningful differences and tradeoffs. Highlight both the session's original recommendation and the peer's independently derived recommendation. If new evidence changes your assessment, distinguish that revision from your original view; preserve dissent.
