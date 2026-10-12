@@ -9,6 +9,8 @@ mode: skill
 
 Run an **ongoing research and design workstream** with close user oversight, using a **decision tree**. Its branches are decisions and their dependencies, **not Git branches**. The main session owns interviewing, architectural overview, and implementation orchestration, with interviewing and architecture first. Keep IC's investigation/planning depth: IC is a mostly autonomous full process taking a single task through exploration, a few manual decisions, implementation, and PR; grill-me continually develops understanding and feeds small, constrained implementation steps. Completing a step does not complete the workstream.
 
+**From the main session, default to using subagents for exploratory tasks and use them broadly for bounded supporting work**: codebase mapping, fact-finding, external research, question generation, planning input, and independent review. Delegate distinct investigations in parallel when independent, rather than doing all exploration in the interactive context. Keep critical reads, synthesis, interviewing, and architectural judgment in the main session; review findings before relying on them. This delegation preference does not change the acceptance gates for implementation.
+
 ## Setup and capture
 
 Read applicable repository/session guidance and relevant docs. Resolve the checkout/worktree policy once and record its source. Follow that policy; revisit only if instructions or constraints change. Default to **sequential mode**: accepted implementation steps finish and are reviewed before the next question round. Offer **concurrent mode** when the user's available focus makes independent questions during implementation useful; change modes only on their instruction.
