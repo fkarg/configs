@@ -134,6 +134,7 @@
   "effortLevel": "high",
   "askUserQuestionTimeout": "never",
   "tui": "fullscreen",
+  "viewMode": "focus",
   "showThinkingSummaries": true,
   "skipWorkflowUsageWarning": true,
   "editorMode": "normal",
