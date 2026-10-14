@@ -54,7 +54,7 @@ peer-review --mode premise --cd <worktree> "Issue: <text>. Established facts: <f
 
 `peer-review` selects a peer from a genuinely different *serving* family (a Claudex session is GPT wearing the Claude harness — never route on harness name), runs it read-only, and returns validated JSON. If it reports no peer CLI, fall back to a fresh-context subagent with the same blind brief and say so.
 
-**When the issue is a bug report whose cause is not yet established, run `--mode diagnosis` instead** — competing causal explanations ranked, plus the single cheap observation that would falsify the leading one. Fixing a misdiagnosis correctly is the most expensive failure available to you, and this is the point where it is cheapest to catch. Get the falsifying observation *before* you design.
+**When the issue is a bug report whose cause is not yet established, run `--mode diagnosis` instead** — competing causal explanations ranked, plus the single cheap observation that would falsify the leading one. Fixing a misdiagnosis correctly is the most expensive failure available to you, and this is the point where it is cheapest to catch. Get the falsifying observation *before* you design. The diagnosis must account for every observed symptom, with more than one cause where necessary.
 
 **For every bug fix, whichever mode you ran, also ask the peer for the whys** in the same call: starting from what happened (the user-visible symptom), why two or three times, each answer one level more meta — mechanism in the code, then the assumption or design decision behind it, then why tests/review/types let it through — each with the evidence it rests on. Do your own chain before reading the peer's; where they diverge, that is a finding.
 
@@ -91,6 +91,7 @@ Write the code yourself. Do not delegate writing the diff — you hold the menta
 - Follow the plan, preserve the invariants, write behavior-driven tests alongside the code.
 - Run the repo's documented checks and tests (its AGENTS.md/README names them) until green.
 - Note plan deviations briefly; budget violations escalate (step 5).
+- **Line of retreat:** after two failed fixes under the same hypothesis, stop patching: re-enumerate the explanations and run the observation that tells them apart. If the diagnosis is in doubt, return to step 3; that re-runs the step-3 peer gate rather than adding one.
 
 **Post-green simplicity pass (always):** hand the diff to `simplicity-reviewer`. Its 🔴 findings are not advisory — apply each one, or carry the disagreement to the user verbatim at the next checkpoint. Restructuring is cheap now and expensive after review. Re-run checks back to green.
 
@@ -139,7 +140,7 @@ Don't present any of this to the user yet — mid-workflow output gets buried un
 
 1. `git add -A`, then delegate to the `commit` agent (`<module>: <summary>` style; mention `Closes #<n>`).
 2. `git push -u origin HEAD`, then `gh pr create --base <default>` — the PR body carries the architectural map and reading guide.
-3. **Opening the PR is not the end of the task — drive CI to green.** Watch the checks (`gh pr checks <n> --watch`, or poll). On a failure, pull the actual logs (`gh run view --log-failed`), diagnose, fix, push, and repeat. Stop only when checks are green or the failure is genuinely outside this change — infra flake, pre-existing breakage on `<default>` — and say so explicitly, with the evidence, rather than going quiet.
+3. **Opening the PR is not the end of the task — drive CI to green.** Watch the checks (`gh pr checks <n> --watch`, or poll). On a failure, pull the actual logs (`gh run view --log-failed`), diagnose, fix, push, and repeat. Stop only when checks are green or the failure is genuinely outside this change — infra flake, pre-existing breakage on `<default>` — and say so explicitly rather than going quiet. "Outside this change" needs evidence that the change didn't cause it — typically the same failure on `<default>`; a passing rerun only shows nondeterminism. Without that evidence the attribution is unresolved: keep investigating or report it as such.
 4. Keep the worktree while external review feedback is likely; otherwise `git worktree remove` it.
 5. **Final report — the one message the user actually reads.** End the run with a single consolidated message: the PR link, **the CI outcome** (green / still failing and why / out-of-scope failure), the architectural map, the reviewer's reading guide, the synthesized review findings, the production report, and — for bug fixes — the whys, the bug class, and the sibling instances with their disposition (fixed in this PR / issue link). Everything earlier has scrolled past; this message must stand alone.
 
@@ -148,3 +149,4 @@ Don't present any of this to the user yet — mid-workflow output gets buried un
 - **Simple over clever.** Minimum complexity for the current requirement; abstractions must be earned by a second concrete use.
 - **Ask at genuine tradeoffs; decide and note the trivial.**
 - **Match the codebase.** Patterns in the same area beat personal preference.
+- **The goal outranks its proxies.** Green CI, a reviewer's verdict, a met change budget are evidence the goal is met. When they diverge, serve the goal and report the divergence; never make a proxy pass by weakening it (loosened assertions, skips, `--no-verify` past a red hook). A test that asserts incorrect behavior may be corrected — say so explicitly, with the evidence.
