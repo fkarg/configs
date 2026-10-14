@@ -172,7 +172,6 @@ brew_packages_extra: []
 brew_casks_common:
   # window management & system tweaks
   - adrafinil
-  - caffeine
   - karabiner-elements
   # openlogi: local-first Logi Options+ replacement (HID++ devices).
   - openlogi
@@ -193,7 +192,6 @@ brew_casks_common:
   - element
   - microsoft-teams
   - signal
-  - telegram
   - telegram-desktop
   - whatsapp
   # proton suite
@@ -217,13 +215,14 @@ brew_casks_common:
   - obsidian
   - zotero
   # AI / coding agents
+  # chatgpt: experimental
+  - chatgpt
   - claude-code@latest
   - codex
   - copilot-cli
   - ollama-app
   # containers & virtualization
   - docker-desktop
-  - utm
   # media
   - vlc
   - youtube-to-mp3
