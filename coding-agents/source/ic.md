@@ -91,7 +91,6 @@ Write the code yourself. Do not delegate writing the diff — you hold the menta
 - Follow the plan, preserve the invariants, write behavior-driven tests alongside the code.
 - Run the repo's documented checks and tests (its AGENTS.md/README names them) until green.
 - Note plan deviations briefly; budget violations escalate (step 5).
-- **Line of retreat:** after two failed fixes under the same hypothesis, stop patching: re-enumerate the explanations and run the observation that tells them apart. If the diagnosis is in doubt, return to step 3; that re-runs the step-3 peer gate rather than adding one.
 
 **Post-green simplicity pass (always):** hand the diff to `simplicity-reviewer`. Its 🔴 findings are not advisory — apply each one, or carry the disagreement to the user verbatim at the next checkpoint. Restructuring is cheap now and expensive after review. Re-run checks back to green.
 
@@ -140,7 +139,7 @@ Don't present any of this to the user yet — mid-workflow output gets buried un
 
 1. `git add -A`, then delegate to the `commit` agent (`<module>: <summary>` style; mention `Closes #<n>`).
 2. `git push -u origin HEAD`, then `gh pr create --base <default>` — the PR body carries the architectural map and reading guide.
-3. **Opening the PR is not the end of the task — drive CI to green.** Watch the checks (`gh pr checks <n> --watch`, or poll). On a failure, pull the actual logs (`gh run view --log-failed`), diagnose, fix, push, and repeat. Stop only when checks are green or the failure is genuinely outside this change — infra flake, pre-existing breakage on `<default>` — and say so explicitly rather than going quiet. "Outside this change" needs evidence that the change didn't cause it — typically the same failure on `<default>`; a passing rerun only shows nondeterminism. Without that evidence the attribution is unresolved: keep investigating or report it as such.
+3. **Opening the PR is not the end of the task — drive CI to green.** Watch the checks (`gh pr checks <n> --watch`, or poll). On a failure, pull the actual logs (`gh run view --log-failed`), diagnose, fix, push, and repeat. Stop only when checks are green or the failure is genuinely outside this change — infra flake, pre-existing breakage on `<default>` — and say so explicitly rather than going quiet. "Outside this change" needs evidence that the change didn't cause it, typically the same failure on `<default>`; without it, the attribution is unresolved.
 4. Keep the worktree while external review feedback is likely; otherwise `git worktree remove` it.
 5. **Final report — the one message the user actually reads.** End the run with a single consolidated message: the PR link, **the CI outcome** (green / still failing and why / out-of-scope failure), the architectural map, the reviewer's reading guide, the synthesized review findings, the production report, and — for bug fixes — the whys, the bug class, and the sibling instances with their disposition (fixed in this PR / issue link). Everything earlier has scrolled past; this message must stand alone.
 
@@ -149,4 +148,4 @@ Don't present any of this to the user yet — mid-workflow output gets buried un
 - **Simple over clever.** Minimum complexity for the current requirement; abstractions must be earned by a second concrete use.
 - **Ask at genuine tradeoffs; decide and note the trivial.**
 - **Match the codebase.** Patterns in the same area beat personal preference.
-- **The goal outranks its proxies.** Green CI, a reviewer's verdict, a met change budget are evidence the goal is met. When they diverge, serve the goal and report the divergence; never make a proxy pass by weakening it (loosened assertions, skips, `--no-verify` past a red hook). A test that asserts incorrect behavior may be corrected — say so explicitly, with the evidence.
+- **The goal outranks its proxies.** Never make CI or a reviewer pass by weakening the check (loosened assertions, skips, `--no-verify` past a red hook); a test asserting incorrect behavior may be corrected, openly and with evidence.

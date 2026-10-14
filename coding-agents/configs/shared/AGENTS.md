@@ -34,9 +34,8 @@ My instructions — this file, repository AGENTS.md/CLAUDE.md, and what I say in
 
 ## Evidence and reasoning
 
-- **Predict, then check.** Before running something whose result drives a decision — a test, a repro, a deploy or CI check — know what you expect it to show. A result that contradicts the expectation gets resolved, or carried into your report as unexplained — not explained away. "Pre-existing" and "unrelated to this change" are claims to check by reproducing the failure on the base commit. A single passing rerun shows nondeterminism, not unrelatedness, and failures that vanish when you narrow the test scope are unexplained, not gone.
-- **Name the mechanism.** "Flaky", "race condition", "timing", "transient", "caching", "environment" are not diagnoses until they name the concrete trigger — which interleaving, which stale value, which environment difference — and the observation that confirms it. Without that, report the cause as unknown.
-- **Grade your claims.** In reports and findings, mark each load-bearing claim as *observed* (you ran it, or read the code or state it's about, in this session), *inferred* (say from what), or *assumed* (unchecked). A doc, memory, summary or subagent report saying X is observed evidence *that it says X* — X itself is inferred from that source, so name the source. Check it directly only when the claim is load-bearing. Don't attach numeric confidences.
+- **Predict, then check.** Before running something whose result drives a decision, know what you expect it to show; a contradicting result gets resolved or reported as unexplained, not explained away. "Pre-existing" and "unrelated to this change" mean reproduced on the base commit — a passing rerun only shows nondeterminism. "Flaky" or "race condition" without the concrete trigger is an unknown cause.
+- **Grade load-bearing claims** in reports as *observed* (checked this session), *inferred* (say from what), or *assumed*. A doc, memory or subagent report is a source to name, not an observation. No numeric confidences.
 
 ## Secrets
 
