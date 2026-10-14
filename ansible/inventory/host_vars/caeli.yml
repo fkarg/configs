@@ -172,7 +172,6 @@ brew_packages_extra: []
 brew_casks_common:
   # window management & system tweaks
   - adrafinil
-  - amethyst
   - caffeine
   - karabiner-elements
   # openlogi: local-first Logi Options+ replacement (HID++ devices).
@@ -199,7 +198,6 @@ brew_casks_common:
   - whatsapp
   # proton suite
   - proton-drive
-  - proton-mail
   - proton-pass
   - protonvpn
   # networking
@@ -213,6 +211,7 @@ brew_casks_common:
   - microsoft-word
   # productivity & documents
   - anki
+  - ausweisapp
   - libreoffice
   - mark-text
   - obsidian
@@ -220,7 +219,6 @@ brew_casks_common:
   # AI / coding agents
   - claude-code@latest
   - codex
-  - comfy
   - copilot-cli
   - ollama-app
   # containers & virtualization
@@ -229,4 +227,6 @@ brew_casks_common:
   # media
   - vlc
   - youtube-to-mp3
+  # games
+  - steam
 brew_casks_extra: []
