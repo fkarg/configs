@@ -204,6 +204,23 @@ global instructions file: `~/.claude/CLAUDE.md`, `~/.codex/AGENTS.md`, and
 it up on the next role run. This repo is public — keep it free of host-specific
 or secret content.
 
+## Writing prompt rules
+
+Applies to `source/*.md` and `configs/shared/AGENTS.md` alike. Every line is read
+on every run, and low-value rules cost more than tokens: they dilute the ones that
+matter, and literal-minded models over-apply them.
+
+- **A rule must earn its tokens.** Add one for a failure that actually happens,
+  ideally with evidence (an incident, or a grep of past transcripts under
+  `~/.claude/projects/` and `~/.codex/sessions/`). Don't add one for a failure the
+  model doesn't exhibit.
+- **Say it once.** Global rules in `configs/shared/AGENTS.md` reach every agent;
+  don't restate them in an agent, only add what is specific to its step.
+- **Specific habits, not generic exhortation.** "Reproduce on the base commit before
+  calling a failure pre-existing" changes behavior; "double-check your work" adds
+  cost without it. Give the *why* in a clause when it isn't obvious.
+- **Prune.** When editing, cut what no longer pulls its weight.
+
 ## Creating a new agent or skill
 
 Add ONE file — `source/<name>.md` — and apply it the same way as an edit (below).
