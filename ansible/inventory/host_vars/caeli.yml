@@ -229,6 +229,4 @@ brew_casks_common:
   # media
   - vlc
   - youtube-to-mp3
-  # misc / experimental
-  - pear-desktop
 brew_casks_extra: []
