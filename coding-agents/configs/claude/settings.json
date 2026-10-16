@@ -65,7 +65,7 @@
       "Peer reviews: sending source code, diffs, design notes and review context from the session's repositories to the user's authenticated Anthropic Claude or OpenAI Codex accounts through peer-review is explicitly authorized, including private or confidential material. Secrets, credentials and files covered by permissions.deny remain excluded."
     ]
   },
-  "model": "fable",
+  "model": "opus",
   "hooks": {
     "SessionEnd": [
       {
@@ -134,8 +134,9 @@
   "effortLevel": "high",
   "askUserQuestionTimeout": "never",
   "tui": "fullscreen",
-  "viewMode": "focus",
+  "viewMode": "default",
   "showThinkingSummaries": true,
+  "skipDangerousModePermissionPrompt": true,
   "skipWorkflowUsageWarning": true,
   "editorMode": "normal",
   "verbose": false,
@@ -143,6 +144,5 @@
   "preferredNotifChannel": "kitty",
   "switchModelsOnFlag": false,
   "fileCheckpointingEnabled": true,
-  "skipAutoPermissionPrompt": true,
-  "skipDangerousModePermissionPrompt": true
+  "skipAutoPermissionPrompt": true
 }
