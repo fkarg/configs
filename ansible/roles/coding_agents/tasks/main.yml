@@ -199,6 +199,20 @@
     state: link
     force: true
 
+# Lives in its own PATH directory (prepended by the fish config) because the
+# native installer owns ~/.local/bin/claude and repoints it on every update.
+- name: Create the Claude token wrapper directory
+  file:
+    path: "~/.local/lib/claude-wrapper"
+    state: directory
+
+- name: Install the Claude token wrapper
+  file:
+    src: "{{ repo_root }}/scripts/claude"
+    dest: "~/.local/lib/claude-wrapper/claude"
+    state: link
+    force: true
+
 # Codex is the exception: it atomically rewrites ~/.codex/config.toml (which would
 # clobber a symlink) and commingles host state (trusted [projects.*], oss_provider,
 # nux counters, auth) with prefs. So rather than symlink it, overlay just the

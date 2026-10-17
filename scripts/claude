@@ -1,0 +1,37 @@
+#!/bin/sh
+# Run Claude Code with this host's long-lived OAuth token, if it has one.
+#
+# `claude setup-token` mints a one-year token that replaces the weekly /login.
+# Keeping it in a file read only here exposes it to Claude Code (and what it
+# spawns) without exporting it into every shell. Without the file, Claude Code
+# uses its normal /login credential.
+#
+# The token file is placed by hand per host, never via this (public) repo:
+# run `claude setup-token`, then paste the printed token into
+#   (umask 077; cat > ~/.config/claude-oauth-token)
+
+token_file="${XDG_CONFIG_HOME:-$HOME/.config}/claude-oauth-token"
+
+# Drop this wrapper's directory from PATH so `claude` resolves to the real CLI.
+self_dir=$(CDPATH='' cd -- "${0%/*}" && pwd)
+real_path=
+set -f
+IFS=:
+for dir in $PATH; do
+    [ "$dir" = "$self_dir" ] || real_path="${real_path:+$real_path:}$dir"
+done
+unset IFS
+set +f
+PATH=$real_path
+
+if command -v claude >/dev/null 2>&1 && [ "$(command -v claude)" -ef "$0" ]; then
+    printf 'claude wrapper: real claude not found outside %s\n' "$self_dir" >&2
+    exit 127
+fi
+
+if [ -r "$token_file" ]; then
+    IFS= read -r CLAUDE_CODE_OAUTH_TOKEN < "$token_file"
+    export CLAUDE_CODE_OAUTH_TOKEN
+fi
+
+exec claude "$@"

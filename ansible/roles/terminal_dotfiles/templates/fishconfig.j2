@@ -73,6 +73,8 @@ end
 # once bun has created it — open a fresh shell after the first `bun install -g`.)
 set -gx BUN_INSTALL ~/.bun
 fish_add_path -gP ~/.cargo/bin ~/.local/bin ~/.local/share/pnpm/bin $BUN_INSTALL/bin
+# Ahead of ~/.local/bin: scripts/claude loads the per-host OAuth token for claude only.
+fish_add_path -gP ~/.local/lib/claude-wrapper
 
 # set -x LD_LIBRARY_PATH (nix-build -E 'import <nixpkgs>' -A 'gcc.cc.lib')/lib64
 # set -x PATH $LD_LIBRARY_PATH $PATH
