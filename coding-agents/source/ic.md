@@ -125,11 +125,19 @@ For each peer finding record the outcome — changed the decision, added a verif
 
 ## 8. Deliverables & checkpoint
 
-Write both in-thread — they go to the checkpoint and into the PR body:
+Write all three in-thread — they go to the checkpoint and into the PR body:
 
 **Architectural map** — the mental model updated to what actually shipped: what the change does and how (a paragraph); the invariants, each with its coverage status from `test-quality-reviewer` (✓/⚠/✗) so the reader sees what rests on tests vs. on reading; call-chains with `file:line`; where to look when X breaks; decisions and tradeoffs.
 
 **Reviewer's reading guide** — route the human's limited attention over the actual diff: **read closely** (the hunks carrying real judgment weight — load-bearing invariants, design decisions, trust boundaries, anything flagged 🔴/🟡 — ranked, each with a one-line *why it needs your eyes*) and **skim / safe to skip** (boilerplate, mechanical changes, well-pinned paths — named explicitly, so skipping is a decision rather than a blind spot).
+
+**Verification walkthrough** — a numbered, developer-repeatable sequence that shows the PR does what the issue needs and can be merged, run by you against the final code on a locally running stack (start it the way the repo's AGENTS.md/README says). It starts with setup — branch, start commands, seed data, accounts, flags — and ends in the user-visible outcomes from step 3, including at least one negative or edge case the change is supposed to handle. Each step has an action, its expected result, and the result you observed:
+
+- **Backend:** copy-pasteable commands (`curl`, CLI, a DB query) with the relevant response or output excerpt — or, where the behavior is only observable through the UI, the frontend check that shows it.
+- **Frontend:** screenshots in sequence, one per meaningful state (before → action → result), each captioned with what it proves. Use synthetic data; keep secrets and real personal data out of frame. Attach them to the PR (browser upload, as in `browser-qa`), not commits; if you can't upload, keep them locally, link the paths in the final report, and say they aren't on the PR yet.
+- **Backend + frontend pairs:** one end-to-end sequence may cover both, using either or both kinds of evidence. Each PR either carries it or links to the PR that does, and it names the counterpart head it was run against.
+
+A step that doesn't produce its expected result is a 🔴 — fix and re-run before shipping. Never write down a step you didn't run. Steps you couldn't run (missing credentials, external services, paid jobs) are marked **not run** with the reason. If the change has no runnable surface (pure refactor, docs, CI config), say so in one line instead.
 
 Then delegate to `production-readiness` with the same diff and worktree path. Route its follow-ups per the target repo's AGENTS.md; filing an issue in another repo is outward-facing — confirm with the user first.
 
@@ -138,10 +146,10 @@ Don't present any of this to the user yet — mid-workflow output gets buried un
 ## 9. Ship
 
 1. `git add -A`, then delegate to the `commit` agent (`<module>: <summary>` style; mention `Closes #<n>`).
-2. `git push -u origin HEAD`, then `gh pr create --base <default>` — the PR body carries the architectural map and reading guide.
+2. `git push -u origin HEAD`, then `gh pr create --base <default>` — the PR body carries the architectural map, reading guide, and verification walkthrough; then attach its screenshots.
 3. **Opening the PR is not the end of the task — drive CI to green.** Watch the checks (`gh pr checks <n> --watch`, or poll). On a failure, pull the actual logs (`gh run view --log-failed`), diagnose, fix, push, and repeat. Stop only when checks are green or the failure is genuinely outside this change — infra flake, pre-existing breakage on `<default>` — and say so explicitly rather than going quiet. "Outside this change" needs evidence that the change didn't cause it, typically the same failure on `<default>`; without it, the attribution is unresolved.
 4. Keep the worktree while external review feedback is likely; otherwise `git worktree remove` it.
-5. **Final report — the one message the user actually reads.** End the run with a single consolidated message: the PR link, **the CI outcome** (green / still failing and why / out-of-scope failure), the architectural map, the reviewer's reading guide, the synthesized review findings, the production report, and — for bug fixes — the whys, the bug class, and the sibling instances with their disposition (fixed in this PR / issue link). Everything earlier has scrolled past; this message must stand alone.
+5. **Final report — the one message the user actually reads.** End the run with a single consolidated message: the PR link, **the CI outcome** (green / still failing and why / out-of-scope failure), the architectural map, the reviewer's reading guide, the verification walkthrough outcome (passed / steps not run and why / where the screenshots are), the synthesized review findings, the production report, and — for bug fixes — the whys, the bug class, and the sibling instances with their disposition (fixed in this PR / issue link). Everything earlier has scrolled past; this message must stand alone.
 
 ## Principles
 
