@@ -438,7 +438,7 @@ peer_failed() {
 peer_status=0
 if [ "$peer_cli" = "codex" ]; then
     # codex --output-schema takes a FILE.
-    set -- exec --sandbox read-only --ephemeral \
+    set -- exec --sandbox read-only \
         --output-schema "$schema_file" -o "$result_file" -m "$peer_model"
     [ -n "$workdir" ] && set -- "$@" --cd "$workdir"
     codex "$@" "$prompt" <"$material_file" >/dev/null 2>"$err_file" ||
