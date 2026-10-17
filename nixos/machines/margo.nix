@@ -8,7 +8,10 @@
 { config, lib, pkgs, ... }: with pkgs; rec
 
 {
-  imports = [ ../shared/desktops/hyprland-session.nix ];
+  imports = [
+    ../shared/desktops/hyprland-session.nix
+    ../shared/policy/writeback.nix
+  ];
 
   nix.settings.experimental-features = [ "nix-command" "flakes" ];
 

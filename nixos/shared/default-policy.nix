@@ -5,5 +5,6 @@
   imports = [
     ./policy/kernel.nix
     ./policy/pulseaudio.nix
+    ./policy/writeback.nix
   ];
 }
