@@ -51,7 +51,8 @@
       "Read(~/.docker/config.json)",
       "Read(~/.config/gh/hosts.yml)",
       "Read(~/.claude/.credentials.json)",
-      "Read(~/.codex/auth.json)"
+      "Read(~/.codex/auth.json)",
+      "Read(~/.config/claude-oauth-token)"
     ],
     "defaultMode": "auto"
   },
@@ -129,6 +130,7 @@
       }
     }
   },
+  "disableClaudeAiConnectors": true,
   "feedbackSurveyRate": 0,
   "spinnerTipsEnabled": false,
   "effortLevel": "high",
