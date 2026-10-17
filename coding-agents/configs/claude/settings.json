@@ -2,7 +2,8 @@
   "cleanupPeriodDays": 3650,
   "env": {
     "CLAUDE_AFK_TIMEOUT_MS": "2147483647",
-    "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1"
+    "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1",
+    "CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS": "100"
   },
   "permissions": {
     "allow": [
