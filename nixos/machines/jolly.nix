@@ -299,6 +299,10 @@
   };
 
   virtualisation.docker.enable = true;
+  # GPU passthrough for containers via CDI: generates /var/run/cdi/nvidia*.yaml
+  # and sets docker's features.cdi, so compose can request
+  # `devices: [nvidia.com/gpu=all]` (used by the local OCR/vLLM stack).
+  hardware.nvidia-container-toolkit.enable = true;
 
   # BOINC distributed computing with NVIDIA GPU compute. Per the services.boinc
   # docs, CUDA needs the NVIDIA driver package in-env and OpenCL needs both that
