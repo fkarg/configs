@@ -192,7 +192,7 @@ Rec: B — simplest, symmetric across both harnesses, main thread keeps direct b
 - P5 follow-up commit e2485213 (all 8 review fixes); 2 consecutive green runs (12/12), malformed-id drop and 404 handling observed, --ui rejected, bad CDP endpoint fails cleanly, password path order intact. Two warning paths (token timeout, non-2xx/404 delete) not exercised live. Not pushed: waiting for issue.
 
 ## State at checkpoint (2026-10-18)
-- Issue frontend-react#1206 created (user: "go ahead."), branch renamed to `1206-smoke-local-runner`, PR frontend-react#1207 opened (not merging). CI: watching.
+- Issue frontend-react#1206 created (user: "go ahead."), branch renamed to `1206-smoke-local-runner`, PR frontend-react#1207 opened (not merging). CI: checks, e2e, validate green; mergeable; no automated reviews yet.
 - Lasting docs: script headers (qa-browser, claude-qa), browser-qa skill "Browser control", docs/firefox-browser-mcp.md superseded note (what/why), product notes in the private infra repo (docs/qa-browser.md, untracked), frontend README smoke section (in PR).
 
 ### Architecture map
