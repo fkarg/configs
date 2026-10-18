@@ -20,6 +20,11 @@ Runner credentials remain inside the guest disk. Each VM also has a dedicated
 local SSH key. All generated state is private and gitignored under `.state/`;
 never commit or share that directory.
 
+Registration configures the runner's tool cache at `/opt/hostedtoolcache`, the
+path embedded in GitHub's prebuilt Python interpreters. This lets Python start
+even when a test clears its environment. Existing runner services pick up cache
+configuration changes when restarted; wait for idle before restarting them.
+
 ## Scale up and down
 
 `./vm status` shows all local instances; `./vm status 2` shows just instance 2.
@@ -90,6 +95,7 @@ label while old queued runs still have that assumption.
 References: [Ubuntu/cloud-init with QEMU](https://docs.cloud-init.io/en/latest/tutorial/qemu.html),
 [Docker Ubuntu installation](https://docs.docker.com/engine/install/ubuntu/),
 [GitHub self-hosted runner requirements](https://docs.github.com/en/actions/reference/runners/self-hosted-runners),
+[Setup-python on self-hosted Linux](https://github.com/actions/setup-python/blob/v5/docs/advanced-usage.md#linux),
 [QEMU networking](https://www.qemu.org/docs/master/system/devices/net.html).
 
 Test the local status command with `python3 -m unittest discover -s . -p test_status.py`.

@@ -92,7 +92,20 @@ PY
     # shellcheck disable=SC2029
     gh api --method POST repos/Epistree/backend-core/actions/runners/registration-token --jq .token |
       ssh "${ssh_args[@]}" runner@127.0.0.1 \
-        "set -eu; read -r token; cd actions-runner; if [ ! -f .runner ]; then ./config.sh --unattended --url https://github.com/Epistree/backend-core --token \"\$token\" --name '$name' --no-default-labels --labels Linux,X64,ubuntu-vm --work _work; fi; if [ ! -f .service ]; then sudo ./svc.sh install runner; fi; sudo ./svc.sh start"
+        "set -eu
+         read -r token
+         cd actions-runner
+         if [ ! -f .runner ]; then
+           ./config.sh --unattended --url https://github.com/Epistree/backend-core --token \"\$token\" --name '$name' --no-default-labels --labels Linux,X64,ubuntu-vm --work _work
+         fi
+         sudo install -d -o runner -g runner /opt/hostedtoolcache
+         for key in AGENT_TOOLSDIRECTORY RUNNER_TOOL_CACHE; do
+           if ! grep -qx \"\$key=/opt/hostedtoolcache\" .env; then
+             printf '%s=/opt/hostedtoolcache\n' \"\$key\" >> .env
+           fi
+         done
+         if [ ! -f .service ]; then sudo ./svc.sh install runner; fi
+         sudo ./svc.sh start"
     ;;
   unregister)
     ssh "${ssh_args[@]}" runner@127.0.0.1 'set -eu; cd actions-runner; if [ -f .service ]; then sudo ./svc.sh stop; sudo ./svc.sh uninstall; fi'
