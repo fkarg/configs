@@ -9,13 +9,25 @@ Test observable product behavior and report evidence for the user's further test
 
 ## Scope and provenance
 
-Read the relevant repository instructions and README. Resolve the target environment, repositories, selected PR wave, accounts and allowed test actions from the request and existing session. For Kolai, the usual repositories are `Epistree/frontend-react` and `Epistree/backend-core`; confirm their current location rather than assuming a particular machine path or browser hostname.
+Read the relevant repository instructions and README. Resolve the target environment, repositories, selected PR wave, accounts and allowed test actions from the request and existing session. For Kolai, the usual repositories are `Epistree/frontend-react` and `Epistree/backend-core`; confirm their current location rather than assuming a particular machine path or browser hostname. Kolai's local-stack QA notes (targets, role-to-profile mapping, smoke baseline) are in the infrastructure repository's `docs/qa-browser.md`.
 
 Use `gh` for PR descriptions, linked requirements, relevant diffs, current heads, dependencies, primary CI and conflict status. Run authenticated `gh` on the host where required for keyring access. Record capture time, exact head and check identity; unrelated green checks, skipped/cancelled checks and old successful runs are not primary validation of a prospective merge. Preserve local checkouts and unrelated changes.
 
 Record deployed FE/BE commits or image identifiers, environment class (production/staging/preview/unknown), timestamp/timezone, displayed version, relevant flags, capabilities and account roles in the deployment manifest. Unknown values stay unknown. A version label or open PR list does not prove inclusion. If this wave is not deployed, prepare its test matrix; retain older observations as historical evidence, without attributing them to new heads. Missing provenance does not prevent useful testing: label such results **running-stack only; PR inclusion unverified** in both the matrix and the table's Tested cell, even when the observed behavior passes.
 
 Compare potentially superseded changes against current remote history before recommending further QA of duplicate branches. Distinguish patch equivalence on main from inclusion in another still-open PR; recommend reconciliation only.
+
+## Browser control
+
+Use the session's computer-use/browser tools. On Linux these are the `chrome-devtools` MCP tools, which attach to a dedicated, long-lived QA Chromium (`qa-browser`) in which each Chrome profile holds one logged-in role. Sessions only have them when started with `claude-qa` or `codex-qa`. Without browser tools, do not substitute desktop automation or another browser: prepare the test matrix, then stop and hand off with the relaunch command and a short summary of the wave, progress and pending decisions.
+
+- One agent drives the QA browser at a time. Do not start, restart or close it, and do not log in or out: the user owns its logins. Ask the user when a role's session has expired or a profile's tab is missing.
+- Before each identity-sensitive step, confirm the account the application itself shows in a current page snapshot. Page IDs shift when tabs open and after any reconnect, so list pages again rather than reusing earlier IDs.
+- New tabs open only in the default profile. Drive other roles by navigating their profile's existing tab; never close it.
+- Observe and act through accessibility snapshots; take screenshots for visual evidence. These are Chromium results: list Firefox-specific layout or behavior checks as remaining user checks.
+- Keep cookies and login redirect parameters (`code=`, `state=`, `session_state=`) out of notes, reports and evidence.
+
+When the product provides a smoke runner for the deployed stack, run it before exploratory cases and record its result as the wave's baseline.
 
 ## Test cases and execution
 
@@ -26,7 +38,7 @@ Translate each PR's promised behavior into named cases in `outputs/test-matrix.m
 
 Use **planned** for future cases awaiting deployment, **untested** for available cases not run, **blocked** for attempted cases prevented by a prerequisite, and **pass/partial/fail** for observed outcomes against the expected contract. A disabled flag or missing provider/fixture is blocked, not proof of a regression. Track execution independently of provenance; code and CI do not count as browser execution. Include relevant FE/BE dependencies and reuse one workflow to cover overlapping promises.
 
-Use available computer-use/browser tools; if unavailable, prepare cases and report the execution limitation. Prefer existing authenticated tabs; use a separate profile/private session for another role without logging out the original user. Check role visibility and relevant direct routes; UI gating alone does not prove server authorization. Use synthetic, clearly named fixtures and list what was created and how it can be cleaned up. Do not change deployment flags, credentials, permissions or external business records just to unblock testing. External writes, production/unknown-environment fixture writes, notifications to real users and paid jobs require explicit authorization for the target and action; otherwise leave the case blocked. Ordinary reversible fixtures in an established QA environment are within an authorized walkthrough.
+Check role visibility and relevant direct routes; UI gating alone does not prove server authorization. Use synthetic, clearly named fixtures and list what was created and how it can be cleaned up. Do not change deployment flags, credentials, permissions or external business records just to unblock testing. External writes, production/unknown-environment fixture writes, notifications to real users and paid jobs require explicit authorization for the target and action; otherwise leave the case blocked. Ordinary reversible fixtures in an established QA environment are within an authorized walkthrough.
 
 Test the complete promised path where possible: create/save/reopen/use, navigation/reload, cross-user isolation, positive/empty/error cases, and cancellation or terminal state when relevant. For asynchronous workflows, distinguish user cancellation, client timeout and server completion; record timestamps in one zone and do not call an intentionally stopped job a natural failure. Do not broaden a scoped wave into an exhaustive code/security review.
 

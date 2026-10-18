@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+# Start a Claude Code (claude-qa) or Codex (codex-qa) session for browser-qa.
+#
+# The browser MCP server gives the session ~30 tools that act inside a logged-in
+# browser, so it is defined per launch here and registered nowhere else:
+# ordinary sessions neither start it nor see its tools. It attaches to the
+# dedicated QA browser, which is started (or reused) first.
+set -euo pipefail
+
+port="${QA_BROWSER_PORT:-9222}"
+server_args=(-y chrome-devtools-mcp@1.11.0 --browserUrl "http://127.0.0.1:$port"
+  --no-usage-statistics --no-performance-crux)
+
+config=$(printf '"%s",' "${server_args[@]}")
+
+qa-browser start || echo "${0##*/}: continuing without the QA browser" >&2
+
+case "${0##*/}" in
+  claude-qa)
+    # `=` keeps the variadic --mcp-config from swallowing a following prompt.
+    exec claude --mcp-config="{\"mcpServers\":{\"chrome-devtools\":{\"command\":\"npx\",\"args\":[${config%,}]}}}" "$@"
+    ;;
+  codex-qa)
+    exec codex -c 'mcp_servers.chrome_devtools.command="npx"' \
+      -c "mcp_servers.chrome_devtools.args=[${config%,}]" "$@"
+    ;;
+  *)
+    echo "${0##*/}: invoke as claude-qa or codex-qa" >&2
+    exit 2
+    ;;
+esac

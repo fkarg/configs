@@ -199,6 +199,18 @@
     state: link
     force: true
 
+# browser-qa sessions: claude-qa/codex-qa add the browser MCP server per launch
+# (it is registered nowhere else) and attach to the qa-browser instance.
+- name: Install the browser-qa session launchers
+  file:
+    src: "{{ repo_root }}/scripts/{{ ca_qa_script }}"
+    dest: "~/.local/bin/{{ ca_qa_script }}"
+    state: link
+    force: true
+  loop: [qa-browser, claude-qa, codex-qa]
+  loop_control:
+    loop_var: ca_qa_script
+
 # Lives in its own PATH directory (prepended by the fish config) because the
 # native installer owns ~/.local/bin/claude and repoints it on every update.
 - name: Create the Claude token wrapper directory

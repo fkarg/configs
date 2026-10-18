@@ -1,0 +1,114 @@
+#!/usr/bin/env bash
+# Dedicated, long-lived Chromium for agent-driven browser QA.
+#
+# Agents attach to it through chrome-devtools-mcp (--browserUrl) on a loopback
+# debugging port. Chrome ignores that port for the default user-data-dir, so
+# this browser keeps its own profile directory: everything logged in here is
+# reachable by any process running as this user, so log in to QA accounts only.
+#
+# `start` attaches to an already-running instance instead of replacing it; only
+# `stop`/`restart` end one, and they wait for the old process to exit, since a
+# second launch on the same profile just opens a tab in the running browser.
+set -euo pipefail
+
+dir="${QA_BROWSER_DIR:-$HOME/.local/share/qa-chromium}"
+port="${QA_BROWSER_PORT:-9222}"
+bin="${QA_BROWSER_BIN:-chromium}"
+endpoint="http://127.0.0.1:$port"
+
+usage() {
+  cat <<EOF
+Usage: qa-browser [start|status|stop|restart] [-- extra chromium args]
+
+  start    launch the QA browser, or report the one already listening (default)
+  status   show the browser version and open page count on $endpoint
+  stop     close the QA browser gracefully and wait for it to exit
+  restart  stop, then start
+
+Environment: QA_BROWSER_DIR ($dir), QA_BROWSER_PORT ($port), QA_BROWSER_BIN ($bin)
+EOF
+}
+
+die() {
+  printf 'qa-browser: %s\n' "$*" >&2
+  exit 1
+}
+
+version() {
+  curl -fsS --max-time 2 "$endpoint/json/version" 2>/dev/null |
+    sed -n 's/.*"Browser": *"\([^"]*\)".*/\1/p'
+}
+
+# Chrome's profile lock is a symlink to "<hostname>-<pid>" of the owning browser.
+# The pid only counts if that process really is this profile's browser on this
+# port: a stale lock's pid may since belong to something else.
+main_pid() {
+  local lock pid cmdline
+  lock="$(readlink "$dir/SingletonLock" 2>/dev/null)" || return 0
+  [ "${lock%-*}" = "$(hostname)" ] || return 0
+  pid="${lock##*-}"
+  cmdline="$(tr '\0' ' ' 2>/dev/null <"/proc/$pid/cmdline")" || return 0
+  case "$cmdline" in
+    *"--user-data-dir=$dir "*"--remote-debugging-port=$port "*) echo "$pid" ;;
+  esac
+}
+
+status() {
+  local v pages
+  v="$(version)" || true
+  [ -n "$v" ] || { echo "not running on $endpoint"; return 1; }
+  pages="$(curl -fsS --max-time 2 "$endpoint/json/list" | grep -c '"type": *"page"' || true)"
+  echo "$v on $endpoint, profile $dir, $pages page(s)"
+}
+
+start() {
+  if [ -n "$(version)" ]; then
+    [ -n "$(main_pid)" ] ||
+      die "$endpoint is answered by a browser that is not using $dir; refusing to attach"
+    status
+    return
+  fi
+  [ -z "$(main_pid)" ] ||
+    die "a browser is using $dir without listening on $endpoint; close it or run 'qa-browser restart'"
+  mkdir -p "$dir"
+  setsid -f "$bin" \
+    --user-data-dir="$dir" \
+    --remote-debugging-port="$port" \
+    --password-store=basic \
+    --no-first-run \
+    --no-default-browser-check \
+    "$@" >/dev/null 2>&1
+  for _ in $(seq 1 30); do
+    if [ -n "$(version)" ]; then
+      status
+      return
+    fi
+    sleep 0.5
+  done
+  die "browser did not start listening on $endpoint"
+}
+
+stop() {
+  local pid
+  pid="$(main_pid)"
+  [ -n "$pid" ] || { echo "not running"; return; }
+  kill -TERM "$pid"
+  for _ in $(seq 1 40); do
+    kill -0 "$pid" 2>/dev/null || { echo "stopped"; return; }
+    sleep 0.5
+  done
+  die "browser $pid did not exit; close it manually"
+}
+
+cmd="${1:-start}"
+[ $# -eq 0 ] || shift
+[ "${1:-}" != "--" ] || shift
+
+case "$cmd" in
+  start) start "$@" ;;
+  status) status ;;
+  stop) stop ;;
+  restart) stop; start "$@" ;;
+  -h|--help|help) usage ;;
+  *) usage >&2; exit 2 ;;
+esac
