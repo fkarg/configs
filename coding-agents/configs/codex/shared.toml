@@ -56,6 +56,7 @@ allow_local_binding = true
 "api.openai.com" = "allow"
 "auth.docker.io" = "allow"
 "codeload.github.com" = "allow"
+"cloud-images.ubuntu.com" = "allow"
 "crates.io" = "allow"
 "deb.debian.org" = "allow"
 "files.pythonhosted.org" = "allow"

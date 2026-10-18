@@ -1,0 +1,118 @@
+#!/usr/bin/env bash
+set -euo pipefail
+umask 077
+root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+command=${1:-help}
+instance=${2:-1}
+if [[ ! $instance =~ ^[1-9][0-9]?$ ]]; then
+  echo 'Instance must be a number from 1 to 99.' >&2
+  exit 1
+fi
+state="$root/.state"
+guest="$state/$instance"
+port=$((2220 + instance))
+name="$(hostname)-backend-core-$instance"
+mkdir -p "$guest"
+ssh_args=(-i "$guest/ssh_ed25519" -p "$port" -o IdentitiesOnly=yes
+  -o UserKnownHostsFile="$guest/known_hosts" -o StrictHostKeyChecking=accept-new
+  -o ConnectTimeout=3 -o BatchMode=yes)
+shift $(( $# > 1 ? 2 : $# ))
+case "$command" in
+  start|stop|register|unregister|reset)
+    exec 9>"$guest/lock"
+    flock -n 9
+    ;;
+esac
+
+case "$command" in
+  start)
+    if [[ -S $guest/qmp.sock ]]; then
+      echo "VM $instance already running (or stale qmp.sock; inspect before removing)." >&2
+      exit 1
+    fi
+    (
+      flock 8
+      if [[ ! -f $state/ubuntu-24.04-20261017.img ]]; then
+        curl -fL --retry 3 -o "$state/base.part" \
+          https://cloud-images.ubuntu.com/releases/noble/release-20261017/ubuntu-24.04-server-cloudimg-amd64.img
+        echo "04e8f2461a16a44e78a370284471f29616cdd9baf1893df25807b71f985b6c94  $state/base.part" | sha256sum -c -
+        mv "$state/base.part" "$state/ubuntu-24.04-20261017.img"
+        chmod 444 "$state/ubuntu-24.04-20261017.img"
+      fi
+    ) 8>"$state/base.lock"
+    if [[ ! -f $guest/disk.qcow2 ]]; then
+      if [[ ! -f $guest/ssh_ed25519 ]]; then
+        ssh-keygen -q -t ed25519 -N '' -f "$guest/ssh_ed25519"
+      fi
+      rm -f "$guest/known_hosts"
+      python3 - "$root" "$guest" "$name" <<'PY'
+import pathlib, sys, yaml
+root, guest = map(pathlib.Path, sys.argv[1:3])
+config = yaml.safe_load((root / 'cloud-init.yaml').read_text())
+config['hostname'] = sys.argv[3]
+config['users'][0]['ssh_authorized_keys'] = [(guest / 'ssh_ed25519.pub').read_text().strip()]
+(guest / 'user-data').write_text('#cloud-config\n' + yaml.safe_dump(config))
+(guest / 'meta-data').write_text(f'instance-id: {sys.argv[3]}\n')
+PY
+      cloud-localds "$guest/seed.img" "$guest/user-data" "$guest/meta-data"
+      qemu-img create -f qcow2 -F qcow2 -b "$state/ubuntu-24.04-20261017.img" "$guest/disk.qcow2" 100G
+    fi
+    qemu-system-x86_64 -name "$name" -machine q35,accel=kvm -cpu host \
+      -smp "${VM_CPUS:-4}" -m "${VM_MEMORY:-8G}" \
+      -drive "file=$guest/disk.qcow2,if=virtio,format=qcow2" \
+      -drive "file=$guest/seed.img,if=virtio,format=raw,readonly=on" \
+      -nic "user,model=virtio-net-pci,hostfwd=tcp:127.0.0.1:$port-:22" \
+      -display none -serial "file:$guest/serial.log" -monitor none \
+      -qmp "unix:$guest/qmp.sock,server=on,wait=off" \
+      -pidfile "$guest/qemu.pid" -daemonize 9>&-
+    echo "Started $name: SSH on 127.0.0.1:$port; use ./vm wait $instance."
+    ;;
+  ssh)
+    exec ssh "${ssh_args[@]}" runner@127.0.0.1 "$@"
+    ;;
+  wait)
+    until ssh "${ssh_args[@]}" runner@127.0.0.1 true 2>/dev/null; do
+      [[ -S $guest/qmp.sock ]] || { echo 'VM is not running.' >&2; exit 1; }
+      sleep 3
+    done
+    ssh "${ssh_args[@]}" runner@127.0.0.1 'sudo cloud-init status --wait && test -f /var/lib/runner-provisioned'
+    ;;
+  test)
+    exec ssh "${ssh_args[@]}" runner@127.0.0.1 'bash -s' < "$root/smoke-test.sh"
+    ;;
+  register)
+    # Credentials travel through pipes/SSH only, never cloud-init or a disk file.
+    # Set this before the API call: a partial registration also blocks reset.
+    ssh "${ssh_args[@]}" runner@127.0.0.1 'test -f /var/lib/runner-provisioned'
+    touch "$guest/registered"
+    # The runner name is deliberately expanded locally; the token is remote.
+    # shellcheck disable=SC2029
+    gh api --method POST repos/Epistree/backend-core/actions/runners/registration-token --jq .token |
+      ssh "${ssh_args[@]}" runner@127.0.0.1 \
+        "set -eu; read -r token; cd actions-runner; if [ ! -f .runner ]; then ./config.sh --unattended --url https://github.com/Epistree/backend-core --token \"\$token\" --name '$name' --no-default-labels --labels Linux,X64,ubuntu-vm --work _work; fi; if [ ! -f .service ]; then sudo ./svc.sh install runner; fi; sudo ./svc.sh start"
+    ;;
+  unregister)
+    ssh "${ssh_args[@]}" runner@127.0.0.1 'set -eu; cd actions-runner; if [ -f .service ]; then sudo ./svc.sh stop; sudo ./svc.sh uninstall; fi'
+    gh api --method POST repos/Epistree/backend-core/actions/runners/remove-token --jq .token |
+      ssh "${ssh_args[@]}" runner@127.0.0.1 \
+        'set -eu; read -r token; cd actions-runner; if [ -f .runner ]; then ./config.sh remove --token "$token"; fi'
+    rm -f "$guest/registered"
+    ;;
+  stop)
+    ssh "${ssh_args[@]}" runner@127.0.0.1 'sudo shutdown -h now'
+    while [[ -S $guest/qmp.sock ]]; do sleep 1; done
+    echo "VM $instance stopped."
+    ;;
+  reset)
+    if [[ -S $guest/qmp.sock || -f $guest/registered ]]; then
+      echo 'Unregister and stop this VM before resetting it.' >&2
+      exit 1
+    fi
+    rm -f "$guest/disk.qcow2" "$guest/seed.img" "$guest/ssh_ed25519" \
+      "$guest/ssh_ed25519.pub" "$guest/known_hosts" "$guest/user-data" "$guest/meta-data"
+    echo "VM $instance reset; next start provisions a clean guest."
+    ;;
+  *)
+    echo 'Usage: ./vm {start|wait|ssh|test|register|unregister|stop|reset} [1..99] [SSH command...]'
+    ;;
+esac

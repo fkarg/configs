@@ -1,0 +1,47 @@
+#cloud-config
+hostname: RUNNER_HOSTNAME
+ssh_pwauth: false
+disable_root: true
+users:
+  - name: runner
+    shell: /bin/bash
+    groups: [sudo]
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    lock_passwd: true
+    ssh_authorized_keys:
+      - RUNNER_SSH_PUBLIC_KEY
+package_update: true
+packages:
+  - ca-certificates
+  - curl
+  - git
+  - build-essential
+  - python3-venv
+  - jq
+  - unzip
+write_files:
+  - path: /usr/local/sbin/provision-runner
+    permissions: '0755'
+    content: |
+      #!/bin/bash
+      set -euo pipefail
+      export DEBIAN_FRONTEND=noninteractive
+      install -m 0755 -d /etc/apt/keyrings
+      curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+      chmod a+r /etc/apt/keyrings/docker.asc
+      echo 'deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu noble stable' > /etc/apt/sources.list.d/docker.list
+      apt-get update
+      apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+      usermod -aG docker runner
+      systemctl enable --now docker
+      install -d -o runner -g runner /home/runner/actions-runner
+      cd /home/runner/actions-runner
+      curl -fL --retry 3 -o /tmp/runner.tar.gz https://github.com/actions/runner/releases/download/v2.337.0/actions-runner-linux-x64-2.337.0.tar.gz
+      echo '70920811a4f8ad4328818682bca5c6469c1c942fab52448868071d0063816613  /tmp/runner.tar.gz' | sha256sum -c -
+      tar -xzf /tmp/runner.tar.gz
+      ./bin/installdependencies.sh
+      chown -R runner:runner /home/runner/actions-runner
+      rm /tmp/runner.tar.gz
+      touch /var/lib/runner-provisioned
+runcmd:
+  - [/usr/local/sbin/provision-runner]
