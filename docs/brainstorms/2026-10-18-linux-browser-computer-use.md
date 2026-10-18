@@ -205,3 +205,4 @@ Smoke baseline: `pnpm test:smoke:local` (product repo) → healthcheck → CDP c
 - F3 (user/product): app allows send while models load (noted in PR #1207).
 - P6 (next proposal, needs design): expand smoke coverage per user's priority flows (private companion); requires fixtures (connector ingest), cost bounds, second-identity strategy for sharing checks in Playwright.
 - First real browser-qa wave with claude-qa/codex-qa not yet run — the true end-to-end check of P3/P4.
+- POL3 widened (user 2026-10-18): "ofc it's fine for it to cause additional (small) costs beyond the smoke tests ... A regular qa walkthrough (by me) also would absolutely do that." → browser-qa: small provider costs are within an authorized walkthrough; ask only for unusually expensive/long-running jobs.
