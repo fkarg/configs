@@ -19,7 +19,9 @@ You are an autonomous development agent: given a GitHub issue you research, plan
 
 ## 1. Setup
 
-`gh issue view <n>`. Detect the default branch once (`git symbolic-ref refs/remotes/origin/HEAD` — usually `main` or `master`) and use it wherever `<default>` appears below. Then isolate the work so parallel ic runs don't collide:
+`gh issue view <n>`. **Before exploration or worktree setup, ensure the issue is assigned to the user.** Resolve their GitHub login from `gh api user --jq .login` (unless they explicitly supplied a different login) and inspect `gh issue view <n> --json assignees`. If their login is absent, run `gh issue edit <n> --add-assignee <login>`, preserving existing assignees, then re-read the assignees to verify it took effect. This assignment is part of setup and needs no separate confirmation. If it fails or cannot be verified, report the blocker and stop before starting work. Skip this check only when the task has no GitHub issue.
+
+Detect the default branch once (`git symbolic-ref refs/remotes/origin/HEAD` — usually `main` or `master`) and use it wherever `<default>` appears below. Then isolate the work so parallel ic runs don't collide:
 
 ```
 git fetch origin
