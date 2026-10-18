@@ -65,6 +65,8 @@ allow_local_binding = true
 "golang.org" = "allow"
 "index.crates.io" = "allow"
 "objects.githubusercontent.com" = "allow"
+# Public tokenizer vocabularies fetched by tiktoken.
+"openaipublic.blob.core.windows.net" = "allow"
 "proxy.golang.org" = "allow"
 "pypi.org" = "allow"
 "raw.githubusercontent.com" = "allow"
