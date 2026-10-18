@@ -22,6 +22,13 @@ never commit or share that directory.
 
 ## Scale up and down
 
+`./vm status` shows all local instances; `./vm status 2` shows just instance 2.
+The overview queries QEMU for its actual run state, lists the local registration
+record and SSH endpoint, and reports allocated overlay disk space. `unreachable`
+means a control socket exists but QEMU did not answer. Registration is a local
+record, not a GitHub online/busy check. Status does not boot guests or contact
+GitHub, and needs only Bash/Python, so it also works outside `nix-shell`.
+
 Each number identifies an independent runner, overlay disk and Docker daemon:
 
 ```sh
@@ -84,3 +91,5 @@ References: [Ubuntu/cloud-init with QEMU](https://docs.cloud-init.io/en/latest/t
 [Docker Ubuntu installation](https://docs.docker.com/engine/install/ubuntu/),
 [GitHub self-hosted runner requirements](https://docs.github.com/en/actions/reference/runners/self-hosted-runners),
 [QEMU networking](https://www.qemu.org/docs/master/system/devices/net.html).
+
+Test the local status command with `python3 -m unittest discover -s . -p test_status.py`.

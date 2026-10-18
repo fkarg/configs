@@ -12,6 +12,9 @@ state="$root/.state"
 guest="$state/$instance"
 port=$((2220 + instance))
 name="$(hostname)-backend-core-$instance"
+if [[ $command == status ]]; then
+  exec python3 "$root/status.py" "$state" "${2:-}"
+fi
 mkdir -p "$guest"
 ssh_args=(-i "$guest/ssh_ed25519" -p "$port" -o IdentitiesOnly=yes
   -o UserKnownHostsFile="$guest/known_hosts" -o StrictHostKeyChecking=accept-new
@@ -113,6 +116,6 @@ PY
     echo "VM $instance reset; next start provisions a clean guest."
     ;;
   *)
-    echo 'Usage: ./vm {start|wait|ssh|test|register|unregister|stop|reset} [1..99] [SSH command...]'
+    echo 'Usage: ./vm {status|start|wait|ssh|test|register|unregister|stop|reset} [1..99] [SSH command...]'
     ;;
 esac
