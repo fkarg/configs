@@ -1,5 +1,17 @@
 # Firefox browser control via MCP on NixOS
 
+> **Superseded (2026-10-18).** Agent browser QA now drives a dedicated Chromium
+> through Google's `chrome-devtools-mcp`: see `scripts/qa-browser`,
+> `scripts/claude-qa` (also `codex-qa`) and the *Browser control* section of
+> `coding-agents/source/browser-qa.md`. Why not this design: Firefox
+> WebExtensions have no `chrome.debugger`, so extension input is untrusted
+> (`isTrusted=false`), and every Firefox route was immature or needed a
+> custom bridge. Chrome's DevTools protocol, by contrast, gives trusted input,
+> reaches incognito windows and every profile's tabs, and needs no new code.
+> Firefox checks stay manual. The design record is
+> `docs/brainstorms/2026-10-18-linux-browser-computer-use.md`; the rest of this
+> document is kept for reference.
+
 Implementation handoff, researched 2026-10-14. Scope: browser interactions in an
 existing Firefox session on Wayland. This document installs nothing and chooses
 no bridge transport on the user's behalf.
