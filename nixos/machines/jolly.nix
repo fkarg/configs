@@ -450,7 +450,6 @@
     # Drives the Hyprland Ctrl+Shift+F12 KVM bind. Functional only when
     # booted into the `i2c-kvm` specialisation (i2c stays off otherwise).
     ddcutil
-    zotero
     # YouTube Music client; autostarted on ws4 by dotconfig/hypr/startup-apps.sh.
     pear-desktop
     # btop's GPU panel dlopens libnvidia-ml.so.1; the plain btop from the shared

@@ -2,7 +2,6 @@
 
 {
   nixpkgs.config.allowUnfree = true;
-  nixpkgs.config.pulseaudio = true;
 
   # Temporary nixos-unstable workarounds for currently broken package/build
   # paths pulled into this desktop configuration.
