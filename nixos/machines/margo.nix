@@ -195,6 +195,7 @@
     docker
     vscode.fhs
     zotero
+    age
   ];
 
   programs.steam.package = pkgs.steam.override {

@@ -9,6 +9,7 @@
     eza
     curl
     openssl
+    age
     fish
     htop
     btop
