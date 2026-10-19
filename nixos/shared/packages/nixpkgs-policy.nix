@@ -16,9 +16,14 @@
           old.postInstall;
       });
 
-      # Zotero 10.0.2 targets ESR140, but nixpkgs supplies ESR153. Backport the
-      # upstream compatibility changes until nixpkgs updates Zotero itself.
+      # Zotero 10 targets ESR140, which is EOL. nixpkgs pins Zotero to a
+      # prebuilt ESR140 marked insecure; run it on ESR153 instead and backport
+      # the upstream compatibility changes until Zotero 11 supports ESR153.
       zotero = (prev.zotero.override {
+        callPackage = fn: args:
+          if baseNameOf (toString fn) == "firefox-esr-140-bin.nix" then
+            final.firefox-esr-153-unwrapped // { libName = "firefox"; }
+          else prev.callPackage fn args;
         # The reader is built separately inside Zotero's package expression.
         buildNpmPackage = args: prev.buildNpmPackage (
           if builtins.isAttrs args && args.pname == "zotero-pdf-reader" then
