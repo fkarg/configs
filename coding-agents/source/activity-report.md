@@ -25,7 +25,7 @@ If no timeframe was given, ask. Do not guess one.
 
 - **All three repos are in the `Epistree` org; the GitHub account is `fkarg`.** `Epistree/infrastructure`, `Epistree/frontend-react`, `Epistree/backend-core`.
 - **Filtering commits by author badly undercounts the work.** A large share of commits in these repos are authored by `198982749+Copilot@users.noreply.github.com`, `noreply@anthropic.com`, or `github-actions[bot]` — inside PRs the user opened, drove and merged. That is his work. **The PR is the unit of work; commits are supporting detail.**
-- **His own commits carry three identities**: `f.karg10@gmail.com`, `9039899+fkarg@users.noreply.github.com`, `hello@kolai.eu`. `git log --author=` is repeatable and ORs — pass all three or you will silently drop a repo's worth of history.
+- **His own commits carry three identities**: `felix.karg@kolai.eu` (current default), `f.karg10@gmail.com`, `9039899+fkarg@users.noreply.github.com` (also shows up as *committer* on rebased/web-merged commits). `git log --author=` is repeatable and ORs — pass all three or you will silently drop a repo's worth of history. `hello@kolai.eu` is a shared address colleagues also commit under — never attribute it to him.
 - **`gh search --updated` means "touched in the window", not "done in the window".** A colleague deleting merged head branches bumps a dozen months-old PRs into the results; board moves and cross-references from new PRs drag the whole issue backlog in. Read `createdAt` / `closedAt` / `mergedAt` on every hit and split it into *created in window*, *closed in window*, *created before and finished now*, and *backlog churn — drop it*.
 - **Reviews are invisible to every author-based query — and `--reviewed-by` lies about dates.** It filters on the PR's `updated`, not the review's. A review submitted two months ago surfaces as a hit. Confirm each one before counting it:
   ```bash
@@ -115,8 +115,8 @@ For `infrastructure`, the `origin/main` log from step 1 is again the primary sou
        gh api repos/Epistree/$R/pulls/$N/files --jq '.[].filename'
      done
      git -C ~/Coding/$R log origin/main --since="$SINCE" \
-       --author=f.karg10@gmail.com --author=9039899+fkarg@users.noreply.github.com \
-       --author=hello@kolai.eu --name-only --format=
+       --author=felix.karg@kolai.eu --author=f.karg10@gmail.com \
+       --author=9039899+fkarg@users.noreply.github.com --name-only --format=
    } | sort -u > /tmp/mine-$R.txt
 
    gh api repos/Epistree/$R/pulls/$M/files --jq '.[].filename' | sort -u \
