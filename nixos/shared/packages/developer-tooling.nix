@@ -69,7 +69,7 @@
     nodejs_24
     pnpm
     postgresql_17
-    minio-client
+    rclone
     rustup
     uv
   ];

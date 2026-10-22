@@ -9,9 +9,6 @@
     # dev
     pkgs.postgresql
 
-    # minio client
-    pkgs.minio-client
-
     # global python
     pkgs.python313Packages.ipython
     pkgs.python313Packages.pyyaml
