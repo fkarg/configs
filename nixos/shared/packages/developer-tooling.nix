@@ -55,7 +55,16 @@
     ccusage
 
     # devOps
-    ansible
+    # ansible-core inside a Python env rather than the standalone `ansible`
+    # app: the app only injects its deps into its own sys.path, so
+    # `ansible_playbook_python` (sys.executable) is a bare interpreter and
+    # localhost modules (community.docker -> requests) fail to import.
+    # Link only ansible-*: the env's bin/ also carries python3 and every
+    # dependency's scripts.
+    (runCommand "ansible-env" { } ''
+      mkdir -p $out/bin
+      ln -s ${python3.withPackages (ps: [ ps.ansible-core ])}/bin/ansible* $out/bin/
+    '')
     ansible-language-server
     ansible-lint
     yamllint

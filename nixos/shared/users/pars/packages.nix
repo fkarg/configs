@@ -20,7 +20,6 @@
     # installer<0.8 but nixpkgs provides installer 1.0.0, which fails the
     # Python runtime dependency check and blocks system builds.
     # pkgs.pdm
-    pkgs.ansible
 
     # beancount ecosystem
     pkgs.beancount
