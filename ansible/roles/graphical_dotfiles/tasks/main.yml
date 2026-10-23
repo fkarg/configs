@@ -159,6 +159,25 @@
   when: ansible_facts['system'] == 'Linux'
   tags: [hyprland]
 
+# DankMaterialShell plugins kept in this repo. Only the plugin directory is
+# linked: the rest of ~/.config/DankMaterialShell (settings, registry-installed
+# plugins) is DMS-managed state.
+- name: Ensure DankMaterialShell plugins directory exists
+  file:
+    path: ~/.config/DankMaterialShell/plugins
+    state: directory
+  when: ansible_facts['system'] == 'Linux'
+  tags: [dms]
+
+- name: Link DankMaterialShell regionScreenshot plugin
+  file:
+    src: "~/{{ configs_repo }}/{{ dotconfigdir }}/DankMaterialShell/plugins/regionScreenshot"
+    dest: ~/.config/DankMaterialShell/plugins/regionScreenshot
+    state: link
+    force: true
+  when: ansible_facts['system'] == 'Linux'
+  tags: [dms]
+
 # Per-user .desktop entries (for launcher discovery of small helpers).
 - name: Ensure ~/.local/share/applications exists
   file:

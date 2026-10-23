@@ -1,0 +1,12 @@
+{
+    "id": "regionScreenshot",
+    "name": "Region Screenshot",
+    "description": "Bar button: select a screen region and copy it to the clipboard",
+    "version": "1.0.0",
+    "author": "Felix Karg",
+    "type": "widget",
+    "capabilities": ["dankbar-widget"],
+    "component": "./RegionScreenshotWidget.qml",
+    "icon": "screenshot_region",
+    "permissions": ["process"]
+}
