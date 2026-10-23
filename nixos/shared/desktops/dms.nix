@@ -30,6 +30,12 @@ in
     systemd.target = "dms-session.target";
   };
 
+  # The packaged unit only restarts on failure, but the shell has been seen
+  # vanishing with a clean exit (the UI dies, systemd SIGTERMs the unit when
+  # the org.freedesktop.Notifications bus name drops, and `dms run` exits 0).
+  # Stopping the unit or target still stops it for good.
+  systemd.user.services.dms.serviceConfig.Restart = "always";
+
   systemd.user.targets.dms-session = {
     description = "DankMaterialShell session";
     requires = [ "hyprland-session.target" ];

@@ -477,6 +477,11 @@ hl.bind(mainMod .. " + SHIFT + U", hl.dsp.exec_cmd("systemctl suspend"))
 -- Config reload while staying in-session. Useful when editing this file.
 hl.bind(mainMod .. " + SHIFT + R", hl.dsp.exec_cmd("hyprctl reload"))
 hl.bind(mainMod .. " + Period", hl.dsp.exec_cmd("hyprctl reload"))
+-- Restart DankMaterialShell, e.g. when the bar has vanished. Also starts it if
+-- it is not running.
+if dms then
+    hl.bind(mainMod .. " + CTRL + R", hl.dsp.exec_cmd("systemctl --user restart dms.service"))
+end
 
 -- Workspace navigation. You have 20 numbered workspaces: 1-10 direct, 11-20 via
 -- CTRL. On a 32:9 display this gives room for task-specific lanes. Switching
