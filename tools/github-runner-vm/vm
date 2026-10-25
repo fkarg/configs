@@ -80,7 +80,7 @@ PY
     fi
     qemu-system-x86_64 -name "$name" -machine q35,accel=kvm -cpu host \
       -smp "${VM_CPUS:-4}" -m "${VM_MEMORY:-8G}" \
-      -drive "file=$guest/disk.qcow2,if=virtio,format=qcow2" \
+      -drive "file=$guest/disk.qcow2,if=virtio,format=qcow2,discard=unmap" \
       -drive "file=$guest/seed.img,if=virtio,format=raw,readonly=on" \
       -nic "user,model=virtio-net-pci,hostfwd=tcp:127.0.0.1:$port-:22" \
       -display none -serial "file:$guest/serial.log" -monitor none \

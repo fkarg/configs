@@ -48,7 +48,8 @@ for n in 2 3; do ./vm wait "$n" && ./vm test "$n" && ./vm register "$n"; done
 ./vm start 3
 ```
 
-Defaults per VM: 4 vCPUs, 8 GiB RAM, sparse 100 GiB overlay. The immutable Ubuntu
+Defaults per VM: 4 vCPUs, 8 GiB RAM, sparse 100 GiB overlay; guest TRIM returns
+freed blocks to the host. The immutable Ubuntu
 base image is shared. Set `VM_CPUS=8 VM_MEMORY=12G ./vm start 1` to change resources
 on the next start. Instances 1–3 forward SSH to localhost ports 2221–2223.
 VMs run detached and survive the shell closing; they do not start automatically
