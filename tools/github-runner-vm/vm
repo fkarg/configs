@@ -20,6 +20,20 @@ ssh_args=(-i "$guest/ssh_ed25519" -p "$port" -o IdentitiesOnly=yes
   -o UserKnownHostsFile="$guest/known_hosts" -o StrictHostKeyChecking=accept-new
   -o ConnectTimeout=3 -o BatchMode=yes)
 shift $(( $# > 1 ? 2 : $# ))
+# A host crash leaves qmp.sock behind with no QEMU listening; connect tells them apart.
+qemu_alive() {
+  python3 - "$guest/qmp.sock" <<'PY'
+import socket, sys
+with socket.socket(socket.AF_UNIX) as connection:
+    connection.settimeout(1)
+    try:
+        connection.connect(sys.argv[1])
+    except (FileNotFoundError, ConnectionRefusedError):
+        sys.exit(1)
+    except OSError:
+        pass
+PY
+}
 case "$command" in
   start|stop|register|unregister|reset)
     exec 9>"$guest/lock"
@@ -29,9 +43,13 @@ esac
 
 case "$command" in
   start)
-    if [[ -S $guest/qmp.sock ]]; then
-      echo "VM $instance already running (or stale qmp.sock; inspect before removing)." >&2
+    if qemu_alive; then
+      echo "VM $instance already running." >&2
       exit 1
+    fi
+    if [[ -e $guest/qmp.sock ]]; then
+      echo "Removing stale QEMU state of VM $instance (its QEMU is gone, e.g. after a host crash)."
+      rm -f "$guest/qmp.sock" "$guest/qemu.pid"
     fi
     (
       flock 8
@@ -75,7 +93,7 @@ PY
     ;;
   wait)
     until ssh "${ssh_args[@]}" runner@127.0.0.1 true 2>/dev/null; do
-      [[ -S $guest/qmp.sock ]] || { echo 'VM is not running.' >&2; exit 1; }
+      qemu_alive || { echo 'VM is not running.' >&2; exit 1; }
       sleep 3
     done
     ssh "${ssh_args[@]}" runner@127.0.0.1 'sudo cloud-init status --wait && test -f /var/lib/runner-provisioned'
@@ -116,11 +134,11 @@ PY
     ;;
   stop)
     ssh "${ssh_args[@]}" runner@127.0.0.1 'sudo shutdown -h now'
-    while [[ -S $guest/qmp.sock ]]; do sleep 1; done
+    while qemu_alive; do sleep 1; done
     echo "VM $instance stopped."
     ;;
   reset)
-    if [[ -S $guest/qmp.sock || -f $guest/registered ]]; then
+    if qemu_alive || [[ -f $guest/registered ]]; then
       echo 'Unregister and stop this VM before resetting it.' >&2
       exit 1
     fi

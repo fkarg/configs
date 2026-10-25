@@ -30,7 +30,9 @@ configuration changes when restarted; wait for idle before restarting them.
 `./vm status` shows all local instances; `./vm status 2` shows just instance 2.
 The overview queries QEMU for its actual run state, lists the local registration
 record and SSH endpoint, and reports allocated overlay disk space. `unreachable`
-means a control socket exists but QEMU did not answer. Registration is a local
+means QEMU is listening on its control socket but did not answer. A socket left
+behind by a QEMU that died with the host shows as `stopped`; `./vm start` removes
+it before booting. Registration is a local
 record, not a GitHub online/busy check. Status does not boot guests or contact
 GitHub, and needs only Bash/Python, so it also works outside `nix-shell`.
 
@@ -50,7 +52,9 @@ Defaults per VM: 4 vCPUs, 8 GiB RAM, sparse 100 GiB overlay. The immutable Ubunt
 base image is shared. Set `VM_CPUS=8 VM_MEMORY=12G ./vm start 1` to change resources
 on the next start. Instances 1–3 forward SSH to localhost ports 2221–2223.
 VMs run detached and survive the shell closing; they do not start automatically
-after a host reboot. Do not start more instances than host RAM/CPU/storage allow.
+after a host reboot or crash, so restart them with `./vm start`. GitHub deletes a
+runner that stays offline for more than 14 days; it then has to be registered
+again. Do not start more instances than host RAM/CPU/storage allow.
 
 ## Rebuild a guest
 

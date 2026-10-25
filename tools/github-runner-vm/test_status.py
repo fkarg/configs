@@ -2,6 +2,7 @@
 
 import contextlib
 import json
+import os
 from pathlib import Path
 import shutil
 import socket
@@ -31,6 +32,24 @@ class StatusTests(unittest.TestCase):
             check=True,
             timeout=5,
         ).stdout
+
+    def run_start(self, instance):
+        """Run ./vm start with a provisioned guest and QEMU stubbed to log its launch."""
+        bin = Path(self.temporary.name) / "bin"
+        bin.mkdir()
+        launches = Path(self.temporary.name) / "launches"
+        stub = bin / "qemu-system-x86_64"
+        stub.write_text(f'#!/usr/bin/env bash\necho "$*" >> {launches}\n')
+        stub.chmod(0o755)
+        (self.state / "ubuntu-24.04-20261017.img").touch()
+        result = subprocess.run(
+            ["bash", str(self.root / "vm"), "start", str(instance)],
+            capture_output=True,
+            text=True,
+            timeout=5,
+            env={**os.environ, "PATH": f"{bin}:{os.environ['PATH']}"},
+        )
+        return result, launches.read_text() if launches.exists() else ""
 
     def guest(self, instance):
         guest = self.state / str(instance)
@@ -102,11 +121,44 @@ class StatusTests(unittest.TestCase):
         self.assertEqual(self.rows(self.run_status("3")),
                          [["3", "stopped", "none", "127.0.0.1:2223", "0B"]])
 
-    def test_stale_socket_is_not_reported_as_running(self):
-        guest = self.guest(2)
+    @staticmethod
+    def stale_socket(guest):
+        """Leave qmp.sock behind without a listener, as a QEMU killed by a host crash does."""
         with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as stale:
             stale.bind(str(guest / "qmp.sock"))
-        self.assertEqual(self.rows(self.run_status("2"))[0][1], "unreachable")
+        (guest / "qemu.pid").write_text("999999\n")
+
+    def test_stale_socket_is_reported_as_stopped(self):
+        guest = self.guest(2)
+        self.stale_socket(guest)
+        self.assertEqual(self.rows(self.run_status("2"))[0][1], "stopped")
+
+    def test_silent_qemu_is_reported_as_unreachable(self):
+        guest = self.guest(2)
+        with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as silent:
+            silent.bind(str(guest / "qmp.sock"))
+            silent.listen(1)
+            self.assertEqual(self.rows(self.run_status("2"))[0][1], "unreachable")
+
+    def test_start_clears_stale_socket_and_launches(self):
+        guest = self.guest(2)
+        self.stale_socket(guest)
+        result, launches = self.run_start(2)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("stale", result.stdout)
+        self.assertFalse((guest / "qemu.pid").exists())
+        self.assertFalse((guest / "qmp.sock").exists())
+        self.assertIn(f"unix:{guest}/qmp.sock", launches)
+
+    def test_start_refuses_live_vm(self):
+        guest = self.guest(2)
+        with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as live:
+            live.bind(str(guest / "qmp.sock"))
+            live.listen(1)
+            result, launches = self.run_start(2)
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("already running", result.stderr)
+        self.assertEqual(launches, "")
 
     def test_paused_vm_is_reported_as_paused(self):
         guest = self.guest(3)

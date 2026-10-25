@@ -8,8 +8,6 @@ import sys
 
 
 def vm_state(guest):
-    if not (guest / "qmp.sock").exists():
-        return "stopped" if (guest / "disk.qcow2").exists() else "not-created"
     try:
         with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as connection:
             connection.settimeout(1)
@@ -28,6 +26,9 @@ def vm_state(guest):
                         if "return" in response:
                             break
                 return response["return"]["status"]
+    except (FileNotFoundError, ConnectionRefusedError):
+        # No socket, or one left behind by a QEMU that died (e.g. host crash).
+        return "stopped" if (guest / "disk.qcow2").exists() else "not-created"
     except (OSError, ValueError, KeyError):
         return "unreachable"
 
