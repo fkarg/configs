@@ -61,7 +61,9 @@ Per app repo (verification recipes in `docs/release-flow.md`): `origin/deploy`
 and the tags pointing at it; the newest candidate on `origin/main`; the
 promoted→candidate range (what ships) and candidate→main (what misses the
 cut). Flag runtime commits that would miss the cut and confirm the cut point
-is intended — main CI may still be running or about to tag.
+is intended — main CI may still be running or about to tag. A Dependabot
+auto-merge triggers no main CI: at the tip it misses the cut until a later
+push is tagged — expected, not red CI.
 
 ### 2. Candidate viability
 
@@ -123,7 +125,10 @@ repos/<org>/<repo>/commits/<sha>/pulls`) — never date or keyword search —
 and copy each non-`None` `## Deploy impact` section into the card's Deploy
 notes with provenance (`repo#PR`, merge SHA), each note naming applicability
 and when it binds. Report coverage: commits in range, PRs resolved,
-unmatched or ambiguous commits, non-`None` sections found. Unmatched
+unmatched or ambiguous commits, non-`None` sections found. A
+`dependabot[bot]` PR without the section is resolved with an implicit `None`
+— not a coverage gap, nothing to chase (its changes still go through the
+reconcile below). Unmatched
 commits (direct pushes, association failures) are inspected by hand, never
 silently skipped; a revert in the range voids the reverted PR's note — drop
 it and say why. Then reconcile both ways against the classified delta: a

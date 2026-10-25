@@ -135,7 +135,10 @@ Read infra PRs' `## Deploy impact` sections directly over this host's last
 successfully applied controller revision → target (doc: "Infrastructure PRs
 never pass through a cut"), scan that range's commit subjects for direct pushes,
 and diff only what plausibly touches this host. Do not manufacture prep steps
-from `None`/boilerplate sections or copied release-card text.
+from `None`/boilerplate sections or copied release-card text. A
+`dependabot[bot]` PR without the section counts as `None`, but still diff its
+Compose image bumps: a version change the reviewer missed is a real deploy
+delta.
 
 Then dry-run the render:
 
