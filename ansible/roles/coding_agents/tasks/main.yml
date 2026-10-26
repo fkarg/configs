@@ -199,6 +199,14 @@
     state: link
     force: true
 
+# PR watcher used by the babysit skill (one event line per CI/review/base change).
+- name: Install the pr-wait PR watcher
+  file:
+    src: "{{ repo_root }}/scripts/pr-wait"
+    dest: "~/.local/bin/pr-wait"
+    state: link
+    force: true
+
 # browser-qa sessions: claude-qa/codex-qa add the browser MCP server per launch
 # (it is registered nowhere else) and attach to the qa-browser instance.
 - name: Install the browser-qa session launchers
