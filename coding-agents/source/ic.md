@@ -39,28 +39,13 @@ Present one plan: approach, files, settled/open decisions, tests, and change bud
 
 Write the implementation yourself; specialists advise. Preserve invariants, add behavior tests, run documented checks; note plan deviations briefly. After green, always send the diff to `simplicity-reviewer`; fix red findings or bring the disagreement verbatim to the signer. Recheck after changes.
 
-Review the complete change against its branch point: stage intended files, then `git diff $(git merge-base origin/<base> HEAD)` from the worktree. In one parallel wave, dispatch fresh-context reviewers who have not seen this conversation, giving each the issue, plan, diff, invariants, test evidence and worktree:
+Review the complete change against its branch point: stage intended files, then load the `super-review` skill (as a subagent, read its `SKILL.md`) as its calling workflow, giving it the worktree, `<base>`, issue, plan, invariants, test evidence and non-goals. Fix red findings and rerun the affected reviewers, fix yellow if quick or report it, fix easy green items. Continue unless a red finding or budget expansion needs the signer.
 
-- Non-trivial work: `reviewer` and `murphyjitsu-reviewer`.
-- As their triggers apply: `security-reviewer`, `test-quality-reviewer`, `performance-reviewer`, `consistency-reviewer`.
-- Repeat `simplicity-reviewer` if scope expanded/new abstractions appeared, or no cross-model peer is available.
-- `peer-review --stdin --mode diff-review --cd <worktree>` with that diff, intent, invariants, verification and non-goals.
+Only you invoke peers, one call per gate: premise/diagnosis, optional design, and the diff gate (super-review's generic and lens passes). Specialists never launch their own, and peers are not rerun after fixes.
 
-Only you invoke peers: one call per gate, at most three (premise/diagnosis, optional design, diff). Specialists never launch their own. Apply global peer interpretation/fallback rules. Dedupe findings; fix red and rerun affected reviewers, fix yellow if quick or report it, fix easy green items.
+## 5. Deliver
 
-## 5. Verify and prepare delivery
-
-Produce these artifacts for the PR:
-
-- **Architectural map:** final behavior/mechanism, invariants with coverage status (✓/⚠/✗, citing `test-quality-reviewer` when run, otherwise your own evidence), call-chains (`file:line`), where to debug, decisions/tradeoffs.
-- **Reading guide:** rank judgment-heavy hunks to read closely and why; identify mechanical/test-pinned parts safe to skim.
-- **Verification walkthrough:** run the final code on the documented local stack. Record repeatable setup and steps, expected and observed results, reaching the required user outcomes and an edge/negative case. Backend: commands and relevant output. Frontend: captioned screenshots of meaningful states using synthetic data; upload to the PR, never commit them. If upload fails, keep local paths and disclose it. Paired frontend/backend PRs share or link the sequence and name the counterpart head tested. Mark unrun checks with reasons; failed expected outcomes must be fixed. If there is no runnable surface, say so.
-
-Send the final diff to `production-readiness`; route follow-ups per repo rules. Filing an issue in another repo requires confirmation. Continue to shipping unless a red finding or budget expansion needs the signer; save deliverables for the PR and final handoff.
-
-## 6. Ship
-
-Delegate the commit to `commit`, using the repo's format and `Closes #<n>`. Push the task branch with `git push -u origin HEAD` and open a PR against `<base>` with the artifacts and screenshots. Load the `babysit` skill (as a subagent, read its `SKILL.md` from your harness's skills directory) and follow it until the PR is merge-ready. Retain the worktree while external review is likely.
+Load the `deliver` skill (as a subagent, read its `SKILL.md` from your harness's skills directory) and follow it: new PR against `<base>`, `Closes #<n>`. Retain the worktree while external review is likely.
 
 End with one self-contained handoff: PR link, CI/review outcome, architectural map, reading guide, walkthrough results/unrun steps/screenshots, review synthesis and production report; for bugs include whys, class and sibling dispositions.
 

@@ -1,5 +1,5 @@
 ---
-description: Super-review. Use when you want a deep, multi-agent review of a branch or PR — the ic review fleet run standalone: deep comprehension, fresh-context reviewers, production-readiness, and a written architectural map. Read-only by default; you decide fix-vs-note at the end.
+description: Super-review. Use when you want a deep, multi-agent review of a branch or PR — fresh-context reviewer fleet, cross-model pass, production-readiness and a written architectural map — standalone (read-only; you decide fix-vs-note at the end) or as the review step of ic, modernize and takeover.
 mode: primary
 permission:
   bash: allow
@@ -11,16 +11,21 @@ permission:
 
 # Super Review
 
-You run the review slice of the `ic` workflow standalone: comprehend the change, fan out fresh-context reviewers, check production-readiness, and hand back an architectural map plus one consolidated findings list. Read-only — you only edit when the user decides a finding should be fixed at the final checkpoint.
+Comprehend a change, fan out fresh-context reviewers, check production-readiness, and return an architectural map plus one consolidated findings list.
 
-**Scale to the change.** A typo gets `reviewer` alone and a one-line verdict. A real change gets the workflow below. When you skip a stage, say so in one line.
+**Two entry points.**
+
+- **Standalone** (the user invoked it): run every step. Read-only — edit only when the user picks a fix at the checkpoint.
+- **Called by a workflow** (ic, modernize, takeover): the caller supplies worktree, base, intent, plan, invariants, verification evidence and non-goals. Skip steps 1–2 except to fill gaps, skip the checkpoint, and return the findings, map, production report and its follow-ups. The caller fixes under its own authority and reruns the affected reviewers.
+
+**Scale to the change.** A typo gets `reviewer` alone and a one-line verdict. When you skip a step, say so in one line.
 
 ## 1. Scope
 
-Detect the default branch (`git symbolic-ref refs/remotes/origin/HEAD`) and compute the diff:
+`<base>` is the PR's base, otherwise the default branch (`git symbolic-ref refs/remotes/origin/HEAD`). Fetch origin and compute the diff:
 
 - **PR named**: `gh pr view <n> --json title,body,headRefName,baseRefName` and `gh pr diff <n>`. A PR you only fetched is read-only — the checkpoint becomes report-only (optionally posted as PR comments).
-- **Current branch** (default): diff against the branch-off point, not the default branch's moving tip (later commits on it would show up inverted): `git diff $(git merge-base <default> HEAD)`. You are read-only — do **not** stage anything; the user's index is not yours to touch. If `git status --porcelain` shows untracked files that belong to the change, read them directly and note that they're outside the diff. State which you reviewed: the branch as committed, or committed + uncommitted work.
+- **Current branch** (default): diff against the branch-off point, not the base's moving tip (later commits on it would show up inverted): `git diff $(git merge-base origin/<base> HEAD)`. Standalone, do **not** stage anything; the user's index is not yours to touch. If `git status --porcelain` shows untracked files that belong to the change, read them directly and note that they're outside the diff. State which you reviewed: the branch as committed, or committed + uncommitted work.
 
 Pull the intent from the linked issue/PR description, or ask the user for one line. Read the most-changed files yourself.
 
@@ -34,35 +39,31 @@ Synthesize in-thread: what the area does (`file:line`), the data flow the change
 
 ## 3. Review — fleet + cross-model
 
-Dispatch fresh-context reviewers in parallel, each with the intent, the diff, and the repo/worktree path. Scale the roster; each agent's description says when it applies:
+In one parallel wave, dispatch fresh-context reviewers who have not seen this conversation, each with the intent, plan if any, diff, invariants, test evidence and worktree path. Scale the roster; each agent's description says when it applies:
 
-- Always, for non-trivial changes: `reviewer`, `simplicity-reviewer`, `murphyjitsu-reviewer`.
-- When the change matches their trigger: `security-reviewer`, `test-quality-reviewer` (pass it the step-2 invariants), `performance-reviewer`, `consistency-reviewer`.
+- Non-trivial changes: `reviewer`, `murphyjitsu-reviewer`, and `simplicity-reviewer` — called by ic, repeat it only if scope expanded, new abstractions appeared, or no cross-model peer is available, since ic ran it after green.
+- When the change matches their trigger: `security-reviewer`, `test-quality-reviewer` (pass it the invariants), `performance-reviewer`, `consistency-reviewer`.
 
-**Cross-model pass — dispatch it in the same wave as the fleet above:**
+**Cross-model passes, in the same wave:** for a non-trivial change, two calls on the same diff and brief: the generic pass, and the same with `--lens murphyjitsu-reviewer`, which reviews with that agent's pre-mortem method instead. For a trivial change, the generic pass alone.
 
 ```
-git diff $(git merge-base <default> HEAD) | peer-review --stdin --mode diff-review --cd <worktree> \
-  "Intent: <one line>. Invariants this must preserve: <list from step 2>. Tests run and their result: <summary>. Known non-goals: <list>."
+git diff $(git merge-base origin/<base> HEAD) | peer-review --stdin --mode diff-review [--lens murphyjitsu-reviewer] --cd <worktree> \
+  "Intent: <one line>. Invariants this must preserve: <list>. Tests run and their result: <summary>. Known non-goals: <list>."
 ```
 
-Hand it the step-2 invariants and the test evidence, not a naked diff — otherwise the peer has to guess what the change was meant to preserve, and guesses come back as noise. `peer-review` picks a peer from a genuinely different *serving* family and returns validated JSON; it reports which model actually answered, which is the thing worth recording. If it reports no peer CLI, skip with a one-line note — the same-model fleet, `simplicity-reviewer` included, is then the only adversarial pass, so don't thin it.
+Hand them the invariants and test evidence, not a naked diff — otherwise the peer guesses what the change was meant to preserve, and guesses come back as noise. If it reports no peer CLI, skip with a one-line note — the same-model fleet, `simplicity-reviewer` included, is then the only adversarial pass, so don't thin it. Only the orchestrator calls peers; specialist reviewers never launch their own, because N peers over overlapping evidence produce correlated findings and move synthesis away from the one place that sees all of it.
 
-This is one call at the orchestrator level. The specialist reviewers do **not** make their own peer calls: N peers over overlapping evidence produce correlated findings and move synthesis out of the one place that can see all of it.
-
-Synthesize in-thread: dedupe, kill false positives, tag cross-model findings with the model that produced them, rank 🔴/🟡/🟢. `simplicity-reviewer` 🔴 findings are not advisory — they go to the checkpoint as their own block, not folded into nits.
-
-Record each peer finding's outcome: changed the decision, added a verification, unique defect, rejected as false positive (with reason), or no impact. "Could not refute" counts as evidence only when `attempted_falsifications` names the attacks tried — an empty list means the peer left its conclusion untested.
+Synthesize in-thread: dedupe, kill false positives, tag cross-model findings with the model that produced them, rank 🔴/🟡/🟢. `simplicity-reviewer` 🔴 findings are not advisory — they go to the checkpoint (or the caller) as their own block, not folded into nits. Record each peer finding's outcome per the global peer rules, tagged generic or lens, in the synthesis that goes into the PR body — that is the record for judging whether the lens pass earns its cost.
 
 ## 4. Production readiness
 
-For a non-trivial change, delegate to `production-readiness` with the same diff and repo/worktree path. Route its follow-ups per the target repo's AGENTS.md; filing an issue in another repo is outward-facing — confirm with the user first.
+For a non-trivial change, delegate to `production-readiness` with the same diff and worktree path. Called by a workflow, return its follow-ups to the caller. Standalone, route them per the target repo's AGENTS.md; filing an issue in another repo is outward-facing — confirm with the user first.
 
 ## 5. Architectural map
 
-Build it in-thread from step 2, updated to what the review surfaced: what the change does and how (a paragraph); the invariants with coverage status (✓/⚠/✗); call-chains with `file:line`; where to look when X breaks; decisions and tradeoffs.
+Build it in-thread from step 2 (or the caller's invariants), updated to what the review surfaced: what the change does and how (a paragraph); the invariants with coverage status (✓/⚠/✗, citing `test-quality-reviewer` when run, otherwise your own evidence); call-chains with `file:line`; where to look when X breaks; decisions and tradeoffs.
 
-## 6. Checkpoint — the user decides fix-vs-note
+## 6. Checkpoint (standalone only) — the user decides fix-vs-note
 
 Present: the architectural map, the synthesized findings (🔴/🟡/🟢, simplicity block separate), the production report. Then **wait**. Per finding the user picks **fix now** (only when the branch is local: apply, re-run the affected reviewer, update the map if an invariant moved) or **note** (report is the deliverable; offer to post PR comments — confirm before posting).
 

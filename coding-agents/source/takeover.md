@@ -30,7 +30,7 @@ Keep git authorship and existing human co-author trailers; drop AI co-author tra
 
 If the work is stale against its base, load `modernize` and run its steps 2–5 on the continuation; shipping stays with this skill. Otherwise plan the remaining work as in `ic`: what stands, what is reworked, change budget; wait for sign-off. Finish the same goal — simplify without dropping intended behavior, add nothing unrelated. Independently reproduce the original failure or exercise the intended workflow; state what stays unverified. Recheck the source before shipping: it may have moved while you worked.
 
-Then take it through `ic`'s review wave, verification artifacts and `commit`, without its issue-assignment and worktree setup; open or update the PR per step 2, then load and follow `babysit`.
+Then load `super-review` as its calling workflow and fix its findings as `ic` does. Load `deliver` with the PR identity from step 2, the original PR's issue linking, a leading section crediting the original contributors and linking their PR, and any `Co-authored-by:` lines.
 
 ## Report
 

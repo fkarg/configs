@@ -59,7 +59,7 @@ REWRITE: present the plan as in `ic` — approach, files, change budget, non-goa
 
 ## 6. Review and ship
 
-Take the result through `ic`'s review wave, verification artifacts and `commit`, with these differences: no issue assignment or new worktree; update the existing PR rather than opening one; push with `--force-with-lease=<branch>:<head SHA from step 1>`, and on a lease failure fetch and reassess. Rewrite the PR body: problem first, then the interview's "what changed and why", then the artifacts. Then load and follow `babysit`.
+Load `super-review` as its calling workflow and fix its findings as `ic` does. Then load `deliver`: update the existing PR, observed head SHA from step 1, issue linking as the PR had it, leading sections "problem" and the interview's "what changed and why".
 
 ## Report
 
