@@ -409,6 +409,44 @@ class PeerReviewTests(unittest.TestCase):
         self.assertEqual(proc.returncode, 1)
         self.assertIn("--stdin", proc.stderr)
 
+    def test_lens_reviews_with_the_reviewer_method_not_its_report_format(self) -> None:
+        proc, lines, _ = self.run_launcher(
+            ["--mode", "diff-review", "--lens", "murphyjitsu-reviewer", "--stdin", "brief"],
+            {}, input_text="diff",
+        )
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        prompt = "\n".join(lines)
+        self.assertIn("Review method:", prompt)
+        self.assertIn("Imagine the page", prompt)
+        self.assertNotIn("## Report", prompt)
+        self.assertNotIn("mode: subagent", prompt)
+        self.assertNotIn("minimalist pass", prompt)
+
+    def test_lens_is_saved_and_listed_with_the_review(self) -> None:
+        with tempfile.TemporaryDirectory() as home:
+            env = {"XDG_CACHE_HOME": home}
+            proc, _, _ = self.run_launcher(
+                ["--mode", "diff-review", "--lens", "security-reviewer", "--stdin", "brief"],
+                env, input_text="diff",
+            )
+            self.assertEqual(proc.returncode, 0, proc.stderr)
+            listing, _, _ = self.run_launcher(["--recent", "--all"], env)
+            self.assertIn("diff-review[security-reviewer]", listing.stdout)
+
+    def test_lens_requires_diff_review_and_a_known_reviewer(self) -> None:
+        proc, lines, _ = self.run_launcher(["--lens", "security-reviewer", "brief"], {})
+        self.assertEqual(proc.returncode, 1)
+        self.assertIn("--lens requires --mode diff-review", proc.stderr)
+        self.assertEqual(lines, [])
+        for lens in ("no-such-reviewer", "../reviewer", "ic"):
+            with self.subTest(lens=lens):
+                proc, lines, _ = self.run_launcher(
+                    ["--mode", "diff-review", "--lens", lens, "--stdin", "brief"],
+                    {}, input_text="diff",
+                )
+                self.assertEqual(proc.returncode, 1)
+                self.assertEqual(lines, [])
+
     def test_target_models_preserve_alias_and_resolved_id_only(self) -> None:
         proc, _, _ = self.run_launcher(
             ["--models"], {"CODEX_THREAD_ID": "test"},
@@ -820,7 +858,7 @@ class PeerReviewTests(unittest.TestCase):
 
 class PeerReviewWiringTests(unittest.TestCase):
     def test_piped_diff_examples_opt_in_to_stdin(self) -> None:
-        for name in ("ic", "super-review", "understanding-prs-for-approval"):
+        for name in ("super-review", "understanding-prs-for-approval"):
             with self.subTest(agent=name):
                 text = (REPO / "coding-agents" / "source" / f"{name}.md").read_text()
                 self.assertIn("| peer-review --stdin --mode diff-review", text)

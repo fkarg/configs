@@ -18,6 +18,7 @@
 set -eu
 
 mode="premise"
+lens=""
 workdir=""
 from_family=""
 peer_model=""
@@ -50,6 +51,7 @@ while [ $# -gt 0 ]; do
     case "$1" in
         -h|--help) help_requested=true; shift; break ;;
         --mode) mode="${2:?--mode needs a value}"; shift 2 ;;
+        --lens) lens="${2:?--lens needs a reviewer name}"; shift 2 ;;
         --cd) workdir="${2:?--cd needs a value}"; shift 2 ;;
         --from) from_family="${2:?--from needs a value}"; shift 2 ;;
         --model) peer_model="${2:?--model needs a value}"; shift 2 ;;
@@ -89,7 +91,7 @@ esac
     [ "$help_requested" = true ] || fail "--all requires --recent"
 if [ -n "$history_action" ] && [ "$help_requested" = false ]; then
     [ $# -eq 0 ] && [ -z "$input_sources" ] && [ "$list_models" = false ] &&
-        [ "$include_self" = false ] && [ -z "$peer_model$from_family" ] &&
+        [ "$include_self" = false ] && [ -z "$peer_model$from_family$lens" ] &&
         [ "$mode" = premise ] || fail "history does not accept review input or model options"
     python3 - "$cache_dir" "$history_action" "$history_value" "$history_all" "$workdir" <<'PY'
 import json, re, subprocess, sys
@@ -138,7 +140,9 @@ try:
             brief = " ".join(record["brief"].split())[:160]
             summary = " ".join(summary.split())[:160]
             print(f'{record["id"]}  {record["created_at"]}  '
-                  f'{record["directory"]}  {record["mode"]}  {output["peer_model"]}')
+                  f'{record["directory"]}  {record["mode"]}'
+                  f'{"[" + record["lens"] + "]" if record.get("lens") else ""}  '
+                  f'{output["peer_model"]}')
             print(f"  Brief: {brief}\n  Outcome: {summary}")
         if not records:
             print("No saved reviews." if all_repos == "true" else
@@ -207,6 +211,8 @@ Review settings:
                     diagnosis   Rank causes and propose falsifying observations.
                     design      Produce an independent design and tradeoffs.
                     diff-review Review a supplied diff for correctness and simplicity.
+  --lens NAME     With diff-review: review using reviewer agent NAME's method
+                  (coding-agents/source/NAME.md) instead of the generic pass.
   --cd DIR        Give the peer access to this directory (review modes only).
 
 Supporting material:
@@ -272,8 +278,8 @@ HELP
 fi
 
 if [ "$list_models" = true ]; then
-    [ $# -eq 0 ] && [ -z "$input_sources" ] ||
-        fail "--models does not accept a brief, --stdin or --file"
+    [ $# -eq 0 ] && [ -z "$input_sources$lens" ] ||
+        fail "--models does not accept a brief, --lens, --stdin or --file"
     python3 - "$peer_cli" "$include_self" "$detected_harness" "$proxy_env_vars" <<'PY'
 import json, os, subprocess, sys
 
@@ -341,6 +347,19 @@ PY
 fi
 
 [ "$include_self" = false ] || fail "--include-self requires --models"
+lens_file=""
+if [ -n "$lens" ]; then
+    [ "$mode" = diff-review ] || fail "--lens requires --mode diff-review"
+    case "$lens" in
+        *[!a-z0-9-]*) fail "invalid lens name: $lens" ;;
+        *-reviewer) ;;
+        *) fail "lens must be a reviewer agent (*-reviewer): $lens" ;;
+    esac
+    # Lenses are the reviewer agents' own prompts, so the cross-model pass
+    # and the same-model fleet cannot drift apart.
+    lens_file="$(dirname "$(realpath "$0")")/../coding-agents/source/$lens.md"
+    [ -f "$lens_file" ] || fail "unknown lens: $lens (no coding-agents/source/$lens.md)"
+fi
 [ "$mode" != diff-review ] || [ -n "$input_sources" ] ||
     fail "diff-review requires --stdin or --file"
 [ $# -ge 1 ] || fail "a brief is required"
@@ -360,6 +379,19 @@ case "$mode" in
     diff-review)
         task="Fresh-eyes review of the diff supplied below. Two jobs: (1) correctness findings; (2) a minimalist pass -- name every hunk that could be smaller or simpler with no tradeoff. Use file:line. No praise, no diff echo." ;;
 esac
+if [ -n "$lens_file" ]; then
+    # The method only: drop the frontmatter and the agent's own report format,
+    # which the response schema replaces.
+    method=$(awk 'NR == 1 && /^---$/ { front = 1; next }
+                  front && /^---$/ { front = 0; next }
+                  front { next }
+                  /^## Report/ { exit }
+                  { print }' "$lens_file")
+    task="Fresh-eyes review of the diff supplied below, using only the review method that follows; it replaces a generic correctness and simplicity pass. Ignore its delivery details, such as who hands you what and how to format a report: answer through the response fields. Keep the method's ranking: most likely or most severe first, its top tier as must, middle as should, lowest as nit. Each finding's claim names the failure or defect with file:line and the assumption it rests on, evidence holds the code that grounds it, next_check the patch or test that would settle it. No praise, no diff echo.
+
+Review method:
+$method"
+fi
 
 discipline="Recommend nothing beyond the facts supplied. Do not spawn subagents. Populate attempted_falsifications with what you actually tried in order to break your own conclusions -- an empty list is read as 'did not test', not as 'nothing to find'. Put anything you could not check into unverified."
 
@@ -473,7 +505,7 @@ fi
 
 PEER_CLI="$peer_cli" PEER_FAMILY="$from_family" PEER_MODEL="$peer_model" \
 PEER_DETECTED="$detected" PEER_STATUS="$peer_status" \
-    python3 - "$result_file" "$cache_dir" "$workdir" "$mode" "$brief" <<'PY'
+    python3 - "$result_file" "$cache_dir" "$workdir" "$mode" "$brief" "$lens" <<'PY'
 import json, os, subprocess, sys, tempfile, uuid
 from datetime import datetime, timezone
 from pathlib import Path
@@ -553,6 +585,8 @@ try:
         "brief": sys.argv[5],
         "response": response,
     }
+    if sys.argv[6]:
+        record["lens"] = sys.argv[6]
     cache.mkdir(parents=True, exist_ok=True, mode=0o700)
     # Readers only see complete files; concurrent reviews have separate IDs.
     with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", dir=cache,

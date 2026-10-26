@@ -90,6 +90,7 @@ ignore stdin; supporting material is explicit:
 peer-review --mode premise "Do we need a cache for this latency target?"
 peer-review --mode design -f design.md "Review the proposed design"
 git diff | peer-review --stdin --mode diff-review "Intent: add CLI help"
+git diff | peer-review --stdin --mode diff-review --lens murphyjitsu-reviewer "Intent: add CLI help"
 git diff | peer-review -f design.md --stdin -f notes.md "Review this change"
 peer-review --models
 peer-review --models --include-self
@@ -97,6 +98,11 @@ peer-review --recent
 peer-review --recent 10 --all
 peer-review --show <ID-from-recent>
 ```
+
+`--lens NAME` (diff-review only) replaces the generic correctness/simplicity
+task with the method of reviewer agent `source/NAME.md`, minus its report
+format, so cross-model and same-model passes share one prompt. Saved reviews
+record the lens and `--recent` shows it as `diff-review[NAME]`.
 
 `--stdin` waits for EOF; `-f/--file` is repeatable. Files and stdin combine in
 command-line order, with a newline between inputs.
