@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """pr-wait: watch one GitHub pull request and print one line per real event.
 
-  pr-wait <pr> [--repo owner/name] [--until green|ready|any-change] [--interval 20]
+  pr-wait <pr>... [--repo owner/name] [--until green|ready|any-change] [--interval N]
 
 Adapted from tstack's babysit-pr (https://github.com/t3dotgg/tstack, MIT,
 (c) Theo Browne). Changed: review bots are reported, not waited for per head,
@@ -13,6 +13,12 @@ from the current checkout. Stdout carries only events, one line each, so a
 monitor that streams lines wakes the agent once per real event; without one,
 run it in the background and read its output when it exits.
 Progress and errors that do not end the run go to stderr.
+
+Several PRs are watched in one process, polled in turn, each line prefixed
+with its PR number: it exits as soon as any PR needs action (1 or 2), and 0
+once every PR met --until (any-change: on the first event). The default time
+between polling rounds grows with the number of PRs (6 s each, at least 20 s)
+to stay inside GitHub's GraphQL rate limit.
 
 --until
   green       required checks passed on the current head (every CI check when
@@ -241,9 +247,16 @@ def required_checks(repo: str, base: str) -> set[str]:
     return names
 
 
+class Done(Exception):
+    def __init__(self, code: int) -> None:
+        super().__init__(code)
+        self.code = code
+
+
 class Watcher:
-    def __init__(self, repo: str, pr: int, until: str, interval: int) -> None:
-        self.repo, self.pr, self.until, self.interval = repo, pr, until, interval
+    def __init__(self, repo: str, pr: int, until: str) -> None:
+        self.repo, self.pr, self.until = repo, pr, until
+        self.failures = 0
         self.owner, self.name = repo.split("/")
         self.path = STATE_DIR / f"{repo.replace('/', '__')}__{pr}.json"
         state = self.load()
@@ -289,7 +302,7 @@ class Watcher:
         for line in lines:
             self.say(line)
         self.save()
-        sys.exit(code)
+        raise Done(code)
 
     def fetch_pr(self) -> Json:
         proc = gh([
@@ -505,37 +518,51 @@ class Watcher:
         if self.until == "any-change" and self.events:
             self.finish(0)
 
-    def run(self) -> NoReturn:
-        failures = 0
-        while True:
+    def step(self) -> None:
+        """One poll. Raises Done when this PR's watch ends."""
+        try:
+            self.poll()
+            self.failures = 0
+        except GhError as error:
+            if not error.transient:
+                self.finish(1, [f"pr-wait stopped: {error}"])
+            self.failures += 1
+            log(f"#{self.pr} poll failed ({self.failures}/{MAX_FAILED_POLLS}): {error}")
+            if self.failures >= MAX_FAILED_POLLS:
+                self.finish(1, [f"pr-wait stopped: GitHub unreachable for {self.failures} polls: {error}"])
+        else:
+            self.save()
+            if self.baseline:
+                log(f"baseline recorded for {self.repo}#{self.pr}; reporting only new events")
+            self.baseline = False
+
+
+def watch(watchers: list[Watcher], until: str, interval: int) -> NoReturn:
+    active = list(watchers)
+    while True:
+        for watcher in list(active):
             try:
-                self.poll()
-                failures = 0
-            except GhError as error:
-                if not error.transient:
-                    self.finish(1, [f"pr-wait stopped: {error}"])
-                failures += 1
-                log(f"poll failed ({failures}/{MAX_FAILED_POLLS}): {error}")
-                if failures >= MAX_FAILED_POLLS:
-                    self.finish(1, [f"pr-wait stopped: GitHub unreachable for {failures} polls: {error}"])
-            else:
-                self.save()
-                if self.baseline:
-                    log(f"baseline recorded for {self.repo}#{self.pr}; reporting only new events")
-                self.baseline = False
-            time.sleep(self.interval)
+                watcher.step()
+            except Done as done:
+                if done.code or until == "any-change":
+                    sys.exit(done.code)
+                active.remove(watcher)
+        if not active:
+            sys.exit(0)
+        time.sleep(interval)
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(prog="pr-wait", description="Watch a GitHub PR and print one line per real event.")
-    parser.add_argument("pr", nargs="?", help="PR number or URL")
+    parser.add_argument("prs", nargs="*", metavar="pr", help="PR numbers or URLs")
     parser.add_argument("--repo", help="owner/name (default: from the URL or the current checkout)")
     parser.add_argument("--until", choices=("green", "ready", "any-change"), default="ready")
-    parser.add_argument("--interval", type=int, default=20, help="seconds between polls (default 20, min 5)")
+    parser.add_argument("--interval", type=int, help="seconds between polling rounds (default 6 per PR, at least 20; min 5)")
     args = parser.parse_args()
-    repo, pr = parse_target(args.pr, args.repo)
-    _lock = lock(repo, pr)
-    Watcher(repo, pr, args.until, max(args.interval, 5)).run()
+    targets = list(dict.fromkeys(parse_target(raw, args.repo) for raw in (args.prs or [None])))
+    _locks = [lock(repo, pr) for repo, pr in targets]
+    interval = max(args.interval, 5) if args.interval else max(20, 6 * len(targets))
+    watch([Watcher(repo, pr, args.until) for repo, pr in targets], args.until, interval)
 
 
 if __name__ == "__main__":
