@@ -434,6 +434,11 @@ class PeerReviewTests(unittest.TestCase):
             self.assertIn("diff-review[security-reviewer]", listing.stdout)
 
     def test_lens_requires_diff_review_and_a_known_reviewer(self) -> None:
+        proc, _, _ = self.run_launcher(
+            ["--mode", "diff-review", "--lens", "reviewer", "--stdin", "brief"],
+            {}, input_text="diff",
+        )
+        self.assertEqual(proc.returncode, 0, proc.stderr)
         proc, lines, _ = self.run_launcher(["--lens", "security-reviewer", "brief"], {})
         self.assertEqual(proc.returncode, 1)
         self.assertIn("--lens requires --mode diff-review", proc.stderr)

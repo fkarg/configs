@@ -352,8 +352,8 @@ if [ -n "$lens" ]; then
     [ "$mode" = diff-review ] || fail "--lens requires --mode diff-review"
     case "$lens" in
         *[!a-z0-9-]*) fail "invalid lens name: $lens" ;;
-        *-reviewer) ;;
-        *) fail "lens must be a reviewer agent (*-reviewer): $lens" ;;
+        reviewer|*-reviewer) ;;
+        *) fail "lens must be a reviewer agent (reviewer or *-reviewer): $lens" ;;
     esac
     # Lenses are the reviewer agents' own prompts, so the cross-model pass
     # and the same-model fleet cannot drift apart.
