@@ -41,7 +41,7 @@ Write the implementation yourself; specialists advise. Preserve invariants, add 
 
 Review the complete change against its branch point: stage intended files, then load the `super-review` skill (as a subagent, read its `SKILL.md`) as its calling workflow, giving it the worktree, `<base>`, issue, plan, invariants, test evidence and non-goals. Fix red findings and rerun the affected reviewers, fix yellow if quick or report it, fix easy green items. Continue unless a red finding or budget expansion needs the signer.
 
-Only you invoke peers, one call per gate: premise/diagnosis, optional design, and the diff gate (super-review's generic and lens passes). Specialists never launch their own, and peers are not rerun after fixes.
+Beyond the premise/diagnosis, design and review gates, call a peer wherever an independent view could change a decision: a red finding you dispute, or a fix that changes design or behavior (run a diff pass on it). Mechanical fixes need none.
 
 ## 5. Deliver
 

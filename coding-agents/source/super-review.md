@@ -44,16 +44,16 @@ In one parallel wave, dispatch fresh-context reviewers who have not seen this co
 - Non-trivial changes: `reviewer`, `murphyjitsu-reviewer`, and `simplicity-reviewer` — called by ic, repeat it only if scope expanded, new abstractions appeared, or no cross-model peer is available, since ic ran it after green.
 - When the change matches their trigger: `security-reviewer`, `test-quality-reviewer` (pass it the invariants), `performance-reviewer`, `consistency-reviewer`.
 
-**Cross-model passes, in the same wave:** for a non-trivial change, two calls on the same diff and brief: the generic pass, and the same with `--lens murphyjitsu-reviewer`, which reviews with that agent's pre-mortem method instead. For a trivial change, the generic pass alone.
+**Cross-model passes:** every dispatched reviewer runs its own lens pass (global peer rules), so the fleet is cross-model per lens. Give each reviewer what that pass needs: the base for the diff, the invariants and test evidence. Only when no fleet runs (a trivial change), run the generic pass yourself:
 
 ```
-git diff $(git merge-base origin/<base> HEAD) | peer-review --stdin --mode diff-review [--lens murphyjitsu-reviewer] --cd <worktree> \
+git diff $(git merge-base origin/<base> HEAD) | peer-review --stdin --mode diff-review --cd <worktree> \
   "Intent: <one line>. Invariants this must preserve: <list>. Tests run and their result: <summary>. Known non-goals: <list>."
 ```
 
-Hand them the invariants and test evidence, not a naked diff — otherwise the peer guesses what the change was meant to preserve, and guesses come back as noise. If it reports no peer CLI, skip with a one-line note — the same-model fleet, `simplicity-reviewer` included, is then the only adversarial pass, so don't thin it. Only the orchestrator calls peers; specialist reviewers never launch their own, because N peers over overlapping evidence produce correlated findings and move synthesis away from the one place that sees all of it.
+A peer gets the invariants and test evidence, never a naked diff — otherwise it guesses what the change was meant to preserve, and guesses come back as noise. If peer-review reports no peer CLI, the same-model fleet, `simplicity-reviewer` included, is the only adversarial pass, so don't thin it.
 
-Synthesize in-thread: dedupe, kill false positives, tag cross-model findings with the model that produced them, rank 🔴/🟡/🟢. `simplicity-reviewer` 🔴 findings are not advisory — they go to the checkpoint (or the caller) as their own block, not folded into nits. Record each peer finding's outcome per the global peer rules, tagged generic or lens, in the synthesis that goes into the PR body — that is the record for judging whether the lens pass earns its cost.
+Synthesize in-thread: dedupe, kill false positives, tag cross-model findings with the model that produced them, rank 🔴/🟡/🟢. `simplicity-reviewer` 🔴 findings are not advisory — they go to the checkpoint (or the caller) as their own block, not folded into nits. Record each peer finding's outcome per the global peer rules, tagged with its lens (or generic), in the synthesis that goes into the PR body — that is the record for judging which lens passes earn their cost.
 
 ## 4. Production readiness
 
