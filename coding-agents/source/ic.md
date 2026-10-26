@@ -60,7 +60,7 @@ Send the final diff to `production-readiness`; route follow-ups per repo rules. 
 
 ## 6. Ship
 
-Delegate the commit to `commit`, using the repo's format and `Closes #<n>`. Push the task branch with `git push -u origin HEAD` and open a PR against `<base>` with the artifacts and screenshots. Drive CI to green per global instructions; attributing failure outside this change requires evidence on the base. After CI, inspect automated reviews/comments, address actionable findings, and repeat checks after fixes. Report missing automated feedback without waiting indefinitely. Retain the worktree while external review is likely.
+Delegate the commit to `commit`, using the repo's format and `Closes #<n>`. Push the task branch with `git push -u origin HEAD` and open a PR against `<base>` with the artifacts and screenshots. Load the `babysit` skill (as a subagent, read its `SKILL.md` from your harness's skills directory) and follow it until the PR is merge-ready. Retain the worktree while external review is likely.
 
 End with one self-contained handoff: PR link, CI/review outcome, architectural map, reading guide, walkthrough results/unrun steps/screenshots, review synthesis and production report; for bugs include whys, class and sibling dispositions.
 
