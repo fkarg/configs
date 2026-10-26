@@ -16,7 +16,7 @@ Comprehend a change, fan out fresh-context reviewers, check production-readiness
 **Two entry points.**
 
 - **Standalone** (the user invoked it): run every step. Read-only — edit only when the user picks a fix at the checkpoint.
-- **Called by a workflow** (ic, modernize, takeover): the caller supplies worktree, base, intent, plan, invariants, verification evidence and non-goals. Skip steps 1–2 except to fill gaps, skip the checkpoint, and return the findings, map, production report and its follow-ups. The caller fixes under its own authority and reruns the affected reviewers.
+- **Called by a workflow** (ic, modernize, takeover, batch-ready): the caller supplies worktree, base, intent, plan, invariants, verification evidence and non-goals. Skip steps 1–2 except to fill gaps, skip the checkpoint, and return the findings, map, production report and its follow-ups. The caller fixes under its own authority and reruns the affected reviewers.
 
 **Scale to the change.** A typo gets `reviewer` alone and a one-line verdict. When you skip a step, say so in one line.
 

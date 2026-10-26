@@ -7,11 +7,11 @@ mode: skill
 
 # Babysit
 
-Own one PR from push to merge-ready. Only the thread that owns the PR babysits it; a delegated reviewer never does.
+Own your PRs from push to merge-ready. Only the thread that owns a PR babysits it; a delegated reviewer never does.
 
 ## Watching
 
-Use `pr-wait <pr> [--repo owner/name] [--until ready|green|any-change]`; never write your own polling or `sleep` loop, and run one watcher per PR (it refuses a second). It prints one line per event — failed check, new comment/thread/reply, review bot result, base commits touching this PR's files, BEHIND/DIRTY, merged/closed — and exits 0 when the condition is met, 1 when it needs action, 2 on bad input or an existing watcher. `ready` (default) is green checks, no unresolved threads, not BEHIND, and Codex's opening review finished (it gives up on a stuck 👀 after 20 minutes and says so).
+Use `pr-wait <pr>... [--repo owner/name] [--until ready|green|any-change]`; never write your own polling or `sleep` loop, and never run two watchers on one PR (it refuses). Several PRs you own go into one `pr-wait`, which exits on the first that needs action. It prints one line per event — failed check, new comment/thread/reply, review bot result, base commits touching this PR's files, BEHIND/DIRTY, merged/closed — and exits 0 when the condition is met, 1 when it needs action, 2 on bad input or an existing watcher. `ready` (default) is green checks, no unresolved threads, not BEHIND, and Codex's opening review finished (it gives up on a stuck 👀 after 20 minutes and says so).
 
 - **Claude Code main thread:** run it with `run_in_background`; you are re-invoked when it exits. With a line-streaming monitor tool, use that instead.
 - **Codex, or as a subagent** (nothing re-invokes you after your turn ends): run it in the foreground with a long timeout (an hour) and restart it on timeout.
@@ -30,6 +30,6 @@ A fix changes the evidence: rerun the affected checks and your own reviewers, an
 
 ## Base and handoff
 
-Rebase when the PR goes BEHIND or DIRTY, or base commits touch its files; push with `--force-with-lease=<branch>:<head sha observed before the rebase>`, and on a lease failure fetch and reassess. If an overlapping PR makes this one obsolete, stop and ask before closing it.
+Rebase when the PR goes DIRTY, base commits touch its files, or it is BEHIND and the repo requires up-to-date branches; otherwise BEHIND needs nothing, so watch it with `--until green`, as you do when the only open threads are declined ones awaiting a human. Push a rebase with `--force-with-lease=<branch>:<head sha observed before the rebase>`, and on a lease failure fetch and reassess. When the PR it was stacked on has been squash- or rebase-merged, a plain rebase replays the parent's commits and conflicts with their squashed copy on main: retarget to main if GitHub hasn't, take the parent's last head from `gh pr view <parent> --json headRefOid` (confirm with `git merge-base --is-ancestor <sha> <branch>`, else find the parent commit the branch actually forked from), then `git rebase --onto origin/<main> <that sha> <branch>`. If an overlapping PR makes this one obsolete, stop and ask before closing it.
 
 Before calling the PR ready, `git fetch` and recheck head, checks, threads and merge state. Never merge while BEHIND/DIRTY or with `--admin`. Hand off: PR link, head SHA, CI and review outcome, declined findings with reasons, and what remains.
