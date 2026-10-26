@@ -14,7 +14,7 @@ Own one PR from push to merge-ready. Only the thread that owns the PR babysits i
 Use `pr-wait <pr> [--repo owner/name] [--until ready|green|any-change]`; never write your own polling or `sleep` loop, and run one watcher per PR (it refuses a second). It prints one line per event — failed check, new comment/thread/reply, review bot result, base commits touching this PR's files, BEHIND/DIRTY, merged/closed — and exits 0 when the condition is met, 1 when it needs action, 2 on bad input or an existing watcher. `ready` (default) is green checks, no unresolved threads, not BEHIND, and Codex's opening review finished (it gives up on a stuck 👀 after 20 minutes and says so).
 
 - **Claude Code main thread:** run it with `run_in_background`; you are re-invoked when it exits. With a line-streaming monitor tool, use that instead.
-- **Codex, or as a subagent** (nothing re-invokes you after your turn ends): run it in the foreground with a long timeout (an hour) and restart it on timeout. In Codex it needs network; escalate per the global sandbox rule.
+- **Codex, or as a subagent** (nothing re-invokes you after your turn ends): run it in the foreground with a long timeout (an hour) and restart it on timeout.
 
 Its first run on a PR records existing state silently, so handle the checks, threads and reviews already there before starting it. Restart it after every push, after handling an exit 1, and after a resume; it remembers what it reported for six hours. When an event needs no action, end the turn without a message, and never post "still waiting".
 

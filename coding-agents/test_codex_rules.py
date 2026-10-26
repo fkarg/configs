@@ -40,6 +40,11 @@ class CodexRulesTests(unittest.TestCase):
         self.assertIsNone(decision_for("peer-review-untrusted", "--mode", "design"))
         self.assertIsNone(decision_for("bash", "unrelated-script.sh"))
 
+    def test_allows_pr_wait_on_the_host(self) -> None:
+        self.assertEqual(decision_for("pr-wait", "123"), "allow")
+        self.assertEqual(decision_for("scripts/pr-wait", "123", "--until", "green"), "allow")
+        self.assertIsNone(decision_for("pr-waiter", "123"))
+
     def test_allows_all_git_commands(self) -> None:
         self.assertEqual(decision_for("git", "status"), "allow")
         self.assertEqual(decision_for("git", "fetch", "origin", "main"), "allow")

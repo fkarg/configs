@@ -49,6 +49,15 @@ prefix_rule(
     not_match = ["peer-review-untrusted --mode design Review", "bash unrelated-script.sh"],
 )
 
+# pr-wait only reads PR state through gh, which needs host credentials.
+prefix_rule(
+    pattern = [["pr-wait", "scripts/pr-wait"]],
+    decision = "allow",
+    justification = "pr-wait polls GitHub read-only through gh and needs host credentials",
+    match = ["pr-wait 123", "scripts/pr-wait 123 --until green"],
+    not_match = ["pr-waiter 123"],
+)
+
 prefix_rule(
     pattern = ["claude", "-p"],
     decision = "allow",

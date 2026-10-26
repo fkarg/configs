@@ -19,6 +19,8 @@
       "Bash(peer-review *)",
       "Bash(scripts/peer-review *)",
       "Bash(./scripts/peer-review *)",
+      "Bash(pr-wait *)",
+      "Bash(scripts/pr-wait *)",
       "Read(//tmp/**)",
       "Bash(git fetch *)",
       "Bash(git switch *)",
