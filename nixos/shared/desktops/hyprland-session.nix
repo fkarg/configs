@@ -84,10 +84,8 @@
   xdg.portal = {
     enable = true;
     xdgOpenUsePortal = true;
-    extraPortals = with pkgs; [
-      xdg-desktop-portal-gtk
-      xdg-desktop-portal-hyprland
-    ];
+    # programs.hyprland adds its own xdg-desktop-portal-hyprland.
+    extraPortals = [ pkgs.xdg-desktop-portal-gtk ];
   };
 
   programs.dconf.enable = true;

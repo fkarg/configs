@@ -25,7 +25,7 @@ in
   # start in every session (plain Hyprland, and GNOME on jolly), fighting mako
   # over org.freedesktop.Notifications. Bind it to its own target instead,
   # which only the "Hyprland (Dank)" session starts.
-  programs.dms-shell = {
+  programs.dux-shell = {
     enable = true;
     systemd.target = "dms-session.target";
   };
