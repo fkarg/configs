@@ -25,3 +25,7 @@ coding-agents/__pycache__/
 # host-owned codex config (symlink target of ~/.codex/config.toml), commingles
 # curated settings with local trust state — see merge_codex_config.py
 coding-agents/configs/codex/config.toml
+
+# kitty theme files DankMaterialShell regenerates from the wallpaper into
+# ~/.config/kitty (a symlink to dotconfig/kitty); kitty.conf doesn't include them
+dotconfig/kitty/dank-*.conf
