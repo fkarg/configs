@@ -483,13 +483,16 @@ if dms then
 end
 
 -- Workspace navigation. You have 20 numbered workspaces: 1-10 direct, 11-20 via
--- CTRL. On a 32:9 display this gives room for task-specific lanes. Switching
--- triggers on key release (old `bindr`); SHIFT moves the focused window there
--- without switching (old `movetoworkspacesilent` -> follow = false).
+-- CTRL. On a 32:9 display this gives room for task-specific lanes. SHIFT moves
+-- the focused window there without switching (old `movetoworkspacesilent` ->
+-- follow = false).
+-- Switching fires on press. These used to be release binds (old `bindr`); from
+-- Hyprland 0.57 (keybind refactor, #15568) the digit's press leaked into the
+-- focused window before the release switched workspaces.
 for i = 1, 10 do
     local key = i % 10 -- 10 maps to key 0
-    hl.bind(mainMod .. " + " .. key,                  hl.dsp.focus({ workspace = i }),       { release = true })
-    hl.bind(mainMod .. " + CTRL + " .. key,           hl.dsp.focus({ workspace = i + 10 }),  { release = true })
+    hl.bind(mainMod .. " + " .. key,                  hl.dsp.focus({ workspace = i }))
+    hl.bind(mainMod .. " + CTRL + " .. key,           hl.dsp.focus({ workspace = i + 10 }))
     hl.bind(mainMod .. " + SHIFT + " .. key,          hl.dsp.window.move({ workspace = i,      follow = false }))
     hl.bind(mainMod .. " + CTRL + SHIFT + " .. key,   hl.dsp.window.move({ workspace = i + 10, follow = false }))
 end
