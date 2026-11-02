@@ -65,7 +65,6 @@ local clipboard   = dms and "dms ipc call clipboard toggle"
 -- Popular alternatives:
 -- local terminal    = "foot"
 -- local fileManager = "nautilus"
--- local menu        = "rofi -show drun"
 
 -------------------
 ---- AUTOSTART ----
@@ -98,7 +97,6 @@ hl.on("hyprland.start", function()
         hl.plugin.load(hy3_so)
         hl.config({ general = { layout = "hy3" } })
     end
-    hl.exec_cmd("hyprlauncher -d")
     hl.exec_cmd("hypridle")
     if not dms then
         local waybar_config = os.getenv("HYPRLAND_WAYBAR_CONFIG") or "~/.config/waybar/hyprland.jsonc"
@@ -408,9 +406,6 @@ hl.bind(mainMod .. " + Z", hl.dsp.window.pseudo())
 -- Popular extra app binds:
 -- hl.bind(mainMod .. " + F1", hl.dsp.exec_cmd("firefox"))
 hl.bind(mainMod .. " + Space", hl.dsp.exec_cmd(menu))
-hl.bind(mainMod .. " + SHIFT + Space", hl.dsp.exec_cmd("hyprlauncher"))
-hl.bind(mainMod .. " + CTRL + Space", hl.dsp.exec_cmd("walker"))
-hl.bind(mainMod .. " + ALT + Space", hl.dsp.exec_cmd("rofi -show drun"))
 -- hl.bind(mainMod .. " + SHIFT + Q", hl.dsp.exit())
 
 -- Keyboard layout switching. This changes Hyprland live state, not the config.

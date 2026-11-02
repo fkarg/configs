@@ -12,7 +12,7 @@
 #   hypr-resize 1 1            # fullscreen-ish (tile-respecting)
 #
 # Invoked from .desktop entries so it's discoverable in launchers
-# (hyprlauncher, fuzzel, walker, rofi …).
+# (DMS spotlight, fuzzel).
 #
 # NOTE: an N-way "equalize all tiled windows" mode was removed. dwindle resizes
 # act on its opaque binary split-tree, so for 3+ windows the outcome depends on

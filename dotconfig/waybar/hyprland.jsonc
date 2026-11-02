@@ -32,10 +32,7 @@
 
   "custom/launcher": {
     "format": "run",
-    "tooltip": "Left: hyprlauncher, middle: walker, right: fuzzel",
-    "on-click": "hyprlauncher",
-    "on-click-middle": "walker",
-    "on-click-right": "fuzzel"
+    "on-click": "fuzzel"
   },
 
   "hyprland/workspaces": {

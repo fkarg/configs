@@ -119,17 +119,8 @@
     # launchers, notifications, and bar
     bibata-cursors
     fuzzel
-    hyprlauncher
     mako
-    rofi
-    tofi
     waybar
-    walker
-    wofi
-    bemenu
-    nwg-drawer
-    sherlock-launcher
-    anyrun
 
     # status, sensors, and system monitors
     btop
