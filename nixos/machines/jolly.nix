@@ -80,6 +80,16 @@
     "btusb.enable_autosuspend=0"
   ];
 
+  # Magic SysRq as the way out of a resume that hangs in the NVIDIA driver
+  # (seen after suspending with the monitor off or a fullscreen game running:
+  # "Lost display notification", then nvidia-modeset blocked on systemd-sleep).
+  # user.slice stays frozen and NetworkManager asleep until the kernel returns,
+  # so no keybind, VT switch or ssh gets through. From a keyboard plugged
+  # straight into the tower, Alt+SysRq+R,E,I,S,U,B reboots cleanly instead of a
+  # hard reset. 244 = 4 (unraw) + 16 (sync) + 32 (remount ro) + 64 (signal
+  # processes) + 128 (reboot).
+  boot.kernel.sysctl."kernel.sysrq" = 244;
+
   # Robust LUKS keyfile discovery for a removable USB key in systems with many
   # disks and multiple USB devices attached. The cryptroot UUID stays in the
   # generated /etc/nixos/hardware-configuration.nix.
