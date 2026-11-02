@@ -4,8 +4,15 @@ let
   # Same compositor as the plain "Hyprland" entry; hyprland.lua reads
   # HYPRLAND_SHELL and starts DankMaterialShell instead of waybar, mako, the
   # polkit agent, the tray applets and cliphist.
+  #
+  # mako is masked for the session: anything notifying before DMS has claimed
+  # org.freedesktop.Notifications would otherwise D-Bus-activate mako.service,
+  # which then holds the name for good and DMS's notification server never
+  # registers. --runtime lives in $XDG_RUNTIME_DIR, so it is gone once the user
+  # manager stops; the plain session starts mako directly, not via D-Bus.
   startHyprlandDms = pkgs.writeShellScript "start-hyprland-dms" ''
     export HYPRLAND_SHELL=dms
+    systemctl --user mask --runtime mako.service
     exec ${config.programs.hyprland.package}/bin/start-hyprland
   '';
 

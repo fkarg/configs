@@ -43,13 +43,22 @@ end
 ---- MY PROGRAMS ----
 ---------------------
 
+-- The "Hyprland (Dank)" GDM session (nixos/shared/desktops/dms.nix) sets
+-- HYPRLAND_SHELL=dms. DankMaterialShell then provides the bar, notifications,
+-- polkit agent, network/bluetooth controls, launcher, clipboard history and
+-- lock screen, so the standalone tools for those are skipped or rebound.
+local dms = os.getenv("HYPRLAND_SHELL") == "dms"
+
 -- --single-instance: all ad-hoc terminals share one process (one GPU sprite
 -- cache) instead of ~50-220 MB VRAM each. NOT used for the lf window (would
 -- strip its --class) or the dev session (single-instance ignores session
 -- os_window_size). kitty.conf already sets allow_remote_control + listen_on.
 local terminal    = "kitty --single-instance"
 local fileManager = "dolphin"
-local menu        = "fuzzel"
+local menu        = dms and "dms ipc call spotlight toggle" or "fuzzel"
+-- cliphist only records in the plain session (see autostart below).
+local clipboard   = dms and "dms ipc call clipboard toggle"
+                        or "cliphist list | fuzzel --dmenu | cliphist decode | wl-copy"
 
 -- These variables keep keybindings readable. Swapping launchers or terminals is
 -- then a one-line edit instead of touching every bind below.
@@ -66,12 +75,6 @@ local menu        = "fuzzel"
 -- reload (the Lua replacement for exec-once). Keep session-specific tools here
 -- instead of systemd user services when they only work under a Hyprland
 -- compositor.
--- The "Hyprland (Dank)" GDM session (nixos/shared/desktops/dms.nix) sets
--- HYPRLAND_SHELL=dms. DankMaterialShell then provides the bar, notifications,
--- polkit agent, network/bluetooth controls and clipboard history, so the
--- standalone tools for those are skipped.
-local dms = os.getenv("HYPRLAND_SHELL") == "dms"
-
 hl.on("hyprland.start", function()
     hl.exec_cmd("systemctl --user start hyprland-session.target")
     if dms then
@@ -527,7 +530,7 @@ hl.bind("XF86AudioPlay",  hl.dsp.exec_cmd("playerctl play-pause"), { locked = tr
 hl.bind("XF86AudioPrev",  hl.dsp.exec_cmd("playerctl previous"),   { locked = true })
 
 -- Popular media/screenshot additions:
-hl.bind(mainMod .. " + CTRL + V", hl.dsp.exec_cmd("cliphist list | fuzzel --dmenu | cliphist decode | wl-copy"))
+hl.bind(mainMod .. " + CTRL + V", hl.dsp.exec_cmd(clipboard))
 -- hl.bind("XF86KbdBrightnessUp", hl.dsp.exec_cmd("brightnessctl -d '*::kbd_backlight' set +10%"), { locked = true, repeating = true })
 
 -- Monitor KVM: send a DDC input-switch over the cable to flip the shared
