@@ -1,0 +1,10 @@
+[Unit]
+Description=Snapshot open kitty windows and agent sessions for restore at login
+# Only meaningful inside a Hyprland session (it asks hyprctl for workspaces).
+ConditionEnvironment=HYPRLAND_INSTANCE_SIGNATURE
+
+[Service]
+Type=oneshot
+# User units inherit a minimal PATH; kitty, hyprctl and python3 must resolve.
+Environment=PATH=%h/.nix-profile/bin:/run/current-system/sw/bin:/usr/local/bin:/usr/bin:/bin
+ExecStart=%h/.config/hypr/kitty-snapshot

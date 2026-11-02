@@ -20,6 +20,9 @@ username: pars
 cowfile: default
 claudex_enabled: true
 
+# Hourly kitty window/agent-session snapshot, restored by startup-apps.sh.
+kitty_snapshot_enabled: true
+
 # network interfaces
 lan: enp10s0
 

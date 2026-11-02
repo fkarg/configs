@@ -1,0 +1,180 @@
+#!/usr/bin/env python3
+"""Snapshot every open kitty OS window as a kitty session file, per workspace.
+
+Run hourly by kitty-snapshot.timer (graphical_dotfiles role); safe to run by
+hand. startup-apps.sh restores the latest snapshot after a reboot, so agent
+sessions that were merely parked (waiting on CI, on a reply, on you) come back
+with the rest instead of disappearing into the resume pickers' "recent" order.
+
+Per kitty window the session file restores:
+  - Claude Code / claudex  -> `claude[x] --resume <session id>`
+    (id from ~/.claude/sessions/<pid>.json, Claude Code's live-session registry)
+  - Codex                  -> `codex resume <thread id>`, matched by the window
+    title Codex sets ("<thread name> | <dir>") against ~/.codex/session_index.jsonl;
+    the plain `codex resume` picker if that match fails
+  - a few harmless interactive programs (KEEP below) -> rerun as typed
+  - anything else          -> a shell in the window's cwd; arbitrary commands
+    (builds, ansible runs, rm) are deliberately never re-executed
+Commands typed into a fish window are restored via `fish -C`, so quitting them
+leaves you at a prompt as before.
+
+Output: $XDG_STATE_HOME/kitty-snapshot/<UTC time>/<workspace>[.<n>].kitty-session,
+with `latest` pointing at the newest snapshot; the last KEEP_SNAPSHOTS are kept.
+"""
+import contextlib
+import datetime
+import glob
+import json
+import os
+import re
+import shlex
+import shutil
+import subprocess
+import sys
+
+KEEP = {"btop", "htop", "watch", "nvim", "vim", "lf"}
+KEEP_SNAPSHOTS = 48
+SHELLS = {"fish", "bash", "zsh", "sh"}
+HOME = os.path.expanduser("~")
+STATE = os.path.join(os.environ.get("XDG_STATE_HOME", os.path.join(HOME, ".local/state")), "kitty-snapshot")
+
+
+def kitty_pids():
+    """Live kitty processes with a remote-control socket (listen_on unix:/tmp/kitty)."""
+    for sock in glob.glob("/tmp/kitty-*"):
+        pid = sock.rsplit("-", 1)[1]
+        try:
+            with open(f"/proc/{pid}/comm") as f:
+                if "kitty" in f.read():
+                    yield int(pid), sock
+        except (FileNotFoundError, ValueError):
+            pass  # stale socket of a kitty that is gone
+
+
+def claude_session(pid):
+    """Claude Code's live-session record for pid: sessionId, cwd, ..."""
+    try:
+        with open(os.path.join(HOME, ".claude/sessions", f"{pid}.json")) as f:
+            return json.load(f)
+    except FileNotFoundError:
+        return None
+
+
+def codex_threads():
+    """Current thread name -> thread id, for names only one thread has."""
+    current = {}  # id -> (updated_at, name)
+    try:
+        with open(os.path.join(HOME, ".codex/session_index.jsonl")) as f:
+            for line in f:
+                t = json.loads(line)
+                if t.get("thread_name") and t["updated_at"] >= current.get(t["id"], ("", ""))[0]:
+                    current[t["id"]] = (t["updated_at"], t["thread_name"])
+    except FileNotFoundError:
+        pass
+    ids = {}
+    for tid, (_, name) in current.items():
+        ids.setdefault(name, []).append(tid)
+    return {name: tids[0] for name, tids in ids.items() if len(tids) == 1}
+
+
+def window_launch(w, threads):
+    """The session-file `launch` arguments that bring one kitty window back."""
+    cwd = w["cwd"]
+    shell = w["cmdline"][0] if w["cmdline"] else ""
+    in_shell = os.path.basename(shell) in SHELLS
+    # What was typed at the prompt; for a window this script restored and nobody
+    # has typed into since, the command it was launched with via `fish -C`.
+    typed = (w.get("last_reported_cmdline") or "").strip()
+    if not typed and w["cmdline"][1:2] == ["-C"]:
+        typed = w["cmdline"][2]
+    # The foreground process group can hold helpers (a busy agent's tool
+    # subprocesses), so look at every member, not just the first or last.
+    procs = [p for p in w["foreground_processes"] if p["cmdline"]]
+    progs = {os.path.basename(p["cmdline"][0]): p for p in procs}
+
+    cmd = None
+    claude = next(filter(None, (claude_session(p["pid"]) for p in procs)), None)
+    if claude:
+        # Resume from the directory the session was started in: Claude Code
+        # files sessions under it and only finds them from there.
+        cwd = claude["cwd"]
+        binary = "claudex" if typed.split()[:1] == ["claudex"] else "claude"
+        cmd = f"{binary} --resume {claude['sessionId']}"
+    elif "codex" in progs:
+        title = w["title"].rsplit(" | ", 1)[0]
+        tid = threads.get(title) or threads.get(re.sub(r"^\W+", "", title))  # spinner glyphs
+        cmd = f"codex resume {tid}" if tid else "codex resume"
+    elif keep := next((p for p in KEEP if p in progs), None):
+        if not in_shell:  # launched directly by a session file, e.g. btop
+            return ["--cwd", cwd, keep] + progs[keep]["cmdline"][1:]
+        # Only a plain invocation of the program itself, never shell syntax
+        # that could chain arbitrary commands onto it.
+        if typed.split()[:1] == [keep] and re.fullmatch(r"[\w./~@%+=:, -]+", typed):
+            cmd = typed
+
+    if cmd and os.path.basename(shell) == "fish":
+        return ["--cwd", cwd, shell, "-C", cmd]
+    if cmd and not in_shell:  # an agent kitty launched directly; no shell to return to
+        return ["--cwd", cwd] + shlex.split(cmd)
+    return ["--cwd", cwd]  # a fresh shell in the same place
+
+
+def session_file(os_window, threads, header):
+    lines = [header]
+    for tab in os_window["tabs"]:
+        lines += ["", f"new_tab {tab['title']}" if tab.get("title_overridden") else "new_tab",
+                  f"layout {tab['layout']}"]
+        for w in tab["windows"]:
+            lines.append(shlex.join(["launch"] + window_launch(w, threads)))
+            if tab["is_active"] and w["is_active"]:
+                lines.append("focus")
+    return "\n".join(lines) + "\n"
+
+
+def main():
+    clients = json.loads(subprocess.run(["hyprctl", "clients", "-j"], check=True,
+                                        capture_output=True, text=True).stdout)
+    threads = codex_threads()
+    now = datetime.datetime.now(datetime.timezone.utc)
+    files = {}
+    for pid, sock in kitty_pids():
+        tree = json.loads(subprocess.run(["kitty", "@", "--to", f"unix:{sock}", "ls"], check=True,
+                                         capture_output=True, text=True).stdout)
+        mine = [c for c in clients if c["pid"] == pid]
+        for osw in tree:
+            # Hyprland's window title is the OS window's active kitty window title.
+            active = next((w["title"] for t in osw["tabs"] if t["is_active"]
+                           for w in t["windows"] if w["is_active"]), None)
+            client = next((c for c in mine if c["title"] == active), mine[0] if mine else None)
+            if client is None:
+                continue
+            mine.remove(client)
+            ws = client["workspace"]["name"].replace("/", "_")
+            name, n = f"{ws}.kitty-session", 2
+            while name in files:
+                name, n = f"{ws}.{n}.kitty-session", n + 1
+            files[name] = session_file(osw, threads, f"# kitty-snapshot of workspace {ws} at {now:%Y-%m-%d %H:%M} UTC")
+    if not files:
+        print("kitty-snapshot: no kitty windows found, keeping the previous snapshot", file=sys.stderr)
+        return
+
+    os.makedirs(STATE, exist_ok=True)
+    tmp = os.path.join(STATE, ".tmp")
+    shutil.rmtree(tmp, ignore_errors=True)
+    os.mkdir(tmp)
+    for name, text in files.items():
+        with open(os.path.join(tmp, name), "w") as f:
+            f.write(text)
+    stamp = f"{now:%Y%m%dT%H%M%SZ}"
+    os.rename(tmp, os.path.join(STATE, stamp))
+    with contextlib.suppress(FileNotFoundError):  # left by an interrupted run
+        os.remove(os.path.join(STATE, ".latest"))
+    os.symlink(stamp, os.path.join(STATE, ".latest"))
+    os.replace(os.path.join(STATE, ".latest"), os.path.join(STATE, "latest"))
+    for old in sorted(d for d in os.listdir(STATE) if d[0].isdigit())[:-KEEP_SNAPSHOTS]:
+        shutil.rmtree(os.path.join(STATE, old))
+    print(f"kitty-snapshot: {stamp}: {', '.join(sorted(files))}")
+
+
+if __name__ == "__main__":
+    main()

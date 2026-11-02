@@ -18,11 +18,28 @@ launch() {
         || echo "startup-apps: launch failed (ws $ws): $cmd" >&2
 }
 
-# Scratchpad (Super+S): system monitor (see dotconfig/kitty/monitor.session).
-launch 'special:magic silent' 'kitty --session ~/.config/kitty/monitor.session'
-
-# ws3: kitty with one tab per active project (see dotconfig/kitty/dev.session).
-launch '3 silent' 'kitty --session ~/.config/kitty/dev.session'
+# kitty: bring back every kitty window from the latest hourly kitty-snapshot
+# (tabs, cwds, and open Claude/Codex sessions resumed by id), each on the
+# workspace it was on. The two standard windows fall back to their static
+# sessions when the snapshot has none for their workspace:
+#   Scratchpad (Super+S): system monitor (dotconfig/kitty/monitor.session).
+#   ws3: one tab per active project (dotconfig/kitty/dev.session).
+# Re-running this by hand resumes those agent sessions a second time while the
+# originals are still open; close the duplicates.
+declare -A kitty_default=(
+    [special:magic]=~/.config/kitty/monitor.session
+    [3]=~/.config/kitty/dev.session
+)
+for session in "${XDG_STATE_HOME:-$HOME/.local/state}"/kitty-snapshot/latest/*.kitty-session; do
+    [ -e "$session" ] || continue
+    ws=${session##*/}
+    ws=${ws%%.*}  # "3.kitty-session", "3.2.kitty-session" -> "3"
+    launch "$ws silent" "kitty --session $session"
+    unset "kitty_default[$ws]"
+done
+for ws in "${!kitty_default[@]}"; do
+    launch "$ws silent" "kitty --session ${kitty_default[$ws]}"
+done
 
 # ws2: firefox default profile (Kolai). ws9: Personal profile; --no-remote lets
 # the second instance run alongside and keeps external links opening in Kolai.

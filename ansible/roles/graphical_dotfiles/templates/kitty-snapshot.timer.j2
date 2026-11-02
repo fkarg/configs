@@ -1,0 +1,11 @@
+[Unit]
+Description=Hourly kitty-snapshot
+
+[Timer]
+# startup-apps.sh restores the latest snapshot at login, before the first run
+# of this session replaces it.
+OnStartupSec=1h
+OnUnitActiveSec=1h
+
+[Install]
+WantedBy=timers.target

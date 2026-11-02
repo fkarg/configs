@@ -141,6 +141,57 @@
   when: ansible_facts['system'] == 'Linux'
   tags: [hyprland]
 
+# Hourly snapshot of open kitty windows (and the agent sessions in them) that
+# startup-apps.sh restores at login. User units for the same reason as
+# agent-sync's: they apply on the ansible run, not behind jolly's next boot.
+- name: Link kitty-snapshot
+  file:
+    src: "~/{{ configs_repo }}/{{ dotconfigdir }}/hypr/kitty-snapshot"
+    dest: ~/.config/hypr/kitty-snapshot
+    state: link
+    force: true
+  when:
+    - ansible_facts['system'] == 'Linux'
+    - kitty_snapshot_enabled | default(false) | bool
+  tags: [hyprland]
+
+- name: Ensure user systemd directory exists
+  file:
+    path: ~/.config/systemd/user
+    state: directory
+    mode: '0755'
+  when:
+    - ansible_facts['system'] == 'Linux'
+    - kitty_snapshot_enabled | default(false) | bool
+  tags: [hyprland]
+
+- name: Install kitty-snapshot systemd user units
+  template:
+    src: "{{ item }}.j2"
+    dest: "~/.config/systemd/user/{{ item }}"
+    mode: '0644'
+  loop:
+    - kitty-snapshot.service
+    - kitty-snapshot.timer
+  when:
+    - ansible_facts['system'] == 'Linux'
+    - kitty_snapshot_enabled | default(false) | bool
+  register: _kitty_snapshot_units
+  tags: [hyprland]
+
+- name: Enable kitty-snapshot timer
+  systemd:
+    name: kitty-snapshot.timer
+    scope: user
+    enabled: true
+    state: started
+    daemon_reload: "{{ _kitty_snapshot_units is changed }}"
+  when:
+    - ansible_facts['system'] == 'Linux'
+    - kitty_snapshot_enabled | default(false) | bool
+    - not ansible_check_mode
+  tags: [hyprland]
+
 - name: Link hyprland resize helper
   file:
     src: "~/{{ configs_repo }}/{{ dotconfigdir }}/hypr/hypr-resize"
