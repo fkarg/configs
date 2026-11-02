@@ -64,9 +64,13 @@
   # action nil and turns the display OFF. On jolly that is not recoverable
   # without a reboot: the monitor is also the USB KVM hub, so after ~90s without
   # a DP signal it auto-switches input and takes the keyboard with it.
+  #
+  # lock_cmd prefers DankMaterialShell's lock screen; outside the Dank session
+  # no DMS instance is running, `dms ipc` exits non-zero and hyprlock takes
+  # over. Keybinds go through `loginctl lock-session` to hit the same path.
   environment.etc."xdg/hypr/hypridle.conf".text = ''
     general {
-        lock_cmd = pidof hyprlock || hyprlock
+        lock_cmd = pidof hyprlock || dms ipc call lock lock || hyprlock
         before_sleep_cmd = loginctl lock-session
         after_sleep_cmd = hyprctl dispatch 'hl.dsp.dpms({ action = "on" })'
     }

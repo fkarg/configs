@@ -394,7 +394,7 @@ hl.bind(mainMod .. " + Return", hl.dsp.exec_cmd(terminal))
 hl.bind(mainMod .. " + Q", close_app)
 hl.bind(mainMod .. " + C", hl.dsp.window.close())
 hl.bind(mainMod .. " + X", close_app)
-hl.bind(mainMod .. " + A", hl.dsp.exec_cmd("hyprlock"))
+hl.bind(mainMod .. " + A", hl.dsp.exec_cmd("loginctl lock-session"))
 hl.bind(mainMod .. " + E", hl.dsp.exec_cmd(fileManager))
 hl.bind(mainMod .. " + CTRL + E", hl.dsp.exec_cmd("kitty --class lf -e lf"))
 hl.bind(mainMod .. " + V", hl.dsp.window.float({ action = "toggle" }))
@@ -470,8 +470,9 @@ hl.bind("Print", hl.dsp.exec_cmd("hyprshot -m region --clipboard-only -z"))
 hl.bind(mainMod .. " + SHIFT + Print", hl.dsp.exec_cmd('grim -g "$(slurp -d)" - | swappy -f -'))
 hl.bind(mainMod .. " + CTRL + Print", hl.dsp.exec_cmd("hyprshot -m output --clipboard-only"))
 
--- Lock and suspend. Hypridle also calls the lock path before sleep.
-hl.bind(mainMod .. " + SHIFT + L", hl.dsp.exec_cmd("hyprlock"))
+-- Lock and suspend. Locking goes through hypridle's lock_cmd (DMS lock in
+-- the Dank session, hyprlock otherwise), same as before sleep.
+hl.bind(mainMod .. " + SHIFT + L", hl.dsp.exec_cmd("loginctl lock-session"))
 hl.bind(mainMod .. " + SHIFT + U", hl.dsp.exec_cmd("systemctl suspend"))
 
 -- Config reload while staying in-session. Useful when editing this file.
