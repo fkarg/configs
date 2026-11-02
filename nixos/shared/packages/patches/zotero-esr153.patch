@@ -34,7 +34,7 @@ https://github.com/zotero/zotero/commit/f53d4b5eca8ecb24be622212f0880a69da245ead
 Adaptations for the 10.0.2 release branch:
 - Preserve its credential fallback flow while awaiting the ESR153 login APIs.
 - Adapt the HiddenBrowser hunk to the existing comment/context.
-- Keep macOS/Windows runtime packaging and WebGPU defaults unchanged; set Linux Gecko to 153.3.0esr.
+- Keep macOS/Windows runtime packaging and WebGPU defaults unchanged; set Linux Gecko to 153.6.0esr.
 - Require Gecko 153 in application.ini.
 - Add a saved-snapshot rendering regression test for the reader iframe migration.
 
@@ -88,10 +88,10 @@ diff --git a/app/config.sh b/app/config.sh
 @@ -2,7 +2,7 @@
  
  # Version of Gecko to build with
- GECKO_VERSION_MAC="140.15.0esr"
--GECKO_VERSION_LINUX="140.15.0esr"
-+GECKO_VERSION_LINUX="153.3.0esr"
- GECKO_VERSION_WIN="140.15.0esr"
+ GECKO_VERSION_MAC="140.17.0esr"
+-GECKO_VERSION_LINUX="140.17.0esr"
++GECKO_VERSION_LINUX="153.6.0esr"
+ GECKO_VERSION_WIN="140.17.0esr"
  RUST_VERSION=1.86.0
  
 diff --git a/app/scripts/fetch_xulrunner b/app/scripts/fetch_xulrunner
