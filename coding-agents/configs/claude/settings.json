@@ -139,7 +139,7 @@
   "effortLevel": "high",
   "askUserQuestionTimeout": "never",
   "tui": "fullscreen",
-  "viewMode": "focus",
+  "viewMode": "default",
   "showThinkingSummaries": true,
   "skipDangerousModePermissionPrompt": true,
   "skipWorkflowUsageWarning": true,
