@@ -68,6 +68,8 @@ allow_local_binding = true
 "objects.githubusercontent.com" = "allow"
 # Public tokenizer vocabularies fetched by tiktoken.
 "openaipublic.blob.core.windows.net" = "allow"
+# Claude CLI authentication/platform requests during peer-review calls.
+"platform.claude.com" = "allow"
 "proxy.golang.org" = "allow"
 "pypi.org" = "allow"
 "raw.githubusercontent.com" = "allow"
