@@ -53,7 +53,7 @@ git diff $(git merge-base origin/<base> HEAD) | peer-review --stdin --mode diff-
 
 A peer gets the invariants and test evidence, never a naked diff — otherwise it guesses what the change was meant to preserve, and guesses come back as noise. If peer-review reports no peer CLI, the same-model fleet, `simplicity-reviewer` included, is the only adversarial pass, so don't thin it.
 
-Synthesize in-thread: dedupe, kill false positives, tag cross-model findings with the model that produced them, rank 🔴/🟡/🟢. `simplicity-reviewer` 🔴 findings are not advisory — they go to the checkpoint (or the caller) as their own block, not folded into nits. Record each peer finding's outcome per the global peer rules, tagged with its lens (or generic), in the synthesis that goes into the PR body — that is the record for judging which lens passes earn their cost.
+Synthesize in-thread: dedupe; rank real findings 🔴/🟡/🟢 by impact, leaving rejected claims unranked; give every material finding, rejected ones included, a disposition separate from its rank: fixed (SHA and verification/re-review status), rejected (reason), deferred (follow-up), or open; tag cross-model findings with the model that produced them. `simplicity-reviewer` 🔴 findings are not advisory — they go to the checkpoint (or the caller) as their own block, not folded into nits. Record each peer finding's outcome per the global peer rules, tagged with its lens (or generic), in the synthesis that goes into the PR body — that is the record for judging which lens passes earn their cost.
 
 ## 4. Production readiness
 

@@ -12,7 +12,7 @@ Turn a reviewed change into a pushed PR with the evidence a reviewer needs, then
 - **Reading guide:** rank judgment-heavy hunks to read closely and why; identify mechanical/test-pinned parts safe to skim.
 - **Verification walkthrough:** run the final code on the documented local stack. Record repeatable setup and steps, expected and observed results, reaching the required user outcomes and an edge/negative case. Backend: commands and relevant output. Frontend: captioned screenshots of meaningful states using synthetic data; upload to the PR, never commit them. If upload fails, keep local paths and disclose it. Paired frontend/backend PRs share or link the sequence and name the counterpart head tested. Mark unrun checks with reasons; failed expected outcomes must be fixed. If there is no runnable surface, say so.
 
-Any fix since the review — the caller's or one made here — changes the evidence: rerun the affected reviewers, update the map, and rerun `production-readiness` on the final diff. Continue to shipping unless a red finding or budget expansion needs the signer.
+Any fix since the review — the caller's or one made here — changes the evidence: rerun the affected reviewers, update the map and synthesis dispositions, and rerun `production-readiness` on the final diff. Continue to shipping unless a red finding or budget expansion needs the signer.
 
 ## 2. Ship
 
