@@ -12,13 +12,13 @@
 
 token_file="${XDG_CONFIG_HOME:-$HOME/.config}/claude-oauth-token"
 
-# Drop this wrapper's directory from PATH so `claude` resolves to the real CLI.
+# Drop every PATH alias of this wrapper so `claude` resolves to the real CLI.
 self_dir=$(CDPATH='' cd -- "${0%/*}" && pwd)
 real_path=
 set -f
 IFS=:
 for dir in $PATH; do
-    [ "$dir" = "$self_dir" ] || real_path="${real_path:+$real_path:}$dir"
+    [ "$dir/claude" -ef "$0" ] || real_path="${real_path:+$real_path:}$dir"
 done
 unset IFS
 set +f

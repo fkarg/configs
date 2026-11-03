@@ -557,6 +557,7 @@ class PeerReviewTests(unittest.TestCase):
         self, args: list[str], env_overrides: dict[str, str],
         *, claude_stub: str = CLAUDE_STUB, codex_stub: str = CODEX_STUB,
         input_text: str | None = None, open_stdin: bool = False,
+        claude_wrapper_on_path: bool = False,
     ) -> tuple[subprocess.CompletedProcess[str], list[str], Path]:
         with tempfile.TemporaryDirectory() as tmp:
             tmpdir = Path(tmp)
@@ -575,6 +576,11 @@ class PeerReviewTests(unittest.TestCase):
                 "RECORD_FILE": str(record),
             }
             env.update(env_overrides)
+            if claude_wrapper_on_path:
+                wrapper_dir = tmpdir / "claude-wrapper"
+                wrapper_dir.mkdir()
+                (wrapper_dir / "claude").symlink_to(REPO / "scripts" / "claude")
+                env["PATH"] = f"{wrapper_dir}:{env['PATH']}"
 
             child = subprocess.Popen(
                 [str(LAUNCHER), *args],
@@ -626,14 +632,16 @@ class PeerReviewTests(unittest.TestCase):
     def test_claude_target_loads_host_token_without_shell_path_setup(self) -> None:
         # Codex's shell finds the native CLI before the fish-installed wrapper.
         # Both review and catalog calls must still use the per-command token.
-        for catalog in (False, True):
-            with self.subTest(catalog=catalog), tempfile.TemporaryDirectory() as tmp:
+        for catalog, wrapper_on_path in ((False, False), (False, True),
+                                         (True, False), (True, True)):
+            with self.subTest(catalog=catalog, wrapper_on_path=wrapper_on_path), tempfile.TemporaryDirectory() as tmp:
                 (Path(tmp) / "claude-oauth-token").write_text("fixture-oauth\n")
                 stub = CATALOG_CLAUDE_STUB if catalog else CLAUDE_STUB
                 stub += '\nprintf "oauth=%s\\n" "${CLAUDE_CODE_OAUTH_TOKEN:+present}" >>"$RECORD_FILE"\n'
                 proc, lines, _ = self.run_launcher(
                     ["--from", "gpt", "--models" if catalog else "brief"],
                     {"XDG_CONFIG_HOME": tmp}, claude_stub=stub,
+                    claude_wrapper_on_path=wrapper_on_path,
                 )
                 self.assertEqual(proc.returncode, 0, proc.stderr)
                 self.assertIn("oauth=present", lines)

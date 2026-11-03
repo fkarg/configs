@@ -148,7 +148,7 @@ and files covered by the existing deny rules remain excluded.
 Claude target calls use the sibling `scripts/claude` OAuth wrapper explicitly,
 including model discovery, so they work without fish's PATH setup. The wrapper
 loads the per-host token only into Claude's process; self-model discovery keeps
-the caller's provider and authentication.
+the caller's command and provider environment.
 
 Prefer the installed `peer-review` command on PATH. The relative spellings
 `scripts/peer-review` and `./scripts/peer-review` are also allowed. Absolute paths
