@@ -623,6 +623,44 @@ class PeerReviewTests(unittest.TestCase):
         )
         self.assertIn("base=unset", lines)
 
+    def test_claude_target_loads_host_token_without_shell_path_setup(self) -> None:
+        # Codex's shell finds the native CLI before the fish-installed wrapper.
+        # Both review and catalog calls must still use the per-command token.
+        for catalog in (False, True):
+            with self.subTest(catalog=catalog), tempfile.TemporaryDirectory() as tmp:
+                (Path(tmp) / "claude-oauth-token").write_text("fixture-oauth\n")
+                stub = CATALOG_CLAUDE_STUB if catalog else CLAUDE_STUB
+                stub += '\nprintf "oauth=%s\\n" "${CLAUDE_CODE_OAUTH_TOKEN:+present}" >>"$RECORD_FILE"\n'
+                proc, lines, _ = self.run_launcher(
+                    ["--from", "gpt", "--models" if catalog else "brief"],
+                    {"XDG_CONFIG_HOME": tmp}, claude_stub=stub,
+                )
+                self.assertEqual(proc.returncode, 0, proc.stderr)
+                self.assertIn("oauth=present", lines)
+                self.assertNotIn("fixture-oauth", proc.stdout + proc.stderr)
+
+    def test_claudex_self_catalog_keeps_its_own_authentication(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            (Path(tmp) / "claude-oauth-token").write_text("fixture-host-oauth\n")
+            stub = CATALOG_CLAUDE_STUB + '''
+case "${CLAUDE_CODE_OAUTH_TOKEN:-}" in
+    fixture-host-oauth) auth=host ;;
+    fixture-caller-oauth) auth=caller ;;
+    *) auth=other ;;
+esac
+printf 'auth=%s\\n' "$auth" >>"$RECORD_FILE"
+'''
+            proc, lines, _ = self.run_launcher(
+                ["--models", "--include-self"],
+                {"XDG_CONFIG_HOME": tmp,
+                 "ANTHROPIC_BASE_URL": "http://127.0.0.1:8317",
+                 "CLAUDE_CODE_OAUTH_TOKEN": "fixture-caller-oauth"},
+                claude_stub=stub,
+            )
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        self.assertEqual(lines, ["cli=claude base=unset", "auth=host",
+                                 "cli=claude base=http://127.0.0.1:8317", "auth=caller"])
+
     def test_codex_session_routes_to_claude(self) -> None:
         """Regression: Codex calling Codex.
 

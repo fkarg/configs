@@ -277,13 +277,20 @@ HELP
     exit 0
 fi
 
+# Use the per-command OAuth wrapper even outside fish's PATH setup. Resolve
+# through installed symlinks; self discovery must keep its own provider/auth.
+peer_command="$peer_cli"
+if [ "$peer_cli" = claude ]; then
+    peer_command="$(dirname "$(realpath "$0")")/claude"
+fi
+
 if [ "$list_models" = true ]; then
     [ $# -eq 0 ] && [ -z "$input_sources$lens" ] ||
         fail "--models does not accept a brief, --lens, --stdin or --file"
-    python3 - "$peer_cli" "$include_self" "$detected_harness" "$proxy_env_vars" <<'PY'
+    python3 - "$peer_cli" "$include_self" "$detected_harness" "$proxy_env_vars" "$peer_command" <<'PY'
 import json, os, subprocess, sys
 
-peer_cli, include_self, harness, proxy_vars = sys.argv[1:]
+peer_cli, include_self, harness, proxy_vars, peer_command = sys.argv[1:]
 self_cli = {"Codex": "codex", "Claude Code": "claude",
             "Claude Code (claudex)": "claude"}.get(
                 harness, "claude" if peer_cli == "codex" else "codex")
@@ -303,6 +310,8 @@ def catalog(cli, *, target=False):
         # Initialization discovers models without sending a user message.
         request = json.dumps({"type": "control_request", "request_id": "peer-models",
                               "request": {"subtype": "initialize"}}) + "\n"
+    if target:
+        command[0] = peer_command
     proc = subprocess.run(command, input=request, capture_output=True, text=True, env=env)
     if proc.returncode:
         raise ValueError(f"{cli} model discovery failed (exit {proc.returncode})")
@@ -477,8 +486,8 @@ if [ "$peer_cli" = "codex" ]; then
         peer_failed "codex exec failed"
 else
     # A peer running through claudex would be GPT again. Force real Anthropic.
-    # Leave ANTHROPIC_API_KEY alone: without it the CLI falls back to the
-    # keychain/OAuth session, which is how this host normally authenticates.
+    # The wrapper loads host OAuth privately; without it the CLI can still
+    # use ANTHROPIC_API_KEY or its normal stored login.
     unset $proxy_env_vars
     # claude --json-schema takes the schema INLINE, not a path -- handing it a
     # filename fails with "not valid JSON: Unrecognized token '/'".
@@ -493,7 +502,7 @@ else
         --strict-mcp-config
     [ -n "$workdir" ] && set -- "$@" --add-dir "$workdir"
     set -- "$@" --disallowed-tools "Edit" "Write" "NotebookEdit"
-    claude "$@" <"$combined_file" >"$result_file" 2>"$err_file" ||
+    "$peer_command" "$@" <"$combined_file" >"$result_file" 2>"$err_file" ||
         peer_status=$?
     # Claude reports API errors as JSON on stdout, often with empty stderr.
     # Keep parsing that result even when the process exits nonzero.
