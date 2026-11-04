@@ -250,6 +250,13 @@ hl.config({
         focus_on_activate = false,
     },
 
+    render = {
+        -- Since 0.57 auto HDR offers fullscreen surfaces an HDR description as
+        -- their preferred one; clients that adopt it (VS Code/Electron) then
+        -- flip the monitor into HDR on a plain fullscreen. Displays stay SDR.
+        cm_auto_hdr = 0,
+    },
+
     cursor = {
         -- Hardware cursors can be troublesome on some NVIDIA setups. This is
         -- left on for performance; flip to 1 if the cursor disappears or
