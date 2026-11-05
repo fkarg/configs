@@ -75,7 +75,12 @@ local clipboard   = dms and "dms ipc call clipboard toggle"
 -- instead of systemd user services when they only work under a Hyprland
 -- compositor.
 hl.on("hyprland.start", function()
-    hl.exec_cmd("systemctl --user start hyprland-session.target")
+    -- Hyprland exports WAYLAND_DISPLAY to systemd/dbus but not XDG_SESSION_TYPE.
+    -- Apps the DMS launcher starts via systemd-run inherit that environment, and
+    -- Chromium/Electron's --ozone-platform-hint=auto falls back to X11 without
+    -- it, putting Teams, Discord, etc. on XWayland, where the fractional scale
+    -- leaves resampling seams in the text. Import it before the session units start.
+    hl.exec_cmd("dbus-update-activation-environment --systemd XDG_SESSION_TYPE; systemctl --user start hyprland-session.target")
     if dms then
         hl.exec_cmd("systemctl --user start dms-session.target")
     else
