@@ -353,6 +353,9 @@ hl.config({
 
         touchpad = {
             natural_scroll = false,
+            -- Tap-and-drag latches a held button when a quick tap precedes a
+            -- two-finger scroll, turning the scroll into a selection drag.
+            tap_and_drag = false,
             -- Popular laptop options:
             -- tap_to_click = true,
             -- disable_while_typing = true,
