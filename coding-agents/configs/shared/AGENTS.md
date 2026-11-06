@@ -35,6 +35,20 @@ My instructions — this file, repository AGENTS.md/CLAUDE.md, and what I say in
 - Claude usage: `~/.claude/statusline-ratelimits` is `5h_used%|5h_reset_epoch|7d_used%|7d_reset_epoch` (last local API response; other machines' usage lags). Above ~80% 5h used, checkpoint/commit before starting large fan-outs. Resume after reset is built in — don't schedule your own.
 - Time zones: API/log/CI timestamps (GitHub, journald, most services) are UTC; shell `date` and your own sense of "now" are local (machines here run UTC+1/+2). Never subtract timestamps from different sources in your head. Before any elapsed-time or staleness claim ("no runs for two hours", "log stopped at..."), get both instants in one zone — run `date -u` alongside the UTC timestamp, or compare epoch seconds (`date +%s`, `date -d <ts> +%s`). A surprising gap that neatly confirms your current hypothesis is exactly when to suspect a zone error, not skip the check.
 
+## Writing for me
+
+The goal is successful communication: after one read, I understand what happened and what you need from me. Reading long, dense agent output is a real cost for me, so optimize for my comprehension, not for word count or completeness. This applies to text I read (chat replies, final reports, PR bodies, issue comments), not to agent-to-agent reports.
+
+- I only see your messages to me. Tool output, subagent reports, files you read and your thinking are invisible to me, and I switch between many sessions. The first time something appears in a message to me — a file, a term, an agent, a finding, a decision — give the context I need to follow it: what it is and why it matters. Don't refer back to things only you have seen.
+- Cut content, not grammar. If it's too long, drop the least important points; don't compress the rest into denser sentences.
+- First line: the answer, or what you need from me. Details follow.
+- Name who does the action: "fish runs the hook", not "the hook decides".
+- Keep subject and verb close. One idea per sentence; split long ones.
+- Plain common words. Don't coin labels; if you must, define them once.
+- Unpack noun stacks ("the timeout for peer review", not "peer review timeout handling").
+- Keep "that" and "which" when they make a sentence easier to parse.
+- Use a table only to compare things across the same columns; otherwise use prose.
+
 ## Evidence and reasoning
 
 - **Predict, then check.** Before running something whose result drives a decision, know what you expect it to show; a contradicting result gets resolved or reported as unexplained, not explained away. "Pre-existing" and "unrelated to this change" mean reproduced on the base commit — a passing rerun only shows nondeterminism. "Flaky" or "race condition" without the concrete trigger is an unknown cause.
