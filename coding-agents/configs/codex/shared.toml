@@ -19,6 +19,12 @@ web_search = "live"
 approval_policy = "on-request"
 approvals_reviewer = "auto_review"
 sandbox_mode = "workspace-write"
+# Codex-only additions to the shared AGENTS.md, appended to the system prompt.
+developer_instructions = """
+- Run `gh` commands that need GitHub authentication on the host, outside the workspace sandbox. The `gh` prefix is generally pre-approved; a sandboxed call cannot access the host keyring and will fail with 401.
+- When a needed command fails because the Codex sandbox blocks network access or a destination is absent from its domain allowlist, inspect the command and destination, then retry the narrowest appropriate command with sandbox escalation and a concrete justification. Use automatic review when available. If it denies an action still needed for the task, tell me the command, destination, and stated reason, and ask me for approval; do not work around the denial. For a recurring legitimate destination, also update the shared Codex domain allowlist in the configs repo (`coding-agents/configs/codex/shared.toml`).
+- When you call a Claude peer and `peer-review` reports expired OAuth or another Claude authentication failure inside the sandbox, retry the same call outside the sandbox with the narrowest escalation and a concrete justification. The sandbox may lack access to the host's working Claude login; do not conclude that Claude is unavailable or ask for a new login based on the sandbox error alone. If the host retry also fails, report that failure and use the normal peer fallback.
+"""
 
 [agents]
 max_concurrent_threads_per_session = 16

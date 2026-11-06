@@ -39,7 +39,7 @@ Present one plan: approach, files, settled/open decisions, tests, and change bud
 
 Write the implementation yourself; specialists advise. Preserve invariants, add behavior tests per the `writing-tests` skill, run documented checks; note plan deviations briefly. After green, always send the diff to `simplicity-reviewer`; fix red findings or bring the disagreement verbatim to the signer. Recheck after changes.
 
-Review the complete change against its branch point: stage intended files, then load the `super-review` skill (as a subagent, read its `SKILL.md`) as its calling workflow, giving it the worktree, `<base>`, issue, plan, invariants, test evidence and non-goals. Fix red findings and rerun the affected reviewers, fix yellow if quick or report it, fix easy green items. Continue unless a red finding or budget expansion needs the signer.
+Review the complete change against its branch point: stage intended files, then load the `super-review` skill (as a subagent, read its `SKILL.md`) as its calling workflow, giving it the worktree, `<base>`, issue, plan, invariants, test evidence and non-goals. Fix red findings and rerun the affected reviewers, fix yellow if quick or report it, fix easy green items. If fixes grew the diff, cut first: prefer the fix that deletes or narrows code over a new guard, helper or option. Continue unless a red finding or budget expansion needs the signer.
 
 Beyond the premise/diagnosis, design and review gates, call a peer wherever an independent view could change a decision: a red finding you dispute, or a fix that changes design or behavior (run a diff pass on it). Mechanical fixes need none.
 

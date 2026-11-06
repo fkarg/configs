@@ -24,7 +24,9 @@ Its first run on a PR records existing state silently, so handle the checks, thr
 
 Act only on checks and comments newer than the latest push, and verify every bot finding against the source before changing code. Codex reviews only when the PR opens, with findings or a 👍; don't post `@codex review` for later heads unless the user asked. If expected automated feedback never arrives, report that instead of waiting.
 
-Fix real bugs in the intended case; decline the rest in a thread reply with the reason, and list them as follow-ups in the handoff. Replies lead with the conclusion and cite `file:line`, a check or output. After the reply posts, resolve bot threads and threads your fix addressed; leave a declined human thread open for that reviewer.
+When CI fails, fetch the logs (`gh run view --log-failed`), diagnose, fix and push. Stop only when the failure is genuinely out of scope (an infra flake, or breakage already on the default branch), and say so explicitly in the handoff.
+
+Fix real bugs in the intended case; decline the rest in a thread reply with the reason, and list them as follow-ups in the handoff. Give same-class siblings an explicit fix-here-or-file decision. If fixes grew the diff, cut first: prefer the fix that deletes or narrows code over a new guard, helper or option. Replies lead with the conclusion and cite `file:line`, a check or output. After the reply posts, resolve bot threads and threads your fix addressed; leave a declined human thread open for that reviewer.
 
 A fix changes the evidence: rerun the affected checks and your own reviewers, and update PR-body artifacts (map, walkthrough) whose claims it changed.
 

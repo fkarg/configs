@@ -44,7 +44,7 @@ In one parallel wave, dispatch fresh-context reviewers who have not seen this co
 - Non-trivial changes: `reviewer`, `murphyjitsu-reviewer`, and `simplicity-reviewer` — called by ic, repeat it only if scope expanded, new abstractions appeared, or no cross-model peer is available, since ic ran it after green.
 - When the change matches their trigger: `security-reviewer`, `test-quality-reviewer` (pass it the invariants), `performance-reviewer`, `consistency-reviewer`.
 
-**Cross-model passes:** every dispatched reviewer runs its own lens pass (global peer rules), so the fleet is cross-model per lens. Give each reviewer what that pass needs: the base for the diff, the invariants and test evidence. Only when no fleet runs (a trivial change), run the generic pass yourself:
+**Cross-model passes:** tell every dispatched reviewer to run its own lens pass, `git diff <base> | peer-review --stdin --mode diff-review --lens <its agent name> --cd <worktree>`, in parallel with its own review, briefed with the intent, invariants and test evidence; to verify the peer's findings against the code; and to fold them into its report tagged with the answering model. That makes the fleet cross-model per lens. Only when no fleet runs (a trivial change), run the generic pass yourself:
 
 ```
 git diff $(git merge-base origin/<base> HEAD) | peer-review --stdin --mode diff-review --cd <worktree> \
@@ -53,7 +53,7 @@ git diff $(git merge-base origin/<base> HEAD) | peer-review --stdin --mode diff-
 
 A peer gets the invariants and test evidence, never a naked diff — otherwise it guesses what the change was meant to preserve, and guesses come back as noise. If peer-review reports no peer CLI, the same-model fleet, `simplicity-reviewer` included, is the only adversarial pass, so don't thin it.
 
-Synthesize in-thread: dedupe; rank real findings 🔴/🟡/🟢 by impact, leaving rejected claims unranked; give every material finding, rejected ones included, a disposition separate from its rank: fixed (SHA and verification/re-review status), rejected (reason), deferred (follow-up), or open; tag cross-model findings with the model that produced them. `simplicity-reviewer` 🔴 findings are not advisory — they go to the checkpoint (or the caller) as their own block, not folded into nits. Record each peer finding's outcome per the global peer rules, tagged with its lens (or generic), in the synthesis that goes into the PR body — that is the record for judging which lens passes earn their cost.
+Synthesize in-thread: dedupe; rank real findings 🔴/🟡/🟢 by impact, leaving rejected claims unranked. Grade severity yourself, whatever label a finding came with: another path, a rare case with low impact, or a small cost is a nit; security, data loss and the intended path's correctness keep their weight. Give same-class siblings an explicit fix-here-or-file decision; give every material finding, rejected ones included, a disposition separate from its rank: fixed (SHA and verification/re-review status), rejected (reason), deferred (follow-up), or open; tag cross-model findings with the model that produced them. `simplicity-reviewer` 🔴 findings are not advisory — they go to the checkpoint (or the caller) as their own block, not folded into nits. Record each peer finding's outcome per the global peer rules, tagged with its lens (or generic), in the synthesis that goes into the PR body — that is the record for judging which lens passes earn their cost.
 
 ## 4. Production readiness
 
