@@ -1,0 +1,183 @@
+#!/usr/bin/env bash
+# agent-awake — keep a Linux laptop running, lid closed or not, while coding
+# agents work; let it suspend once they go idle. A Linux take on adrafinil.
+#
+# Each working agent session gets its own holder: a logind block-weak inhibitor
+# (`sleep:handle-lid-switch`) wrapping a watcher loop. Weak, so a suspend you
+# ask for yourself still goes through; logind's own lid handling ignores no
+# one's weak locks, so lid close stays blocked. The watcher drops the
+# lock when the agent process exits, when no hook has renewed the session for
+# IDLE_MINUTES (backstop for missed releases, e.g. Esc in Claude Code fires no
+# Stop), or when a safety cutoff trips. With the lid still closed, logind
+# re-checks the lid as soon as the last lock goes and suspends on its own.
+# The screen still blanks: the idle-inhibitor is deliberately not taken.
+#
+#   hold       hook: start or renew the lock for the session on stdin
+#   release    hook: drop it (kept while Claude reports background tasks)
+#   attach PID [WHY]   hold while PID lives (no idle timeout), e.g. peer-review
+#   manual [on|off|toggle]   hold without an agent (bar widget toggle)
+#   status     JSON for the bar widget
+#
+# Safety cutoffs (temperature sustained for CUTOFF_SAMPLES polls, battery while
+# discharging, or no readable temperature at all) release every lock, manual
+# included, and refuse new ones for CUTOFF_COOLDOWN_MINUTES.
+#
+# Wired up by the coding_agents role: Claude hooks in configs/claude/settings.json,
+# Codex hooks in configs/codex/hooks.json. A no-op on macOS, where adrafinil runs.
+# Hooks must stay silent on stdout and never fail the agent, hence `|| true`s.
+
+[ "$(uname -s)" = Linux ] && command -v systemd-inhibit >/dev/null || exit 0
+
+: "${MAX_TEMP_C:=95}" "${MIN_BATTERY:=20}" "${CUTOFF_SAMPLES:=3}" \
+    "${CUTOFF_COOLDOWN_MINUTES:=10}" "${IDLE_MINUTES:=60}" "${POLL_SECONDS:=10}"
+conf="${XDG_CONFIG_HOME:-$HOME/.config}/agent-awake/config"
+# shellcheck source=/dev/null
+[ -r "$conf" ] && . "$conf"
+
+state="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/agent-awake"
+mkdir -p "$state" || exit 0
+self="$(readlink -f "$0")"
+
+# Prints why holding is unsafe right now; prints nothing when it is fine.
+cutoff_reason() {
+    local max=-1 t z b cap
+    for z in /sys/class/thermal/thermal_zone*/temp; do
+        t=$(cat "$z" 2>/dev/null) || continue
+        [ "$t" -gt "$max" ] 2>/dev/null && max=$t
+    done
+    if [ "$max" -lt 0 ]; then echo "no readable temperature sensor"; return; fi
+    if [ "$max" -ge $((MAX_TEMP_C * 1000)) ]; then echo "temperature $((max / 1000))°C"; return; fi
+    for b in /sys/class/power_supply/*; do
+        [ "$(cat "$b/type" 2>/dev/null)" = Battery ] || continue
+        [ "$(cat "$b/scope" 2>/dev/null)" = Device ] && continue  # mice, headsets
+        [ "$(cat "$b/status" 2>/dev/null)" = Discharging ] || continue
+        cap=$(cat "$b/capacity" 2>/dev/null) || continue
+        if [ "$cap" -lt "$MIN_BATTERY" ]; then echo "battery ${cap}%"; return; fi
+    done
+}
+
+cooling_down() {
+    [ -n "$(find "$state/cutoff" -mmin -"$CUTOFF_COOLDOWN_MINUTES" 2>/dev/null)" ]
+}
+
+# The holder is the systemd-inhibit process, leader of its own process group.
+holder_alive() {
+    local pid
+    pid=$(cat "$1" 2>/dev/null) || return 1
+    [ "$(cat "/proc/$pid/comm" 2>/dev/null)" = systemd-inhibit ]
+}
+
+# start SESSION PID|manual WHY — idempotent; renews the heartbeat if running.
+start() {
+    local file="$state/$1"
+    exec 9>>"$state/.lock"
+    flock 9
+    if holder_alive "$file"; then touch "$file"; return; fi
+    cooling_down && return
+    setsid systemd-inhibit --what=sleep:handle-lid-switch --mode=block-weak \
+        --who=agent-awake --why="$3" "$self" watch "$1" "$2" \
+        </dev/null >/dev/null 2>&1 9>&- &
+    echo $! >"$file"
+}
+
+stop() {
+    local file="$state/$1" pid
+    exec 9>>"$state/.lock"
+    flock 9
+    holder_alive "$file" && pid=$(cat "$file") && kill -TERM -- "-$pid" 2>/dev/null
+    rm -f "$file"
+}
+
+sessions() {
+    local f
+    for f in "$state"/*; do
+        case $f in */cutoff | "$state/*") continue ;; esac
+        holder_alive "$f" && echo "${f##*/}"
+    done
+}
+
+# Nearest ancestor that is the agent itself (hooks run via sh -c).
+agent_pid() {
+    local pid=$PPID
+    while [ "$pid" -gt 1 ] 2>/dev/null; do
+        case $(cat "/proc/$pid/comm" 2>/dev/null) in claude | codex) echo "$pid"; return 0 ;; esac
+        pid=$(awk '/^PPid:/ {print $2}' "/proc/$pid/status" 2>/dev/null)
+    done
+    return 1
+}
+
+# watch SESSION PID|manual — runs under systemd-inhibit; exiting releases.
+watch() {
+    local file="$state/$1" hot=0 reason s
+    while :; do
+        case $2 in
+        manual) ;;
+        *)
+            [ -d "/proc/$2" ] || break
+            # attach-ed processes are the work itself: no idle timeout.
+            case $1 in pid-*) ;; *)
+                [ -n "$(find "$file" -mmin -"$IDLE_MINUTES" 2>/dev/null)" ] || break ;;
+            esac
+            ;;
+        esac
+        reason=$(cutoff_reason)
+        if [ -n "$reason" ]; then hot=$((hot + 1)); else hot=0; fi
+        if [ "$hot" -ge "$CUTOFF_SAMPLES" ]; then
+            echo "$reason" >"$state/cutoff"
+            logger -t agent-awake "safety cutoff, releasing all locks: $reason"
+            for s in $(sessions); do [ "$s" = "$1" ] || stop "$s"; done
+            break
+        fi
+        sleep "$POLL_SECONDS"
+        # A holder that lost a start race (or whose pid got reused) bows out.
+        [ "$(cat "$file" 2>/dev/null)" = "$PPID" ] || return
+    done
+    rm -f "$file"
+}
+
+session_from_stdin() {
+    input=$(cat)
+    session=$(jq -r '.session_id // empty' <<<"$input" 2>/dev/null)
+    [[ $session =~ ^[A-Za-z0-9_-]+$ ]]
+}
+
+case ${1:-} in
+hold)
+    session_from_stdin || exit 0
+    pid=$(agent_pid) || exit 0
+    start "$session" "$pid" "$(cat "/proc/$pid/comm") working in $(jq -r '.cwd // "?"' <<<"$input")"
+    ;;
+release)
+    session_from_stdin || exit 0
+    # Claude's Stop while background shells/agents still run: they'll end the
+    # turn again (or the idle timeout will) once they finish.
+    [ "$(jq '(.background_tasks // []) | length' <<<"$input" 2>/dev/null)" = 0 ] || exit 0
+    stop "$session"
+    ;;
+attach)
+    [ -d "/proc/${2:-x}" ] || exit 0
+    start "pid-$2" "$2" "${3:-$(cat "/proc/$2/comm")} running"
+    ;;
+manual)
+    case ${2:-toggle} in
+    on) start manual manual "manual stay-awake" ;;
+    off) stop manual ;;
+    toggle) if holder_alive "$state/manual"; then stop manual; else start manual manual "manual stay-awake"; fi ;;
+    esac
+    ;;
+watch) watch "$2" "$3" ;;
+status)
+    agents=0 manual=false cutoff=""
+    for s in $(sessions); do
+        if [ "$s" = manual ]; then manual=true; else agents=$((agents + 1)); fi
+    done
+    cooling_down && cutoff=$(cat "$state/cutoff")
+    jq -nc --argjson agents "$agents" --argjson manual "$manual" --arg cutoff "$cutoff" \
+        '{agents: $agents, manual: $manual, cutoff: $cutoff}'
+    ;;
+*)
+    sed -n '2,/^$/s/^# \{0,1\}//p' "$self" >&2
+    exit 2
+    ;;
+esac
+exit 0

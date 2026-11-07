@@ -79,6 +79,14 @@
             "command": "bash ~/.claude/session-end-sync-hook.sh"
           }
         ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.local/bin/agent-awake release"
+          }
+        ]
       }
     ],
     "SessionStart": [
@@ -100,6 +108,57 @@
             "type": "command",
             "command": "bash ~/.claude/stop-queue-hook.sh",
             "statusMessage": "Checking message queue"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.local/bin/agent-awake hold"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.local/bin/agent-awake hold"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.local/bin/agent-awake hold"
+          }
+        ]
+      }
+    ],
+    "StopFailure": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.local/bin/agent-awake release"
+          }
+        ]
+      }
+    ],
+    "Notification": [
+      {
+        "matcher": "idle_prompt",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.local/bin/agent-awake release"
           }
         ]
       }

@@ -1,0 +1,12 @@
+{
+    "id": "agentAwake",
+    "name": "Agent Awake",
+    "description": "Bar pill: coding agents keeping the laptop awake (scripts/agent-awake); click toggles a manual stay-awake that also survives closing the lid",
+    "version": "1.0.0",
+    "author": "Felix Karg",
+    "type": "widget",
+    "capabilities": ["dankbar-widget"],
+    "component": "./AgentAwakeWidget.qml",
+    "icon": "coffee",
+    "permissions": ["process"]
+}

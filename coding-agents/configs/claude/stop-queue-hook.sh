@@ -28,6 +28,14 @@
 
 input="$(cat)"
 
+# agent-awake (scripts/agent-awake) drops its lid/sleep lock here, on every exit
+# that lets the turn end. A separate parallel Stop hook would also drop it while
+# we hand Claude a queued line, and a closed laptop would suspend mid-follow-up.
+end_turn() {
+  printf '%s' "$input" | "$HOME/.local/bin/agent-awake" release >/dev/null 2>&1
+  exit 0
+}
+
 dir="$(printf '%s' "$input" | jq -r '.cwd // empty' 2>/dev/null)" || dir=""
 [ -n "$dir" ] || dir="$PWD"
 root="$(git -C "$dir" rev-parse --show-toplevel 2>/dev/null)" || root="$dir"
@@ -35,7 +43,7 @@ root="$(git -C "$dir" rev-parse --show-toplevel 2>/dev/null)" || root="$dir"
 key="$(printf '%s' "$root" | sed 's#/#%#g')"
 queue="$HOME/.claude/queue/$key"
 
-[ -s "$queue" ] || exit 0
+[ -s "$queue" ] || end_turn
 
 next="$(head -n1 "$queue")"
 # Pop the first line regardless of content (guarantees the queue shrinks).
@@ -43,7 +51,7 @@ tail -n +2 "$queue" > "$queue.tmp" 2>/dev/null && mv "$queue.tmp" "$queue"
 [ -s "$queue" ] || rm -f "$queue"
 
 # Skip blank lines: let Claude stop, drain the rest on the next turn-end.
-[ -n "$next" ] || exit 0
+[ -n "$next" ] || end_turn
 
 # Adrafinil's Stop release runs before this hook. Re-acquire only when we block
 # that stop, so its assertion spans the queued follow-up until its real Stop.

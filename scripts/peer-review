@@ -477,6 +477,8 @@ peer_failed() {
 }
 
 peer_status=0
+# Keep a Linux laptop awake, lid closed too, while the peer runs (no-op elsewhere).
+command -v agent-awake >/dev/null 2>&1 && agent-awake attach "$$" "peer-review ($peer_cli)"
 if [ "$peer_cli" = "codex" ]; then
     # codex --output-schema takes a FILE.
     set -- exec --sandbox read-only \

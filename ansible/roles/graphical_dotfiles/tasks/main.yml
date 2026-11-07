@@ -220,12 +220,13 @@
   when: ansible_facts['system'] == 'Linux'
   tags: [dms]
 
-- name: Link DankMaterialShell regionScreenshot plugin
+- name: Link DankMaterialShell plugins
   file:
-    src: "~/{{ configs_repo }}/{{ dotconfigdir }}/DankMaterialShell/plugins/regionScreenshot"
-    dest: ~/.config/DankMaterialShell/plugins/regionScreenshot
+    src: "~/{{ configs_repo }}/{{ dotconfigdir }}/DankMaterialShell/plugins/{{ item }}"
+    dest: "~/.config/DankMaterialShell/plugins/{{ item }}"
     state: link
     force: true
+  loop: [regionScreenshot, agentAwake]
   when: ansible_facts['system'] == 'Linux'
   tags: [dms]
 

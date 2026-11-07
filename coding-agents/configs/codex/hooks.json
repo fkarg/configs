@@ -1,0 +1,75 @@
+{
+  "description": "agent-awake (scripts/agent-awake): keep a Linux laptop awake, lid closed too, while a turn runs",
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.local/bin/agent-awake hold"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.local/bin/agent-awake hold"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.local/bin/agent-awake hold"
+          }
+        ]
+      }
+    ],
+    "PreModelRequest": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.local/bin/agent-awake hold"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.local/bin/agent-awake release"
+          }
+        ]
+      }
+    ],
+    "Interrupt": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.local/bin/agent-awake release"
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.local/bin/agent-awake release"
+          }
+        ]
+      }
+    ]
+  }
+}

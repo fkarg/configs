@@ -42,6 +42,25 @@
     force: true
   tags: [codex]
 
+# Claude hooks call it on every host (settings.json is shared); it exits as a
+# no-op on macOS, where adrafinil does this job.
+- name: Install agent-awake
+  file:
+    src: "{{ repo_root }}/scripts/agent-awake"
+    dest: "~/.local/bin/agent-awake"
+    state: link
+    force: true
+
+# Codex asks once per host, via /hooks, to trust these definitions.
+- name: Link Codex agent-awake hooks
+  file:
+    src: "{{ coding_agents_source_dir }}/configs/codex/hooks.json"
+    dest: "~/.codex/hooks.json"
+    state: link
+    force: true
+  when: ansible_facts['system'] == 'Linux'
+  tags: [codex]
+
 - name: Discover Codex custom prompts
   find:
     paths: "{{ coding_agents_source_dir }}/configs/codex/prompts"
