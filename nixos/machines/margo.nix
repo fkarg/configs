@@ -81,6 +81,17 @@
     SUBSYSTEM=="power_supply", KERNEL=="ACAD", ATTR{online}=="0", RUN+="${pkgs.power-profiles-daemon}/bin/powerprofilesctl set power-saver"
     SUBSYSTEM=="power_supply", KERNEL=="ACAD", ATTR{online}=="1", RUN+="${pkgs.power-profiles-daemon}/bin/powerprofilesctl set balanced"
   '';
+  # sched_ext scheduler: pack work onto E-cores (8-15), spill to P-cores (0-7),
+  # LP E-cores (16-17, no L3) last; latency-critical tasks still go to P-cores.
+  # --autopower follows the power-profiles-daemon profile (performance mode
+  # drops the compaction and uses all cores). Do not combine with intel_lpmd.
+  services.scx-loader = {
+    enable = true;
+    config = {
+      default_sched = "scx_lavd";
+      scheds.scx_lavd.auto_mode = [ "--autopower" "--cpu-pref-order" "8-15,0-7,16-17" ];
+    };
+  };
 
   fileSystems."/" =
     { device = "/dev/disk/by-uuid/ba2ef340-5436-4a5e-a39c-791de5bf38a7";
