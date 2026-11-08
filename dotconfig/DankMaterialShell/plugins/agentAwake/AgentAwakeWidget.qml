@@ -6,7 +6,8 @@ import qs.Modules.Plugins
 
 // Shows how many coding agents hold the lid/sleep lock (scripts/agent-awake),
 // or a warning icon while a temperature/battery cutoff cools down. Click opens
-// the list of sessions holding it; right-click toggles a manual stay-awake
+// the list of sessions holding it, each with a button to release it by hand
+// (e.g. one left behind by an Esc interrupt); right-click toggles a manual stay-awake
 // that, unlike DMS's idle inhibitor, also keeps running with the lid closed.
 // Safety cutoffs live in the script, not here.
 PluginComponent {
@@ -57,13 +58,27 @@ PluginComponent {
                 Repeater {
                     model: root.sessions
 
-                    StyledText {
+                    Row {
                         required property var modelData
                         width: parent.width
-                        leftPadding: Theme.spacingS
-                        wrapMode: Text.Wrap
-                        color: Theme.surfaceText
-                        text: modelData.id === "manual" ? "manual stay-awake" : modelData.why + "\n" + [modelData.tty || "no tty", "pid " + modelData.pid, modelData.id.startsWith("pid-") ? "attached" : "last hook " + modelData.idle_minutes + " min ago", modelData.id].join(" · ")
+                        spacing: Theme.spacingS
+
+                        StyledText {
+                            width: parent.width - dropButton.width - parent.spacing
+                            anchors.verticalCenter: parent.verticalCenter
+                            leftPadding: Theme.spacingS
+                            wrapMode: Text.Wrap
+                            color: Theme.surfaceText
+                            text: modelData.id === "manual" ? "manual stay-awake" : modelData.why + "\n" + [modelData.tty || "no tty", "pid " + modelData.pid, modelData.id.startsWith("pid-") ? "attached" : "last hook " + modelData.idle_minutes + " min ago", modelData.id].join(" · ")
+                        }
+
+                        DankActionButton {
+                            id: dropButton
+                            anchors.verticalCenter: parent.verticalCenter
+                            iconName: "close"
+                            tooltipText: "Release this lock"
+                            onClicked: Proc.runCommand("agentAwake.drop", [root.bin, "drop", modelData.id], () => root.refresh(), 0)
+                        }
                     }
                 }
             }

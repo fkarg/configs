@@ -14,6 +14,7 @@
 #
 #   hold       hook: start or renew the lock for the session on stdin
 #   release    hook: drop it (kept while Claude reports background tasks)
+#   drop SESSION   drop one session's lock by hand (bar widget), e.g. after Esc
 #   attach PID [WHY]   hold while PID lives (no idle timeout), e.g. peer-review
 #   manual [on|off|toggle]   hold without an agent (bar widget toggle)
 #   status     JSON for the bar widget
@@ -29,7 +30,7 @@
 [ "$(uname -s)" = Linux ] && command -v systemd-inhibit >/dev/null || exit 0
 
 : "${MAX_TEMP_C:=95}" "${MIN_BATTERY:=20}" "${CUTOFF_SAMPLES:=3}" \
-    "${CUTOFF_COOLDOWN_MINUTES:=10}" "${IDLE_MINUTES:=60}" "${POLL_SECONDS:=10}"
+    "${CUTOFF_COOLDOWN_MINUTES:=10}" "${IDLE_MINUTES:=15}" "${POLL_SECONDS:=10}"
 conf="${XDG_CONFIG_HOME:-$HOME/.config}/agent-awake/config"
 # shellcheck source=/dev/null
 [ -r "$conf" ] && . "$conf"
@@ -164,6 +165,10 @@ manual)
     off) stop manual ;;
     toggle) if holder_alive "$state/manual"; then stop manual; else start manual manual "manual stay-awake"; fi ;;
     esac
+    ;;
+drop)
+    # The agent re-takes it on its next hook, so this is safe on a live one.
+    [[ ${2:-} =~ ^[A-Za-z0-9_-]+$ ]] && stop "$2"
     ;;
 watch) watch "$2" "$3" ;;
 status)
