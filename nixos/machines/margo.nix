@@ -81,15 +81,20 @@
     SUBSYSTEM=="power_supply", KERNEL=="ACAD", ATTR{online}=="0", RUN+="${pkgs.power-profiles-daemon}/bin/powerprofilesctl set power-saver"
     SUBSYSTEM=="power_supply", KERNEL=="ACAD", ATTR{online}=="1", RUN+="${pkgs.power-profiles-daemon}/bin/powerprofilesctl set balanced"
   '';
-  # sched_ext scheduler: pack work onto E-cores (8-15), spill to P-cores (0-7),
-  # LP E-cores (16-17, no L3) last; latency-critical tasks still go to P-cores.
-  # --autopower follows the power-profiles-daemon profile (performance mode
-  # drops the compaction and uses all cores). Do not combine with intel_lpmd.
+  # sched_ext scheduler. --autopower follows the power-profiles-daemon profile
+  # (set by the AC/battery udev rule above); lavd derives its core order from
+  # CPPC highest_perf (P 0-7: 57, E 8-15: 36, LP-E 16-17: 25, no L3):
+  # - power-saver (battery): compaction onto E-cores 8-15, then P 0-7, LP-E last
+  # - balanced (AC): compaction onto P-cores first
+  # - performance: no compaction, all cores
+  # With compaction, tasks that benefit from a big core go to P-cores in
+  # proportion to the active P/E capacity. --cpu-pref-order is not used: lavd
+  # (<= 1.1.4) ignores its value. Do not combine with intel_lpmd.
   services.scx-loader = {
     enable = true;
     config = {
       default_sched = "scx_lavd";
-      scheds.scx_lavd.auto_mode = [ "--autopower" "--cpu-pref-order" "8-15,0-7,16-17" ];
+      scheds.scx_lavd.auto_mode = [ "--autopower" ];
     };
   };
 
