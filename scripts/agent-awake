@@ -167,13 +167,22 @@ manual)
     ;;
 watch) watch "$2" "$3" ;;
 status)
-    agents=0 manual=false cutoff=""
-    for s in $(sessions); do
-        if [ "$s" = manual ]; then manual=true; else agents=$((agents + 1)); fi
-    done
+    # One line per holder: session, --why, watched pid, its tty, minutes since
+    # the last hook renewed it. Lets you spot a lock an Esc left behind.
+    cutoff="" now=$(date +%s)
+    list=$(for s in $(sessions); do
+        mapfile -d '' args <"/proc/$(cat "$state/$s")/cmdline"
+        why=${args[4]#--why=} pid=${args[-1]}
+        tty=$(ps -o tty= -p "$pid" 2>/dev/null) || tty=""
+        jq -nc --arg id "$s" --arg why "$why" --arg pid "$pid" --arg tty "${tty// /}" \
+            --argjson idle $(((now - $(stat -c %Y "$state/$s")) / 60)) \
+            '{id: $id, why: $why, pid: $pid, tty: $tty, idle_minutes: $idle}'
+    done)
+    agents=$(jq -s 'map(select(.id != "manual")) | length' <<<"$list")
+    manual=$(jq -s 'any(.id == "manual")' <<<"$list")
     cooling_down && cutoff=$(cat "$state/cutoff")
-    jq -nc --argjson agents "$agents" --argjson manual "$manual" --arg cutoff "$cutoff" \
-        '{agents: $agents, manual: $manual, cutoff: $cutoff}'
+    jq -sc --argjson agents "$agents" --argjson manual "$manual" --arg cutoff "$cutoff" \
+        '{agents: $agents, manual: $manual, cutoff: $cutoff, sessions: .}' <<<"$list"
     ;;
 *)
     sed -n '2,/^$/s/^# \{0,1\}//p' "$self" >&2
