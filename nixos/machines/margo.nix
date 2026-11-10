@@ -12,14 +12,24 @@ let
     set -eu
     exec 9>/run/lock/margo-power-budget.lock
     ${pkgs.util-linux}/bin/flock 9
-    read -r online < /sys/class/power_supply/ACAD/online
-    if [ "$online" = 1 ]; then
-      sustained=30000000
-      burst=60000000
-    else
-      sustained=15000000
-      burst=20000000
+    cpus=
+    sustained=30000000
+    burst=60000000
+    if [ "''${1-}" != --reset ]; then
+      read -r online < /sys/class/power_supply/ACAD/online
+      profile=$(${pkgs.power-profiles-daemon}/bin/powerprofilesctl get)
+      if [ "$online" = 0 ] && [ "$profile" = power-saver ]; then
+        cpus=8-17
+        sustained=15000000
+        burst=20000000
+      fi
     fi
+
+    # Match LPMD's cgroup enforcement without a second profile-policy owner.
+    # init.scope, kernel threads and IRQs remain outside these slices.
+    for slice in system.slice user.slice machine.slice; do
+      ${pkgs.systemd}/bin/systemctl set-property --runtime "$slice" "AllowedCPUs=$cpus"
+    done
 
     # Apply both MSR and MMIO package limits; leave core/psys zones alone.
     for zone in /sys/devices/virtual/powercap/intel-rapl*/intel-rapl*:0; do
@@ -37,7 +47,9 @@ let
       done
       printf '1\n' > "$zone/enabled"
     done
+    printf 'Applied CPU mask "%s", package limits %s/%s uW\n' "$cpus" "$sustained" "$burst"
   '';
+  powerWatcherPython = pkgs.python3.withPackages (p: [ p.dbus-python p.pygobject3 ]);
 in rec
 
 {
@@ -115,19 +127,22 @@ in rec
   services.udev.extraRules = ''
     SUBSYSTEM=="power_supply", KERNEL=="ACAD", ATTR{online}=="0", RUN+="${pkgs.power-profiles-daemon}/bin/powerprofilesctl set power-saver"
     SUBSYSTEM=="power_supply", KERNEL=="ACAD", ATTR{online}=="1", RUN+="${pkgs.power-profiles-daemon}/bin/powerprofilesctl set balanced"
-    SUBSYSTEM=="power_supply", KERNEL=="ACAD", ACTION!="remove", RUN+="${powerBudget}"
   '';
-  # EPP and scheduler powersave are preferences, not wattage limits. Limit the
-  # CPU package to 15 W sustained / 20 W short-term on battery, restoring this
-  # machine's 30 W / 60 W firmware defaults on AC. RAPL averages over hardware
-  # time windows; this is not a cap on total laptop power or instantaneous spikes.
+  # Only battery + power-saver restricts ordinary work to E/LP-E CPUs 8-17
+  # and the package to 15 W sustained / 20 W short-term. AC, balanced and
+  # performance restore unrestricted slice masks and firmware's 30 W / 60 W.
+  # RAPL uses hardware averaging windows, not an instantaneous/laptop-wide cap.
   systemd.services.margo-power-budget = {
-    description = "Apply margo's AC/battery CPU package power budget";
-    wantedBy = [ "multi-user.target" ];
-    after = [ "systemd-modules-load.service" ];
+    description = "Apply margo's battery-saver CPU placement and power budget";
+    wantedBy = [ "multi-user.target" "power-profiles-daemon.service" "upower.service" ];
+    requires = [ "power-profiles-daemon.service" "upower.service" ];
+    after = [ "systemd-modules-load.service" "power-profiles-daemon.service" "upower.service" ];
+    partOf = [ "power-profiles-daemon.service" "upower.service" ];
     serviceConfig = {
-      Type = "oneshot";
-      ExecStart = powerBudget;
+      ExecStart = "${powerWatcherPython}/bin/python3 ${./margo-power-profile-watch.py} ${powerBudget}";
+      ExecStopPost = "${powerBudget} --reset";
+      Restart = "on-failure";
+      RestartSec = 2;
     };
   };
   powerManagement.resumeCommands = ''
