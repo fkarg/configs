@@ -87,6 +87,8 @@ allow_local_binding = true
 "ssh.github.com" = "allow"
 "static.crates.io" = "allow"
 "sum.golang.org" = "allow"
+# Public browser assets used by the local documentation wiki (MathJax, Mermaid).
+"unpkg.com" = "allow"
 # Public shareholder filings used by the PTV research archive.
 "www.porsche-se.com" = "allow"
 
