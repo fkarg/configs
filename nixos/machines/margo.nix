@@ -5,7 +5,40 @@
 #
 # modify startup script:
 # - setting background
-{ config, lib, pkgs, ... }: with pkgs; rec
+{ config, lib, pkgs, ... }: with pkgs;
+
+let
+  powerBudget = pkgs.writeShellScript "margo-power-budget" ''
+    set -eu
+    exec 9>/run/lock/margo-power-budget.lock
+    ${pkgs.util-linux}/bin/flock 9
+    read -r online < /sys/class/power_supply/ACAD/online
+    if [ "$online" = 1 ]; then
+      sustained=30000000
+      burst=60000000
+    else
+      sustained=15000000
+      burst=20000000
+    fi
+
+    # Apply both MSR and MMIO package limits; leave core/psys zones alone.
+    for zone in /sys/devices/virtual/powercap/intel-rapl*/intel-rapl*:0; do
+      [ -f "$zone/name" ] || continue
+      read -r name < "$zone/name"
+      [ "$name" = package-0 ] || continue
+      for constraint in "$zone"/constraint_*_name; do
+        read -r name < "$constraint"
+        case "$name" in
+          long_term) limit=$sustained ;;
+          short_term) limit=$burst ;;
+          *) continue ;;
+        esac
+        printf '%s\n' "$limit" > "''${constraint%_name}_power_limit_uw"
+      done
+      printf '1\n' > "$zone/enabled"
+    done
+  '';
+in rec
 
 {
   imports = [
@@ -71,6 +104,8 @@
   # `mem_sleep_default=deep`: 'shutdown' system and go to deep suspension instead of `s2idle`. This trades reduced energy consumption for increased resume time delay.
   # boot.kernelParams = [ "mem_sleep_default=deep" "nvme.noacpi=1" "mitigations=off" "fsck.mode=force" "fsck.repair=yes" "i915.enable_psr=1"];
   boot.kernelParams = [ "fsck.mode=force" "fsck.repair=yes"];
+  # Make RAPL available before the boot-time power budget service runs.
+  boot.kernelModules = [ "intel_rapl_msr" ];
   # boot.kernelParams = [ "mem_sleep_default=deep" ];
   # run `sudo powertop --auto-tune` on startup. Reduces power consumption on idle
   powerManagement.powertop.enable = true;
@@ -80,6 +115,23 @@
   services.udev.extraRules = ''
     SUBSYSTEM=="power_supply", KERNEL=="ACAD", ATTR{online}=="0", RUN+="${pkgs.power-profiles-daemon}/bin/powerprofilesctl set power-saver"
     SUBSYSTEM=="power_supply", KERNEL=="ACAD", ATTR{online}=="1", RUN+="${pkgs.power-profiles-daemon}/bin/powerprofilesctl set balanced"
+    SUBSYSTEM=="power_supply", KERNEL=="ACAD", ACTION!="remove", RUN+="${powerBudget}"
+  '';
+  # EPP and scheduler powersave are preferences, not wattage limits. Limit the
+  # CPU package to 15 W sustained / 20 W short-term on battery, restoring this
+  # machine's 30 W / 60 W firmware defaults on AC. RAPL averages over hardware
+  # time windows; this is not a cap on total laptop power or instantaneous spikes.
+  systemd.services.margo-power-budget = {
+    description = "Apply margo's AC/battery CPU package power budget";
+    wantedBy = [ "multi-user.target" ];
+    after = [ "systemd-modules-load.service" ];
+    serviceConfig = {
+      Type = "oneshot";
+      ExecStart = powerBudget;
+    };
+  };
+  powerManagement.resumeCommands = ''
+    ${powerBudget}
   '';
   # sched_ext scheduler. --autopower follows the power-profiles-daemon profile
   # (set by the AC/battery udev rule above); lavd derives its core order from
