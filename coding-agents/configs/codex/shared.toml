@@ -66,6 +66,7 @@ allow_local_binding = true
 "crates.io" = "allow"
 "deb.debian.org" = "allow"
 "files.pythonhosted.org" = "allow"
+"galaxy.ansible.com" = "allow"
 "github-releases.githubusercontent.com" = "allow"
 "github.com" = "allow"
 "golang.org" = "allow"
