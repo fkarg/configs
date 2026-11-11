@@ -7,6 +7,12 @@
   # paths pulled into this desktop configuration.
   nixpkgs.overlays = [
     (final: prev: {
+      # Go 1.27 changed gzip output, breaking kubecfg's hardcoded test digest.
+      # Backport https://github.com/kubecfg/kubecfg/commit/922bba97becd2fcf8862d1c1d66157eb5c99c54a
+      kubecfg = prev.kubecfg.overrideAttrs (old: {
+        patches = (old.patches or [ ]) ++ [ ./patches/kubecfg-testpush-manifest-digest.patch ];
+      });
+
       # Removing rpaths leaves empty space-separated elements, which Qt6's
       # binary wrapper rejects. Normalize the remaining linker flags.
       lazarus-qt6 = prev.lazarus-qt6.overrideAttrs (old: {
