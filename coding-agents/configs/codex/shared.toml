@@ -108,6 +108,7 @@ allow_local_binding = true
 "darwin.eeb.uconn.edu" = "allow"
 "endotext.org" = "allow"
 "lifelong-learning.ox.ac.uk" = "allow"
+"oyc.yale.edu" = "allow"
 "pharmacologyeducation.org" = "allow"
 "pmc.ncbi.nlm.nih.gov" = "allow"
 "wur-bioinformatics.github.io" = "allow"
