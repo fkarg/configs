@@ -13,6 +13,11 @@
         patches = (old.patches or [ ]) ++ [ ./patches/kubecfg-testpush-manifest-digest.patch ];
       });
 
+      # zstd-sys uses pkg-config, but ccusage doesn't declare the library.
+      ccusage = prev.ccusage.overrideAttrs (old: {
+        buildInputs = (old.buildInputs or [ ]) ++ [ final.zstd ];
+      });
+
       # Removing rpaths leaves empty space-separated elements, which Qt6's
       # binary wrapper rejects. Normalize the remaining linker flags.
       lazarus-qt6 = prev.lazarus-qt6.overrideAttrs (old: {
