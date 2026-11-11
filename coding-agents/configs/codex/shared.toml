@@ -99,6 +99,7 @@ allow_local_binding = true
 "nap.nationalacademies.org" = "allow"
 "ocw.mit.edu" = "allow"
 "vtechworks.lib.vt.edu" = "allow"
+"www.ebi.ac.uk" = "allow"
 "www.fda.gov" = "allow"
 "www.itl.nist.gov" = "allow"
 "www.jstage.jst.go.jp" = "allow"
