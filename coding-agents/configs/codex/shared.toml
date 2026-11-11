@@ -104,6 +104,18 @@ allow_local_binding = true
 "www.jstage.jst.go.jp" = "allow"
 "www.studservice.uni-kiel.de" = "allow"
 
+# Recurring public curriculum and biomedical teaching sources.
+"darwin.eeb.uconn.edu" = "allow"
+"endotext.org" = "allow"
+"lifelong-learning.ox.ac.uk" = "allow"
+"pharmacologyeducation.org" = "allow"
+"pmc.ncbi.nlm.nih.gov" = "allow"
+"wur-bioinformatics.github.io" = "allow"
+"www.endotext.org" = "allow"
+"www.medizinische-fakultaet-hd.uni-heidelberg.de" = "allow"
+"www.uni-heidelberg.de" = "allow"
+"www.vvz.ethz.ch" = "allow"
+
 [tui]
 status_line = ["model-with-reasoning", "current-dir", "git-branch", "branch-changes", "run-state", "context-used", "five-hour-limit", "weekly-limit", "used-tokens", "total-input-tokens", "total-output-tokens", "task-progress"]
 status_line_use_colors = true
