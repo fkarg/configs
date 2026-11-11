@@ -93,7 +93,9 @@ allow_local_binding = true
 "www.porsche-se.com" = "allow"
 # Public university teaching material and primary biomedical sources used by
 # the private longevish wiki; allow only the specific recurring hosts.
+"chem.libretexts.org" = "allow"
 "faculty.washington.edu" = "allow"
+"vtechworks.lib.vt.edu" = "allow"
 "www.fda.gov" = "allow"
 "www.jstage.jst.go.jp" = "allow"
 "www.studservice.uni-kiel.de" = "allow"
