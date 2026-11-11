@@ -102,6 +102,7 @@ allow_local_binding = true
 "www.fda.gov" = "allow"
 "www.itl.nist.gov" = "allow"
 "www.jstage.jst.go.jp" = "allow"
+"www.nature.com" = "allow"
 "www.studservice.uni-kiel.de" = "allow"
 
 # Recurring public curriculum and biomedical teaching sources.
