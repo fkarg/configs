@@ -91,6 +91,12 @@ allow_local_binding = true
 "unpkg.com" = "allow"
 # Public shareholder filings used by the PTV research archive.
 "www.porsche-se.com" = "allow"
+# Public university teaching material and primary biomedical sources used by
+# the private longevish wiki; allow only the specific recurring hosts.
+"faculty.washington.edu" = "allow"
+"www.fda.gov" = "allow"
+"www.jstage.jst.go.jp" = "allow"
+"www.studservice.uni-kiel.de" = "allow"
 
 [tui]
 status_line = ["model-with-reasoning", "current-dir", "git-branch", "branch-changes", "run-state", "context-used", "five-hour-limit", "weekly-limit", "used-tokens", "total-input-tokens", "total-output-tokens", "task-progress"]
