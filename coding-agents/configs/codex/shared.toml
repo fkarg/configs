@@ -96,8 +96,11 @@ allow_local_binding = true
 # the private longevish wiki; allow only the specific recurring hosts.
 "chem.libretexts.org" = "allow"
 "faculty.washington.edu" = "allow"
+"nap.nationalacademies.org" = "allow"
+"ocw.mit.edu" = "allow"
 "vtechworks.lib.vt.edu" = "allow"
 "www.fda.gov" = "allow"
+"www.itl.nist.gov" = "allow"
 "www.jstage.jst.go.jp" = "allow"
 "www.studservice.uni-kiel.de" = "allow"
 
