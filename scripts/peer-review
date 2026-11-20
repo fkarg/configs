@@ -1,5 +1,6 @@
 #!/bin/sh
-# Ask a peer model from a *different serving family* to attack a claim.
+# Ask an independent peer model to attack a claim. Underlying model families
+# are reported only when the selected CLI exposes enough information to know.
 #
 # The routing decision that matters is the serving model, not the harness:
 # `claudex` runs GPT-5.6 inside the Claude Code harness, so a session that
@@ -16,15 +17,13 @@
 #   {"peer_cli": ..., "peer_model": ..., "peer_family": ..., "result": {...}}
 
 set -eu
-printf '%s\n' 'currently unavailable, proceed without review'
-exit 0
-
-
 mode="premise"
 lens=""
 workdir=""
 from_family=""
 peer_model=""
+peer_override=""
+model_override=false
 help_requested=false
 input_sources=""
 material_file=""
@@ -57,7 +56,8 @@ while [ $# -gt 0 ]; do
         --lens) lens="${2:?--lens needs a reviewer name}"; shift 2 ;;
         --cd) workdir="${2:?--cd needs a value}"; shift 2 ;;
         --from) from_family="${2:?--from needs a value}"; shift 2 ;;
-        --model) peer_model="${2:?--model needs a value}"; shift 2 ;;
+        --peer) peer_override="${2:?--peer needs a CLI}"; shift 2 ;;
+        --model) peer_model="${2:?--model needs a value}"; model_override=true; shift 2 ;;
         --stdin)
             [ -n "$input_sources" ] || input_sources=$(mktemp)
             printf '%s\0' --stdin >>"$input_sources"
@@ -94,7 +94,7 @@ esac
     [ "$help_requested" = true ] || fail "--all requires --recent"
 if [ -n "$history_action" ] && [ "$help_requested" = false ]; then
     [ $# -eq 0 ] && [ -z "$input_sources" ] && [ "$list_models" = false ] &&
-        [ "$include_self" = false ] && [ -z "$peer_model$from_family$lens" ] &&
+        [ "$include_self" = false ] && [ -z "$peer_model$from_family$peer_override$lens" ] &&
         [ "$mode" = premise ] || fail "history does not accept review input or model options"
     python3 - "$cache_dir" "$history_action" "$history_value" "$history_all" "$workdir" <<'PY'
 import json, re, subprocess, sys
@@ -192,9 +192,22 @@ fi
 [ -n "$from_family" ] || from_family="${PEER_REVIEW_FROM:-$detected}"
 
 case "$from_family" in
-    claude) peer_cli="codex"; peer_model="${peer_model:-gpt-6.1-sol}" ;;
-    gpt) peer_cli="claude"; peer_model="${peer_model:-claude-opus-5-5}" ;;
+    claude) default_peer="codex" ;;
+    gpt)
+        if [ "$detected_harness" = "Codex" ]; then
+            default_peer="opencode"
+        else
+            default_peer="claude"
+        fi ;;
     *) fail "unknown family: $from_family (want claude|gpt)" ;;
+esac
+
+peer_cli="${peer_override:-$default_peer}"
+case "$peer_cli" in
+    claude) peer_model="${peer_model:-claude-opus-5-5}" ;;
+    codex) peer_model="${peer_model:-gpt-6.1-sol}" ;;
+    opencode) ;;
+    *) fail "unknown peer CLI: $peer_cli (want opencode|claude|codex)" ;;
 esac
 
 if [ "$help_requested" = true ]; then
@@ -205,7 +218,7 @@ Usage: peer-review [OPTIONS] BRIEF
        peer-review --show ID
        git diff | peer-review --stdin --mode diff-review --cd "$PWD" "Intent: ..."
 
-Ask a read-only peer from a different serving model family to challenge a brief.
+Ask a read-only peer model to challenge a brief.
 Options must precede BRIEF. Stdin is ignored unless --stdin is supplied.
 
 Review settings:
@@ -227,12 +240,16 @@ Supporting material:
 Peer selection:
   --from FAMILY   Declare the caller's OWN serving family: claude or gpt.
                   Defaults to PEER_REVIEW_FROM, then automatic detection.
-                  A gpt caller uses Claude; a claude caller uses Codex.
+                  Codex callers use OpenCode; Claude callers use Codex.
+  --peer CLI      Select target CLI explicitly: opencode, claude or codex.
+                  Use --peer claude to keep the Claude review path from Codex.
   --model MODEL   Override the selected peer's model (review modes only).
-                  Defaults: claude-opus-5-5 (Claude), gpt-6.1-sol (Codex).
+                  OpenCode defaults to the top available free model by its
+                  Artificial Analysis Intelligence Index.
 
 Model discovery:
-  --models        List the target harness's model catalog; no brief.
+  --models        List the target model catalog; OpenCode shows available free
+                  models and their cached Artificial Analysis scores.
   --include-self  Also list the caller harness's models (with --models).
                   Outside a harness, list the other CLI's models too.
 
@@ -254,11 +271,17 @@ Output:
   The result contains verdict, findings, counterproposal,
   attempted_falsifications and unverified. Errors go to stderr; exit is nonzero.
   Requires the selected peer CLI and python3. Never include secrets in input.
-  --models emits target (and optional self) catalogs as JSON without a
-  model inference. Catalogs may be cached; entries do not prove account access
-  or validate custom --model IDs. Claude aliases retain their resolved model IDs.
+  --models emits target (and optional self) catalogs as JSON without a review
+  inference. OpenCode's local catalog identifies free models by zero input,
+  output and cache prices. Artificial Analysis data refreshes only when this
+  availability set changes, then stays in the local peer-review cache. Its
+  Intelligence Index is a broad benchmark, not a direct review-quality score.
+  Claude aliases retain their resolved model IDs.
   Successful reviews are saved before printing under
   ${XDG_CACHE_HOME:-$HOME/.cache}/peer-review, with private file permissions.
+  OpenCode identifies the provider CLI, not the model family; its peer_family
+  is reported as unknown. Region-blocked defaults fall through to the next
+  ranked free model.
   Supporting material is not saved separately. Cache failures warn on stderr
   without discarding the answer. An ID and retrieval command go to stderr.
 
@@ -276,7 +299,9 @@ HELP
     printf '  Detected harness: %s\n' "$detected_harness"
     printf '  Detected serving family: %s\n' "$detected"
     printf '  Effective caller family: %s\n' "$from_family"
-    printf '  Target peer: %s (model: %s)\n' "$peer_cli" "$peer_model"
+    display_model="$peer_model"
+    [ "$peer_cli" != opencode ] || display_model="${peer_model:-top available free model by AA index}"
+    printf '  Target peer: %s (model: %s)\n' "$peer_cli" "$display_model"
     exit 0
 fi
 
@@ -286,20 +311,33 @@ peer_command="$peer_cli"
 if [ "$peer_cli" = claude ]; then
     peer_command="$(dirname "$(realpath "$0")")/claude"
 fi
+if [[ $peer_cli == opencode ]]; then
+    model_helper="$(dirname "$(realpath "$0")")/peer_review_models.py"
+else
+    model_helper=
+fi
 
 if [ "$list_models" = true ]; then
     [ $# -eq 0 ] && [ -z "$input_sources$lens" ] ||
         fail "--models does not accept a brief, --lens, --stdin or --file"
-    python3 - "$peer_cli" "$include_self" "$detected_harness" "$proxy_env_vars" "$peer_command" <<'PY'
+    [ "$model_override" = false ] || fail "--models does not accept --model"
+    python3 - "$peer_cli" "$include_self" "$detected_harness" "$proxy_env_vars" \
+        "$peer_command" "$model_helper" "$cache_dir" <<'PY'
 import json, os, subprocess, sys
 
-peer_cli, include_self, harness, proxy_vars, peer_command = sys.argv[1:]
+peer_cli, include_self, harness, proxy_vars, peer_command, model_helper, cache_dir = sys.argv[1:]
 self_cli = {"Codex": "codex", "Claude Code": "claude",
             "Claude Code (claudex)": "claude"}.get(
                 harness, "claude" if peer_cli == "codex" else "codex")
 
 def catalog(cli, *, target=False):
     env = os.environ.copy()
+    if cli == "opencode":
+        command = [sys.executable, model_helper, "list", "--cache-dir", cache_dir]
+        proc = subprocess.run(command, capture_output=True, text=True, env=env)
+        if proc.returncode:
+            raise ValueError("opencode model discovery failed")
+        return json.loads(proc.stdout)
     if cli == "claude" and target:
         for name in proxy_vars.split():
             env.pop(name, None)
@@ -405,7 +443,7 @@ Review method:
 $method"
 fi
 
-discipline="Recommend nothing beyond the facts supplied. Do not spawn subagents. Populate attempted_falsifications with what you actually tried in order to break your own conclusions -- an empty list is read as 'did not test', not as 'nothing to find'. Put anything you could not check into unverified."
+discipline="Recommend nothing beyond the facts supplied. Do not edit files or run shell commands. Do not spawn subagents. Populate attempted_falsifications with what you actually tried in order to break your own conclusions -- an empty list is read as 'did not test', not as 'nothing to find'. Put anything you could not check into unverified."
 
 material_file=$(mktemp) || fail "cannot create temp file"
 schema_file=$(mktemp) || fail "cannot create temp file"
@@ -466,6 +504,12 @@ prompt="$task
 $brief
 
 $discipline"
+if [ "$peer_cli" = opencode ]; then
+    prompt="$prompt
+
+Return only one JSON object that matches this schema exactly, with no markdown:
+$(cat "$schema_file")"
+fi
 
 # --- run the peer, foreground, read-only, stdin closed -------------------
 # Keep the peer's stderr: swallowing it turns every failure into an opaque
@@ -480,16 +524,19 @@ peer_failed() {
 }
 
 peer_status=0
+opencode_score=""
+opencode_index_version=""
+opencode_refreshed_at=""
 # Keep a Linux laptop awake, lid closed too, while the peer runs (no-op elsewhere).
 command -v agent-awake >/dev/null 2>&1 && agent-awake attach "$$" "peer-review ($peer_cli)"
 if [ "$peer_cli" = "codex" ]; then
     # codex --output-schema takes a FILE.
-    set -- exec --sandbox read-only \
+    set -- exec --ephemeral --sandbox read-only \
         --output-schema "$schema_file" -o "$result_file" -m "$peer_model"
     [ -n "$workdir" ] && set -- "$@" --cd "$workdir"
     codex "$@" "$prompt" <"$material_file" >/dev/null 2>"$err_file" ||
         peer_failed "codex exec failed"
-else
+elif [ "$peer_cli" = "claude" ]; then
     # A peer running through claudex would be GPT again. Force real Anthropic.
     # The wrapper loads host OAuth privately; without it the CLI can still
     # use ANTHROPIC_API_KEY or its normal stored login.
@@ -515,20 +562,88 @@ else
         printf 'peer-review: claude -p failed (exit %s)\n' "$peer_status" >&2
         tail -n 20 "$err_file" >&2
     fi
+else
+    opencode_excluded=""
+    while :; do
+        if [ "$model_override" = true ]; then
+            opencode_selection=$(python3 "$model_helper" resolve --cache-dir "$cache_dir" \
+                --model "$peer_model") || exit $?
+        else
+            set -- resolve --cache-dir "$cache_dir"
+            [ -z "$opencode_excluded" ] || set -- "$@" --exclude "$opencode_excluded"
+            opencode_selection=$(python3 "$model_helper" "$@") || exit $?
+        fi
+        peer_model=$(printf '%s' "$opencode_selection" | python3 -c 'import json,sys; print(json.load(sys.stdin)["id"])')
+        opencode_score=$(printf '%s' "$opencode_selection" | python3 -c 'import json,sys; print(json.load(sys.stdin).get("intelligence_index", ""))')
+        opencode_index_version=$(printf '%s' "$opencode_selection" | python3 -c 'import json,sys; print(json.load(sys.stdin).get("index_version", ""))')
+        opencode_refreshed_at=$(printf '%s' "$opencode_selection" | python3 -c 'import json,sys; print(json.load(sys.stdin).get("refreshed_at", ""))')
+        set -- run --model "$peer_model" --agent plan --format json --archived
+        [ -z "$input_sources" ] || set -- "$@" --file "$material_file"
+        set -- "$@" "$prompt"
+        if [ -n "$workdir" ]; then
+            (cd "$workdir" && opencode "$@") >"$result_file" 2>"$err_file" ||
+                peer_status=$?
+        else
+            opencode "$@" >"$result_file" 2>"$err_file" || peer_status=$?
+        fi
+        [ "$peer_status" -eq 0 ] && break
+        region_blocked=$(python3 - "$result_file" <<'PY'
+import json, sys
+try:
+    for line in open(sys.argv[1], encoding="utf-8"):
+        event = json.loads(line)
+        message = (event.get("error") or {}).get("message", "")
+        if "not available in your country" in message.casefold():
+            print("yes")
+            break
+    else:
+        print("no")
+except (OSError, ValueError, TypeError, AttributeError):
+    print("no")
+PY
+)
+        if [ "$model_override" = true ] || [ "$region_blocked" != yes ]; then
+            peer_failed "opencode run failed"
+        fi
+        printf 'peer-review: %s is region-blocked; trying the next ranked free model\n' \
+            "$peer_model" >&2
+        opencode_excluded="${opencode_excluded:+$opencode_excluded,}$peer_model"
+        peer_model=""
+        peer_status=0
+    done
 fi
 
 PEER_CLI="$peer_cli" PEER_FAMILY="$from_family" PEER_MODEL="$peer_model" \
+PEER_AA_SCORE="$opencode_score" PEER_AA_VERSION="$opencode_index_version" \
+PEER_AA_REFRESHED_AT="$opencode_refreshed_at" \
 PEER_DETECTED="$detected" PEER_STATUS="$peer_status" \
     python3 - "$result_file" "$cache_dir" "$workdir" "$mode" "$brief" "$lens" <<'PY'
 import json, os, subprocess, sys, tempfile, uuid
 from datetime import datetime, timezone
 from pathlib import Path
 
-raw = open(sys.argv[1]).read().strip()
+raw = open(sys.argv[1], encoding="utf-8").read().strip()
 if not raw:
     sys.exit("peer-review: peer returned nothing")
 
-payload = json.loads(raw)
+if os.environ["PEER_CLI"] == "opencode":
+    try:
+        events = [json.loads(line) for line in raw.splitlines() if line.strip()]
+    except ValueError:
+        sys.exit("peer-review: OpenCode returned invalid JSON events")
+    text = "".join(event.get("part", {}).get("text", "")
+                  for event in events if event.get("type") == "text")
+    if any(event.get("type") == "error" for event in events):
+        sys.exit("peer-review: OpenCode reported an error")
+    if not text.strip():
+        sys.exit("peer-review: OpenCode returned no text answer")
+    try:
+        result = json.loads(text)
+    except ValueError:
+        sys.exit("peer-review: OpenCode answer was not valid JSON")
+    reported, payload = os.environ["PEER_MODEL"], result
+else:
+    payload = json.loads(raw)
 
 # codex -o writes the bare answer. `claude --output-format json` emits the
 # whole event stream -- an ARRAY whose final result event carries the answer.
@@ -566,14 +681,42 @@ else:
 if os.environ["PEER_STATUS"] != "0":
     sys.exit("peer-review: peer exited unsuccessfully; discarding its result")
 
+required = {"verdict", "findings", "counterproposal", "attempted_falsifications", "unverified"}
+if not isinstance(result, dict) or set(result) != required:
+    sys.exit("peer-review: peer answer does not match the response schema")
+if result["verdict"] not in {"supports", "challenges", "insufficient_evidence"}:
+    sys.exit("peer-review: peer answer has an invalid verdict")
+if not all(isinstance(result[key], list) for key in (
+        "findings", "attempted_falsifications", "unverified")):
+    sys.exit("peer-review: peer answer has an invalid response schema")
+finding_keys = {"severity", "claim", "evidence", "next_check"}
+if any(not isinstance(item, dict) or set(item) != finding_keys
+       or item["severity"] not in {"must", "should", "nit"}
+       or not all(isinstance(item[key], str) for key in finding_keys - {"severity"})
+       for item in result["findings"]):
+    sys.exit("peer-review: peer answer has invalid findings")
+if any(not isinstance(item, str) for key in ("attempted_falsifications", "unverified")
+       for item in result[key]):
+    sys.exit("peer-review: peer answer has invalid response schema")
+
 caller, detected = os.environ["PEER_FAMILY"], os.environ["PEER_DETECTED"]
+peer_family = {"codex": "gpt", "claude": "claude", "opencode": "unknown"}[
+    os.environ["PEER_CLI"]
+]
 out = {
     "peer_cli": os.environ["PEER_CLI"],
-    "peer_family": "gpt" if caller == "claude" else "claude",
+    "peer_family": peer_family,
     "peer_model": reported or os.environ["PEER_MODEL"] or "cli default",
     "caller_family": caller,
     "result": result,
 }
+if os.environ["PEER_CLI"] == "opencode":
+    if os.environ["PEER_AA_SCORE"] not in ("", "None", "null"):
+        out["peer_model_artificial_analysis_intelligence_index"] = float(
+            os.environ["PEER_AA_SCORE"]
+        )
+    out["peer_model_index_version"] = os.environ["PEER_AA_VERSION"] or None
+    out["peer_model_index_refreshed_at"] = os.environ["PEER_AA_REFRESHED_AT"] or None
 if caller != detected:
     out["routing_warning"] = (
         f"caller declared '{caller}' but detection says '{detected}'; "
