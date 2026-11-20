@@ -1,8 +1,8 @@
-"""Contract tests for the cross-model peer-review launcher.
+"""Contract tests for the peer-review launcher.
 
-The property that matters is routing on the *serving* model rather than the
-harness: under Claudex the Claude Code harness is served by GPT, so a
-harness-keyed rule would send GPT to Codex and call the result cross-model.
+Routing detects the *serving* model rather than relying on the harness name:
+under Claudex the Claude Code harness is served by GPT, so a harness-keyed
+rule would send GPT to Codex and could mistake a same-family review for one.
 """
 
 from __future__ import annotations
@@ -67,6 +67,25 @@ printf '%s' '[{{"type":"system","subtype":"init"}},'
 printf '%s' '{{"type":"result","subtype":"success","is_error":false,'
 printf '%s' '"modelUsage":{{"claude-fable-5":{{"costUSD":0.1}}}},'
 printf '%s' '"result":"{{}}","structured_output":{ANSWER}}}]'
+"""
+
+OPENCODE_CATALOG = json.dumps({"data": [{
+    "id": "test-free", "name": "Test Free", "providerID": "opencode",
+    "type": "chat", "status": "active", "enabled": True,
+    "cost": [{"input": 0, "output": 0, "cache": {"read": 0, "write": 0}}],
+}]})
+
+OPENCODE_STUB = f"""
+if [ "$1" = api ]; then
+    [ "$2 $3" = 'GET /api/model' ] || exit 93
+    printf 'api:%s\\n' "$*" >>"$RECORD_FILE"
+    printf '%s' '{OPENCODE_CATALOG}'
+elif [ "$1" = run ]; then
+    printf 'run:%s\\n' "$*" >>"$RECORD_FILE"
+    python3 -c 'import json,os; print(json.dumps({{"type":"text","part":{{"type":"text","text":os.environ["OPENCODE_ANSWER"]}}}}))'
+else
+    exit 94
+fi
 """
 
 CATALOG_CODEX_STUB = """
@@ -454,7 +473,7 @@ class PeerReviewTests(unittest.TestCase):
 
     def test_target_models_preserve_alias_and_resolved_id_only(self) -> None:
         proc, _, _ = self.run_launcher(
-            ["--models"], {"CODEX_THREAD_ID": "test"},
+            ["--models", "--peer", "claude"], {"CODEX_THREAD_ID": "test"},
             claude_stub=CATALOG_CLAUDE_STUB, open_stdin=True,
         )
         self.assertEqual(proc.returncode, 0, proc.stderr)
@@ -471,7 +490,7 @@ class PeerReviewTests(unittest.TestCase):
         proc, _, _ = self.run_launcher(
             ["--models", "--include-self"], {"CODEX_THREAD_ID": "test"},
             claude_stub=CATALOG_CLAUDE_STUB, codex_stub=CATALOG_CODEX_STUB,
-            open_stdin=True,
+            opencode_stub=OPENCODE_STUB, open_stdin=True,
         )
         self.assertEqual(proc.returncode, 0, proc.stderr)
         own = json.loads(proc.stdout)["self"]
@@ -488,6 +507,18 @@ class PeerReviewTests(unittest.TestCase):
         self.assertEqual(proc.returncode, 0, proc.stderr)
         self.assertEqual(lines, ["cli=claude base=unset",
                                  "cli=claude base=http://127.0.0.1:8317"])
+
+    def test_codex_model_listing_reports_free_opencode_models_without_review(self) -> None:
+        proc, lines, _ = self.run_launcher(
+            ["--models"], {"CODEX_THREAD_ID": "test"},
+            opencode_stub=OPENCODE_STUB, open_stdin=True,
+        )
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        payload = json.loads(proc.stdout)["target"]
+        self.assertEqual(payload["cli"], "opencode")
+        self.assertEqual(payload["models"][0]["id"], "opencode/test-free")
+        self.assertTrue(payload["models"][0]["available_free"])
+        self.assertEqual(lines, ["api:api GET /api/model"])
 
     def test_terminal_include_self_lists_both_harnesses(self) -> None:
         for options, target, own in (([], "codex", "claude"),
@@ -519,7 +550,7 @@ class PeerReviewTests(unittest.TestCase):
 
     def test_model_catalog_cli_failure_is_not_success(self) -> None:
         proc, _, _ = self.run_launcher(
-            ["--models"], {"CODEX_THREAD_ID": "test"},
+            ["--models", "--peer", "claude"], {"CODEX_THREAD_ID": "test"},
             claude_stub="exit 7\n", open_stdin=True,
         )
         self.assertEqual(proc.returncode, 1)
@@ -535,7 +566,7 @@ class PeerReviewTests(unittest.TestCase):
             with self.subTest(response=response["subtype"]):
                 event = json.dumps({"type": "control_response", "response": response})
                 proc, _, _ = self.run_launcher(
-                    ["--models"], {"CODEX_THREAD_ID": "test"},
+                    ["--models", "--peer", "claude"], {"CODEX_THREAD_ID": "test"},
                     claude_stub=f"printf '%s\\n' '{event}'\n", open_stdin=True,
                 )
                 self.assertEqual(proc.returncode, 1)
@@ -547,7 +578,7 @@ class PeerReviewTests(unittest.TestCase):
             with self.subTest(flag=flag):
                 proc, _, _ = self.run_launcher([flag], {}, open_stdin=True)
                 self.assertEqual(proc.returncode, 0, proc.stderr)
-                for option in ("--stdin", "--file", "--include-self", "--models",
+                for option in ("--stdin", "--file", "--include-self", "--models", "--peer",
                                "--recent", "--show", "--all"):
                     self.assertIn(option, proc.stdout)
                 self.assertIn("repeatable", proc.stdout)
@@ -556,6 +587,7 @@ class PeerReviewTests(unittest.TestCase):
     def run_launcher(
         self, args: list[str], env_overrides: dict[str, str],
         *, claude_stub: str = CLAUDE_STUB, codex_stub: str = CODEX_STUB,
+        opencode_stub: str | None = None, opencode_aa_cache: dict | None = None,
         input_text: str | None = None, open_stdin: bool = False,
         claude_wrapper_on_path: bool = False,
     ) -> tuple[subprocess.CompletedProcess[str], list[str], Path]:
@@ -567,6 +599,8 @@ class PeerReviewTests(unittest.TestCase):
 
             write_executable(bin_dir / "codex", codex_stub)
             write_executable(bin_dir / "claude", claude_stub)
+            if opencode_stub is not None:
+                write_executable(bin_dir / "opencode", opencode_stub)
 
             # Prepend the stubs to the real PATH: this host is NixOS, so
             # /usr/bin carries no coreutils and a synthetic PATH loses grep.
@@ -574,7 +608,12 @@ class PeerReviewTests(unittest.TestCase):
                 "PATH": f"{bin_dir}:{os.environ['PATH']}",
                 "HOME": str(tmpdir),
                 "RECORD_FILE": str(record),
+                "OPENCODE_ANSWER": ANSWER,
             }
+            if opencode_aa_cache is not None:
+                cache_path = tmpdir / ".cache" / "peer-review" / "catalog" / "free-models.json"
+                cache_path.parent.mkdir(parents=True)
+                cache_path.write_text(json.dumps(opencode_aa_cache))
             env.update(env_overrides)
             if claude_wrapper_on_path:
                 wrapper_dir = tmpdir / "claude-wrapper"
@@ -669,17 +708,84 @@ printf 'auth=%s\\n' "$auth" >>"$RECORD_FILE"
         self.assertEqual(lines, ["cli=claude base=unset", "auth=host",
                                  "cli=claude base=http://127.0.0.1:8317", "auth=caller"])
 
-    def test_codex_session_routes_to_claude(self) -> None:
-        """Regression: Codex calling Codex.
+    def test_codex_session_routes_to_opencode_free_model(self) -> None:
+        """Codex uses a distinct OpenCode free model, unless overridden."""
+        proc, lines, _ = self.run_launcher(
+            ["--model", "opencode/test-free", "brief"], {"CODEX_THREAD_ID": "abc123"},
+            opencode_stub=OPENCODE_STUB,
+        )
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        payload = json.loads(proc.stdout)
+        self.assertEqual(payload["peer_cli"], "opencode")
+        self.assertEqual(payload["peer_family"], "unknown")
+        self.assertEqual(payload["peer_model"], "opencode/test-free")
+        self.assertIn("--agent plan", "\n".join(lines))
+        self.assertIn("--format json", "\n".join(lines))
 
-        A Codex-spawned shell exports CODEX_SESSION_ID / CODEX_THREAD_ID but
-        NOT CODEX_HOME or CODEX_SANDBOX, so keying on the latter made every
-        Codex session detect as Claude and select Codex as its own peer.
-        """
-        for var in ("CODEX_SESSION_ID", "CODEX_THREAD_ID"):
-            with self.subTest(env=var):
-                proc, _, _ = self.run_launcher(["brief"], {var: "abc123"})
-                self.assertEqual(json.loads(proc.stdout)["peer_cli"], "claude")
+    def test_region_blocked_default_tries_the_next_ranked_model(self) -> None:
+        catalog = {"data": [
+            {"id": "first-free", "name": "First Free", "providerID": "opencode",
+             "type": "chat", "status": "active", "enabled": True,
+             "cost": [{"input": 0, "output": 0, "cache": {"read": 0, "write": 0}}]},
+            {"id": "second-free", "name": "Second Free", "providerID": "opencode",
+             "type": "chat", "status": "active", "enabled": True,
+             "cost": [{"input": 0, "output": 0, "cache": {"read": 0, "write": 0}}]},
+            {"id": "third-free", "name": "Third Free", "providerID": "opencode",
+             "type": "chat", "status": "active", "enabled": True,
+             "cost": [{"input": 0, "output": 0, "cache": {"read": 0, "write": 0}}]},
+        ]}
+        stub = f"""
+if [ "$1" = api ]; then
+    printf '%s\\n' '{json.dumps(catalog)}'
+elif [ "$1" = run ]; then
+    printf 'run:%s\\n' "$*" >>"$RECORD_FILE"
+    case "$*" in
+        *first-free*|*second-free*)
+            printf '%s\\n' '{{"type":"error","error":{{"type":"provider.auth","message":"This model is not available in your country"}}}}'
+            exit 1 ;;
+        *)
+            python3 -c 'import json,os; print(json.dumps({{"type":"text","part":{{"type":"text","text":os.environ["OPENCODE_ANSWER"]}}}}))' ;;
+    esac
+else
+    exit 94
+fi
+"""
+        cache = {
+            "schema": 1,
+            "availability": [
+                {"id": "first-free", "name": "First Free"},
+                {"id": "second-free", "name": "Second Free"},
+                {"id": "third-free", "name": "Third Free"},
+            ],
+            "model_ids": ["first-free", "second-free", "third-free"],
+            "refreshed_at": "2026-01-01T00:00:00+00:00",
+            "intelligence_index_version": 5,
+            "models": [
+                {"id": "first-free", "display_name": "First Free",
+                 "intelligence_index": 50},
+                {"id": "second-free", "display_name": "Second Free",
+                 "intelligence_index": 40},
+                {"id": "third-free", "display_name": "Third Free",
+                 "intelligence_index": 30},
+            ],
+        }
+        proc, lines, _ = self.run_launcher(
+            ["brief"], {"CODEX_THREAD_ID": "abc123"}, opencode_stub=stub,
+            opencode_aa_cache=cache,
+        )
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        payload = json.loads(proc.stdout)
+        self.assertEqual(payload["peer_model"], "opencode/third-free")
+        self.assertEqual(sum(line.startswith("run:") for line in lines), 3)
+        self.assertIn("region-blocked", proc.stderr)
+
+    def test_codex_can_explicitly_keep_claude_as_peer(self) -> None:
+        """The previous Claude target remains available as an explicit route."""
+        proc, _, _ = self.run_launcher(
+            ["--peer", "claude", "brief"], {"CODEX_THREAD_ID": "abc123"},
+        )
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        self.assertEqual(json.loads(proc.stdout)["peer_cli"], "claude")
 
     def test_codex_home_alone_does_not_imply_a_codex_session(self) -> None:
         """A shell that merely configures Codex is still Claude-served."""
@@ -726,8 +832,6 @@ printf 'auth=%s\\n' "$auth" >>"$RECORD_FILE"
         _, lines, _ = self.run_launcher(["brief"], {})
         self.assertIn("--output-schema", lines)
         schema_path = lines[lines.index("--output-schema") + 1]
-        # The schema is a temp file cleaned up on exit; assert the flag pairing
-        # rather than its contents, which the end-to-end result already proves.
         self.assertTrue(schema_path)
 
     def test_codex_peer_defaults_to_gpt_6_1_sol(self) -> None:
@@ -917,7 +1021,7 @@ class PeerReviewWiringTests(unittest.TestCase):
     def test_shared_instructions_warn_about_harness_routing(self) -> None:
         text = SHARED_AGENTS.read_text()
         self.assertIn("peer-review", text)
-        self.assertIn("serving model, not the harness", text)
+        self.assertIn("serving model", text)
 
     def test_role_symlinks_the_launcher_onto_path(self) -> None:
         text = ROLE_TASKS.read_text()

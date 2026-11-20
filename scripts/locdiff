@@ -1,0 +1,132 @@
+#!/usr/bin/env python3
+"""Lines added/removed per day, broken down by repo, across all local git repos.
+
+Scans ~/Coding and ~/configs (or the roots you pass) for repositories, reads
+`git log --numstat` from every branch, and sums your commits per day.
+Commits are deduplicated by hash, so multiple clones of one repo count once.
+Days are author dates (when you wrote it, not when it was rebased/merged).
+Merge commits, lockfiles, binaries and huge per-file changes (data dumps,
+generated files; see --max-file-lines) are skipped.
+
+  locdiff                    # last 14 days, per day with per-repo breakdown
+  locdiff -d 30 --by-repo    # 30-day totals per repo
+  locdiff --author .         # everyone, not just you
+  locdiff ~/Coding/kolai     # just the repos under that path
+  locdiff -x research        # skip a repo (repeatable)
+"""
+import argparse
+import os
+import subprocess
+from collections import defaultdict
+from pathlib import Path
+
+LOCKFILES = [
+    "*.lock", "package-lock.json", "pnpm-lock.yaml", "yarn.lock",
+    "uv.lock", "poetry.lock", "Cargo.lock", "flake.lock", "go.sum",
+]
+
+
+def git(repo, *args):
+    return subprocess.run(
+        ["git", "-C", str(repo), *args], capture_output=True, text=True
+    ).stdout
+
+
+def find_repos(roots, depth):
+    repos = set()
+    for root in roots:
+        root = Path(root).expanduser().resolve()
+        base = len(root.parts)
+        for dirpath, dirnames, _ in os.walk(root):
+            if ".git" in dirnames:
+                repos.add(Path(dirpath))
+            # don't descend into .git, node_modules, worktrees etc., and cap depth
+            dirnames[:] = [
+                d for d in dirnames
+                if not d.startswith(".") and d != "node_modules"
+                and len(Path(dirpath).parts) - base < depth
+            ]
+    return sorted(repos)
+
+
+def main():
+    p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    p.add_argument("roots", nargs="*", default=["~/Coding", "~/configs"])
+    p.add_argument("-d", "--days", type=int, default=14)
+    p.add_argument("--author", help="git --author regex (default: global user.name)")
+    p.add_argument("--by-repo", action="store_true", help="totals per repo instead of per day")
+    p.add_argument("-x", "--exclude", action="append", default=[], metavar="REPO",
+                   help="skip repos with this directory name (repeatable)")
+    p.add_argument("--max-file-lines", type=int, default=5000,
+                   help="ignore single-file changes bigger than this (0 = no limit)")
+    p.add_argument("--depth", type=int, default=3, help="max directory depth to search for repos")
+    a = p.parse_args()
+
+    author = a.author or subprocess.run(
+        ["git", "config", "--global", "user.name"], capture_output=True, text=True
+    ).stdout.strip()
+
+    cutoff = subprocess.run(
+        ["date", "-v", f"-{a.days - 1}d", "+%Y-%m-%d"] if os.uname().sysname == "Darwin"
+        else ["date", "-d", f"{a.days - 1} days ago", "+%Y-%m-%d"],
+        capture_output=True, text=True,
+    ).stdout.strip()
+    seen = set()
+    capped = 0
+    stats = defaultdict(lambda: [0, 0])  # (day, repo) -> [added, deleted]
+    for repo in find_repos(a.roots, a.depth):
+        if repo.name in a.exclude:
+            continue
+        out = git(
+            repo, "log", "--all", "--no-merges", f"--since={a.days} days ago",
+            f"--author={author}", "--numstat",
+            "--format=@%H %ad", "--date=format-local:%Y-%m-%d",
+            "--", ".", *[f":(exclude,glob)**/{f}" for f in LOCKFILES],
+        )
+        skip = False
+        for line in out.splitlines():
+            if line.startswith("@"):
+                sha, day = line[1:].split()
+                # --since filters on committer date; rebased commits can have older author dates
+                skip = sha in seen or day < cutoff
+                seen.add(sha)
+            elif line and not skip:
+                added, deleted, _ = line.split("\t", 2)
+                if added == "-":  # binary
+                    continue
+                if a.max_file_lines and int(added) + int(deleted) > a.max_file_lines:
+                    capped += 1
+                    continue
+                s = stats[(day, repo.name)]
+                s[0] += int(added)
+                s[1] += int(deleted)
+
+    if not stats:
+        print("no commits found")
+        return
+
+    w = max(len(r) for _, r in stats) + 2
+    fmt = lambda label, ad, de, indent="": print(f"{indent}{label:<{w - len(indent)}} {'+' + str(ad):>8} {'-' + str(de):>8} {ad - de:>+8}")
+
+    if a.by_repo:
+        totals = defaultdict(lambda: [0, 0])
+        for (_, repo), (ad, de) in stats.items():
+            totals[repo][0] += ad
+            totals[repo][1] += de
+        for repo, (ad, de) in sorted(totals.items(), key=lambda kv: -sum(kv[1])):
+            fmt(repo, ad, de)
+    else:
+        for day in sorted({d for d, _ in stats}):
+            rows = sorted(((r, s) for (d, r), s in stats.items() if d == day), key=lambda kv: -sum(kv[1]))
+            fmt(day, sum(s[0] for _, s in rows), sum(s[1] for _, s in rows))
+            for repo, (ad, de) in rows:
+                fmt(repo, ad, de, indent="  ")
+
+    print("-" * (w + 27))
+    fmt("total", sum(s[0] for s in stats.values()), sum(s[1] for s in stats.values()))
+    if capped:
+        print(f"({capped} file changes over {a.max_file_lines} lines skipped)")
+
+
+if __name__ == "__main__":
+    main()

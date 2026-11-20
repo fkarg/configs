@@ -25,7 +25,6 @@ tokei, ghc, node, bun, pnpm, uv, rustup, docker, the k8s tools, beancount suite,
 | rust | `rustup` | |
 | kubernetes-cli | `kubectl` | |
 | minio-mc | `minio-client` | |
-| gemini-cli | `gemini-cli` | |
 | tinymist | `tinymist` | in `desktop-apps.nix` |
 | actionlint | `actionlint` | |
 | ansible-lint | `ansible-lint` | |

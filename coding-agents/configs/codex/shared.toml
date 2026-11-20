@@ -58,6 +58,8 @@ allow_local_binding = true
 # choke rather than a clean skip.
 "ab.chatgpt.com" = "allow"
 "api.anthropic.com" = "allow"
+# Artificial Analysis model scores used by peer-review.
+"artificialanalysis.ai" = "allow"
 "api.github.com" = "allow"
 "api.openai.com" = "allow"
 "auth.docker.io" = "allow"

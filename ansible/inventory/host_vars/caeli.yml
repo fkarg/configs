@@ -136,8 +136,8 @@ brew_packages_common:
   - wireguard-tools
   - xpipe
   # storage & databases
-  - minio-mc
-  - postgresql@17
+  # - minio-mc
+  # - postgresql@17
   # documents & typesetting
   - ghostscript
   - graphviz
@@ -159,9 +159,8 @@ brew_packages_common:
   - ansible-lint
   # AI / coding agents
   - ccusage
-  - gemini-cli
-  - opencode
-  - pi-coding-agent
+  # - opencode
+  # - pi-coding-agent
   # macOS-specific helpers
   - batt
   - m1ddc
@@ -190,7 +189,7 @@ brew_casks_common:
   - betterdiscord-installer
   - discord
   - element
-  - microsoft-teams
+  # - microsoft-teams
   - signal
   - telegram-desktop
   - whatsapp
@@ -203,10 +202,10 @@ brew_casks_common:
   # daemons register two nodes, and the formula's CLI shadows the app's.
   - tailscale-app
   # microsoft office
-  - microsoft-excel
-  - microsoft-outlook
-  - microsoft-powerpoint
-  - microsoft-word
+  # - microsoft-excel
+  # - microsoft-outlook
+  # - microsoft-powerpoint
+  # - microsoft-word
   # productivity & documents
   - anki
   - ausweisapp

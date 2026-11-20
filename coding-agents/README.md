@@ -83,8 +83,10 @@ the role.
 
 ## Peer reviews
 
-`peer-review` selects a peer from the other serving model family. Bare calls
-ignore stdin; supporting material is explicit:
+`peer-review` selects an independent peer. Codex sessions use OpenCode's free
+models by default; Claude sessions still use Codex, and the existing Claude
+target can be selected with `--peer claude`. Bare calls ignore stdin; supporting
+material is explicit:
 
 ```sh
 peer-review --mode premise "Do we need a cache for this latency target?"
@@ -94,6 +96,7 @@ git diff | peer-review --stdin --mode diff-review --lens murphyjitsu-reviewer "I
 git diff | peer-review -f design.md --stdin -f notes.md "Review this change"
 peer-review --models
 peer-review --models --include-self
+peer-review --peer claude --mode diff-review --stdin "Intent: ..."
 peer-review --recent
 peer-review --recent 10 --all
 peer-review --show <ID-from-recent>
@@ -106,12 +109,24 @@ record the lens and `--recent` shows it as `diff-review[NAME]`.
 
 `--stdin` waits for EOF; `-f/--file` is repeatable. Files and stdin combine in
 command-line order, with a newline between inputs.
-Model listing uses each harness's native catalog without sending a user prompt.
-It returns JSON, preserves Claude aliases and resolved IDs, and includes Codex
-visibility metadata. See `peer-review --help` for catalog limitations.
-`--include-self` adds the detected caller harness's catalog. From a terminal,
-it adds the other CLI's catalog, so both Codex and Claude are listed.
-`--from` changes peer routing, not harness detection.
+Model listing uses the native catalog without a review inference. For OpenCode,
+it asks the local OpenCode service for active, enabled chat models with zero
+input, output, and cache prices. It matches exact normalized display names to
+Artificial Analysis model names; ambiguous and unmatched entries remain
+unranked. The free API exposes its broad Intelligence Index, not the dedicated
+Coding Agent Index, so the score is only a rough model-quality signal.
+`--include-self` adds the detected caller harness's catalog. `--from` declares
+the serving family; `--peer` selects the target CLI directly.
+OpenCode's catalog identifies its provider but not the underlying model family,
+so its result reports `peer_family: "unknown"`. If the top-ranked model is
+region-blocked, the launcher tries the next scored free model.
+
+Artificial Analysis data is fetched in bulk only when the available free-model
+set changes and is cached under `catalog/free-models.json` inside the local
+peer-review cache. The cached index version and retrieval time appear in
+`--models` output. The key comes from `ARTIFICIALANALYSIS_API_KEY` or the local
+file `~/.config/peer-review-aanalysis`; use `PEER_REVIEW_AA_KEY_FILE` to point
+elsewhere. Neither the key nor score cache belongs in this public repository.
 
 Successful reviews are saved before stdout is printed, so a response piped through
 `tail` or truncated by a tool can be recovered without another model call.
@@ -128,7 +143,9 @@ Read the complete response before drawing conclusions.
 The local cache is `${XDG_CACHE_HOME:-$HOME/.cache}/peer-review`, outside Git.
 Each review has an atomic JSON file with private permissions. The brief and
 answer are retained; supplied files and stdin are not stored separately (the
-answer can quote them). Failed reviews and model catalogs are not saved.
+answer can quote them). Failed reviews and the Claude/Codex model catalogs are
+not saved. OpenCode's Artificial Analysis score cache lives in a separate
+subdirectory and does not appear in review history.
 A retrieval command with the exact ID is printed to stderr. Cache write failures
 warn without discarding the peer's answer. There is no automatic expiration;
 remove the cache directory to clear the history.
