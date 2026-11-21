@@ -24,6 +24,8 @@ from_family=""
 peer_model=""
 peer_override=""
 model_override=false
+single=false
+multi_base=""
 help_requested=false
 input_sources=""
 material_file=""
@@ -38,7 +40,7 @@ history_value=""
 history_all=false
 cache_dir="${XDG_CACHE_HOME:-$HOME/.cache}/peer-review"
 trap 'rm -f "$input_sources" "$material_file" "$schema_file" "$result_file" \
-    "$err_file" "$combined_file"' EXIT INT TERM
+    "$err_file" "$combined_file"; [ -z "$multi_base" ] || rm -f "$multi_base"*' EXIT INT TERM
 # Strip these only for a real Anthropic peer; self discovery keeps its provider.
 proxy_env_vars="ANTHROPIC_BASE_URL ANTHROPIC_AUTH_TOKEN ANTHROPIC_MODEL
 ANTHROPIC_DEFAULT_OPUS_MODEL ANTHROPIC_DEFAULT_SONNET_MODEL
@@ -57,6 +59,7 @@ while [ $# -gt 0 ]; do
         --cd) workdir="${2:?--cd needs a value}"; shift 2 ;;
         --from) from_family="${2:?--from needs a value}"; shift 2 ;;
         --peer) peer_override="${2:?--peer needs a CLI}"; shift 2 ;;
+        --single) single=true; shift ;;
         --model) peer_model="${2:?--model needs a value}"; model_override=true; shift 2 ;;
         --stdin)
             [ -n "$input_sources" ] || input_sources=$(mktemp)
@@ -194,13 +197,15 @@ fi
 case "$from_family" in
     claude) default_peer="codex" ;;
     gpt)
-        if [ "$detected_harness" = "Codex" ]; then
-            default_peer="opencode"
-        else
-            default_peer="claude"
-        fi ;;
+        default_peer="claude" ;;
     *) fail "unknown family: $from_family (want claude|gpt)" ;;
 esac
+
+# Default: the frontier peer plus the best free OpenCode model, in parallel.
+# An explicit --peer, --model or --single asks for exactly one peer.
+multi=false
+[ -n "$peer_override$peer_model" ] || [ "$single" = true ] ||
+    [ "$list_models" = true ] || [ "$help_requested" = true ] || multi=true
 
 peer_cli="${peer_override:-$default_peer}"
 case "$peer_cli" in
@@ -218,7 +223,10 @@ Usage: peer-review [OPTIONS] BRIEF
        peer-review --show ID
        git diff | peer-review --stdin --mode diff-review --cd "$PWD" "Intent: ..."
 
-Ask a read-only peer model to challenge a brief.
+Ask read-only peer models to challenge a brief. By default two peers run in
+parallel and both answers come back: the frontier peer of the other family
+(Claude callers get Codex, GPT callers get Claude) and the best free OpenCode
+model. Use --single, --peer or --model to ask exactly one peer.
 Options must precede BRIEF. Stdin is ignored unless --stdin is supplied.
 
 Review settings:
@@ -238,9 +246,10 @@ Supporting material:
                   by a newline. diff-review requires at least one input source.
 
 Peer selection:
+  --single        Ask only the default frontier peer (no OpenCode, old output).
   --from FAMILY   Declare the caller's OWN serving family: claude or gpt.
                   Defaults to PEER_REVIEW_FROM, then automatic detection.
-                  Codex callers use OpenCode; Claude callers use Codex.
+                  Claude callers use Codex; GPT callers use Claude.
   --peer CLI      Select target CLI explicitly: opencode, claude or codex.
                   Use --peer claude to keep the Claude review path from Codex.
   --model MODEL   Override the selected peer's model (review modes only).
@@ -267,7 +276,12 @@ General:
   --              End options (for a brief beginning with a dash).
 
 Output:
-  One validated JSON object with peer_cli, peer_model, peer_family and result.
+  Default: {"peers": [frontier, opencode]}. Each entry is the single-peer
+  object below, or {"peer_cli", "error"} if that peer failed. A failed
+  OpenCode peer does not fail the call; a failed frontier peer exits nonzero
+  but still prints the other answer. Each peer's review is saved separately.
+  With --single/--peer/--model: one validated JSON object with peer_cli,
+  peer_model, peer_family and result.
   The result contains verdict, findings, counterproposal,
   attempted_falsifications and unverified. Errors go to stderr; exit is nonzero.
   Requires the selected peer CLI and python3. Never include secrets in input.
@@ -469,6 +483,45 @@ try:
 except OSError as exc:
     sys.exit(f"peer-review: cannot read material file: {exc.filename}")
 ' "$input_sources" "$material_file"
+fi
+
+if [ "$multi" = true ]; then
+    # Re-invoke ourselves once per peer so each keeps its own validation,
+    # history record and failure handling; then merge the answers.
+    self=$(realpath "$0")
+    multi_base=$(mktemp) || fail "cannot create temp file"
+    for target in "$peer_cli" opencode; do
+        (
+            set -- --peer "$target" --mode "$mode" --from "$from_family"
+            [ -z "$lens" ] || set -- "$@" --lens "$lens"
+            [ -z "$workdir" ] || set -- "$@" --cd "$workdir"
+            [ -z "$input_sources" ] || set -- "$@" --file "$material_file"
+            status=0
+            "$self" "$@" -- "$brief" </dev/null \
+                >"$multi_base.$target.out" 2>"$multi_base.$target.err" || status=$?
+            echo "$status" >"$multi_base.$target.status"
+        ) &
+    done
+    wait
+    for target in "$peer_cli" opencode; do cat "$multi_base.$target.err" >&2; done
+    python3 - "$multi_base" "$peer_cli" opencode <<'PY'
+import json, sys
+from pathlib import Path
+
+base, targets = sys.argv[1], sys.argv[2:]
+peers = []
+for target in targets:
+    status = int(Path(f"{base}.{target}.status").read_text())
+    if status == 0:
+        peers.append(json.loads(Path(f"{base}.{target}.out").read_text()))
+    else:
+        tail = Path(f"{base}.{target}.err").read_text().strip().splitlines()[-5:]
+        peers.append({"peer_cli": target, "error": " | ".join(tail) or f"exit {status}"})
+sys.stdout.write(json.dumps({"peers": peers}, indent=2) + "\n")
+if "error" in peers[0]:
+    sys.exit(f"peer-review: frontier peer {targets[0]} failed; see its error entry")
+PY
+    exit $?
 fi
 
 cat >"$schema_file" <<'SCHEMA'

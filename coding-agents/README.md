@@ -83,10 +83,15 @@ the role.
 
 ## Peer reviews
 
-`peer-review` selects an independent peer. Codex sessions use OpenCode's free
-models by default; Claude sessions still use Codex, and the existing Claude
-target can be selected with `--peer claude`. Bare calls ignore stdin; supporting
-material is explicit:
+`peer-review` asks two independent peers in parallel by default and returns
+`{"peers": [frontier, opencode]}`: the frontier peer of the other family
+(Claude sessions get Codex, GPT sessions get Claude) plus the best free OpenCode
+model. A failed OpenCode peer becomes an `error` entry; a failed frontier peer
+exits nonzero but still prints the other answer. `--single` asks only the
+frontier peer, and `--peer`/`--model` select exactly one peer (old output
+shape). Each peer's review is saved under its own ID. Free OpenCode models may
+log prompts: a repository that must not send material to them should say so in
+its AGENTS.md. Bare calls ignore stdin; supporting material is explicit:
 
 ```sh
 peer-review --mode premise "Do we need a cache for this latency target?"

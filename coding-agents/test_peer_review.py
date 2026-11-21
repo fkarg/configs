@@ -110,6 +110,16 @@ print(json.dumps({"type": "control_response", "response": {
     }}}))'
 """
 
+FREE_CACHE = {
+    "schema": 1,
+    "availability": [{"id": "test-free", "name": "Test Free"}],
+    "model_ids": ["test-free"],
+    "refreshed_at": "2026-01-01T00:00:00+00:00",
+    "intelligence_index_version": 5,
+    "models": [{"id": "test-free", "display_name": "Test Free",
+                "intelligence_index": 10}],
+}
+
 RECORD_INPUT = 'printf "material:%s\\n" "$(cat)" >>"$RECORD_FILE"\n'
 
 
@@ -510,7 +520,7 @@ class PeerReviewTests(unittest.TestCase):
 
     def test_codex_model_listing_reports_free_opencode_models_without_review(self) -> None:
         proc, lines, _ = self.run_launcher(
-            ["--models"], {"CODEX_THREAD_ID": "test"},
+            ["--peer", "opencode", "--models"], {"CODEX_THREAD_ID": "test"},
             opencode_stub=OPENCODE_STUB, open_stdin=True,
         )
         self.assertEqual(proc.returncode, 0, proc.stderr)
@@ -589,7 +599,7 @@ class PeerReviewTests(unittest.TestCase):
         *, claude_stub: str = CLAUDE_STUB, codex_stub: str = CODEX_STUB,
         opencode_stub: str | None = None, opencode_aa_cache: dict | None = None,
         input_text: str | None = None, open_stdin: bool = False,
-        claude_wrapper_on_path: bool = False,
+        claude_wrapper_on_path: bool = False, multi: bool = False,
     ) -> tuple[subprocess.CompletedProcess[str], list[str], Path]:
         with tempfile.TemporaryDirectory() as tmp:
             tmpdir = Path(tmp)
@@ -622,7 +632,7 @@ class PeerReviewTests(unittest.TestCase):
                 env["PATH"] = f"{wrapper_dir}:{env['PATH']}"
 
             child = subprocess.Popen(
-                [str(LAUNCHER), *args],
+                [str(LAUNCHER), *([] if multi else ["--single"]), *args],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 text=True,
@@ -709,9 +719,10 @@ printf 'auth=%s\\n' "$auth" >>"$RECORD_FILE"
                                  "cli=claude base=http://127.0.0.1:8317", "auth=caller"])
 
     def test_codex_session_routes_to_opencode_free_model(self) -> None:
-        """Codex uses a distinct OpenCode free model, unless overridden."""
+        """--peer opencode asks one free OpenCode model, as an explicit route."""
         proc, lines, _ = self.run_launcher(
-            ["--model", "opencode/test-free", "brief"], {"CODEX_THREAD_ID": "abc123"},
+            ["--peer", "opencode", "--model", "opencode/test-free", "brief"],
+            {"CODEX_THREAD_ID": "abc123"},
             opencode_stub=OPENCODE_STUB,
         )
         self.assertEqual(proc.returncode, 0, proc.stderr)
@@ -770,14 +781,63 @@ fi
             ],
         }
         proc, lines, _ = self.run_launcher(
-            ["brief"], {"CODEX_THREAD_ID": "abc123"}, opencode_stub=stub,
-            opencode_aa_cache=cache,
+            ["--peer", "opencode", "brief"], {"CODEX_THREAD_ID": "abc123"},
+            opencode_stub=stub, opencode_aa_cache=cache,
         )
         self.assertEqual(proc.returncode, 0, proc.stderr)
         payload = json.loads(proc.stdout)
         self.assertEqual(payload["peer_model"], "opencode/third-free")
         self.assertEqual(sum(line.startswith("run:") for line in lines), 3)
         self.assertIn("region-blocked", proc.stderr)
+
+    def test_default_runs_frontier_and_free_peer_and_returns_both(self) -> None:
+        proc, lines, _ = self.run_launcher(
+            ["brief"], {}, opencode_stub=OPENCODE_STUB, multi=True,
+            opencode_aa_cache=FREE_CACHE,
+        )
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        peers = json.loads(proc.stdout)["peers"]
+        self.assertEqual([p["peer_cli"] for p in peers], ["codex", "opencode"])
+        self.assertTrue(all(p["result"]["verdict"] == "challenges" for p in peers))
+
+    def test_gpt_caller_gets_claude_plus_free_peer(self) -> None:
+        proc, _, _ = self.run_launcher(
+            ["--from", "gpt", "brief"], {}, opencode_stub=OPENCODE_STUB,
+            multi=True, opencode_aa_cache=FREE_CACHE,
+        )
+        peers = json.loads(proc.stdout)["peers"]
+        self.assertEqual([p["peer_cli"] for p in peers], ["claude", "opencode"])
+
+    def test_multi_shares_stdin_material_with_both_peers(self) -> None:
+        proc, lines, _ = self.run_launcher(
+            ["--stdin", "--mode", "diff-review", "brief"], {},
+            opencode_stub=OPENCODE_STUB, codex_stub=CODEX_STUB + RECORD_INPUT,
+            multi=True, opencode_aa_cache=FREE_CACHE, input_text="the diff\n",
+        )
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        self.assertEqual(len(json.loads(proc.stdout)["peers"]), 2)
+
+    def test_failed_free_peer_does_not_fail_the_review(self) -> None:
+        proc, _, _ = self.run_launcher(["brief"], {}, multi=True)  # no opencode CLI
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        peers = json.loads(proc.stdout)["peers"]
+        self.assertEqual(peers[0]["peer_cli"], "codex")
+        self.assertEqual(peers[1]["peer_cli"], "opencode")
+        self.assertIn("error", peers[1])
+
+    def test_failed_frontier_peer_exits_nonzero_but_keeps_free_answer(self) -> None:
+        proc, _, _ = self.run_launcher(
+            ["brief"], {}, codex_stub="exit 1\n", opencode_stub=OPENCODE_STUB,
+            multi=True, opencode_aa_cache=FREE_CACHE,
+        )
+        self.assertNotEqual(proc.returncode, 0)
+        peers = json.loads(proc.stdout)["peers"]
+        self.assertIn("error", peers[0])
+        self.assertEqual(peers[1]["peer_cli"], "opencode")
+
+    def test_explicit_peer_stays_single(self) -> None:
+        proc, _, _ = self.run_launcher(["--peer", "claude", "brief"], {}, multi=True)
+        self.assertEqual(json.loads(proc.stdout)["peer_cli"], "claude")
 
     def test_codex_can_explicitly_keep_claude_as_peer(self) -> None:
         """The previous Claude target remains available as an explicit route."""
@@ -834,11 +894,11 @@ fi
         schema_path = lines[lines.index("--output-schema") + 1]
         self.assertTrue(schema_path)
 
-    def test_codex_peer_defaults_to_gpt_6_1_sol(self) -> None:
+    def test_codex_peer_defaults_to_gpt_6_luna(self) -> None:
         proc, lines, _ = self.run_launcher(["--from", "claude", "brief"], {})
         self.assertIn("-m", lines)
-        self.assertEqual(lines[lines.index("-m") + 1], "gpt-6.1-sol")
-        self.assertEqual(json.loads(proc.stdout)["peer_model"], "gpt-6.1-sol")
+        self.assertEqual(lines[lines.index("-m") + 1], "gpt-6-luna")
+        self.assertEqual(json.loads(proc.stdout)["peer_model"], "gpt-6-luna")
 
     def test_result_reports_which_model_answered(self) -> None:
         proc, lines, _ = self.run_launcher(["--model", "gpt-5.6-sol", "brief"], {})
@@ -862,10 +922,10 @@ fi
         self.assertEqual(schema_arg.strip(), "{")
         self.assertIn("attempted_falsifications", "\n".join(lines))
 
-    def test_claude_peer_defaults_to_opus_5_5(self) -> None:
+    def test_claude_peer_defaults_to_sonnet_5_5(self) -> None:
         _, lines, _ = self.run_launcher(["--from", "gpt", "brief"], {})
         self.assertIn("--model", lines)
-        self.assertEqual(lines[lines.index("--model") + 1], "claude-opus-5-5")
+        self.assertEqual(lines[lines.index("--model") + 1], "claude-sonnet-5-5")
 
     def test_claude_peer_model_override_is_preserved(self) -> None:
         proc, lines, _ = self.run_launcher(
