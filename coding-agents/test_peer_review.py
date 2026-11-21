@@ -825,6 +825,18 @@ fi
         self.assertEqual(peers[1]["peer_cli"], "opencode")
         self.assertIn("error", peers[1])
 
+    def test_hung_free_peer_is_killed_after_the_frontier_finishes(self) -> None:
+        hung = OPENCODE_STUB.replace(
+            'printf \'run:%s\\n\' "$*" >>"$RECORD_FILE"', "sleep 60")
+        proc, _, _ = self.run_launcher(
+            ["brief"], {"PEER_REVIEW_FREE_FLOOR": "2"}, opencode_stub=hung,
+            multi=True, opencode_aa_cache=FREE_CACHE,
+        )
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        peers = json.loads(proc.stdout)["peers"]
+        self.assertEqual(peers[0]["peer_cli"], "codex")
+        self.assertIn("timed out", peers[1]["error"])
+
     def test_failed_frontier_peer_exits_nonzero_but_keeps_free_answer(self) -> None:
         proc, _, _ = self.run_launcher(
             ["brief"], {}, codex_stub="exit 1\n", opencode_stub=OPENCODE_STUB,

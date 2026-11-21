@@ -87,7 +87,7 @@ the role.
 `{"peers": [frontier, opencode]}`: the frontier peer of the other family
 (Claude sessions get Codex, GPT sessions get Claude) plus the best free OpenCode
 model. A failed OpenCode peer becomes an `error` entry; a failed frontier peer
-exits nonzero but still prints the other answer. `--single` asks only the
+exits nonzero but still prints the other answer. The frontier peer has no time limit; a still-running OpenCode peer is stopped at `max(180s, 1.4·T + 63s)` after start (T = frontier runtime; +75% at 3 min, tapering to +40%) and reported as a timeout error. `--single` asks only the
 frontier peer, and `--peer`/`--model` select exactly one peer (old output
 shape). Each peer's review is saved under its own ID. Free OpenCode models may
 log prompts: a repository that must not send material to them should say so in

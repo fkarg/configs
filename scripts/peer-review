@@ -280,6 +280,9 @@ Output:
   object below, or {"peer_cli", "error"} if that peer failed. A failed
   OpenCode peer does not fail the call; a failed frontier peer exits nonzero
   but still prints the other answer. Each peer's review is saved separately.
+  The frontier peer has no time limit; OpenCode is stopped at max(180s,
+  1.4*T + 63s) after start, T being the frontier's runtime (PEER_REVIEW_FREE_FLOOR
+  overrides the 180s floor), and reported as a timeout error.
   With --single/--peer/--model: one validated JSON object with peer_cli,
   peer_model, peer_family and result.
   The result contains verdict, findings, counterproposal,
@@ -490,19 +493,47 @@ if [ "$multi" = true ]; then
     # history record and failure handling; then merge the answers.
     self=$(realpath "$0")
     multi_base=$(mktemp) || fail "cannot create temp file"
-    for target in "$peer_cli" opencode; do
-        (
-            set -- --peer "$target" --mode "$mode" --from "$from_family"
-            [ -z "$lens" ] || set -- "$@" --lens "$lens"
-            [ -z "$workdir" ] || set -- "$@" --cd "$workdir"
-            [ -z "$input_sources" ] || set -- "$@" --file "$material_file"
-            status=0
-            "$self" "$@" -- "$brief" </dev/null \
-                >"$multi_base.$target.out" 2>"$multi_base.$target.err" || status=$?
-            echo "$status" >"$multi_base.$target.status"
-        ) &
+    run_peer() {
+        set -- --peer "$1" --mode "$mode" --from "$from_family"
+        [ -z "$lens" ] || set -- "$@" --lens "$lens"
+        [ -z "$workdir" ] || set -- "$@" --cd "$workdir"
+        [ -z "$input_sources" ] || set -- "$@" --file "$material_file"
+        "$self" "$@" -- "$brief" </dev/null
+    }
+    kill_tree() {
+        for child in $(pgrep -P "$1" 2>/dev/null); do kill_tree "$child"; done
+        kill "$1" 2>/dev/null || true
+    }
+    peer_job() {
+        status=0
+        run_peer "$1" >"$multi_base.$1.out" 2>"$multi_base.$1.err" || status=$?
+        echo "$status" >"$multi_base.$1.status"
+    }
+    peer_job "$peer_cli" &
+    frontier_pid=$!
+    peer_job opencode &
+    free_pid=$!
+    started=$(date +%s)
+    # The frontier peer has no time limit. The free peer may outlive it by a
+    # margin that shrinks with run time: limit = max(floor, 1.4*T + 0.35*floor),
+    # i.e. +75% at T=floor, approaching +40% for long reviews.
+    wait "$frontier_pid" || true
+    took=$(( $(date +%s) - started ))
+    floor=${PEER_REVIEW_FREE_FLOOR:-180}
+    limit=$(( took * 14 / 10 + floor * 35 / 100 ))
+    [ "$limit" -ge "$floor" ] || limit=$floor
+    while [ ! -e "$multi_base.opencode.status" ]; do
+        if [ $(( $(date +%s) - started )) -ge "$limit" ]; then
+            kill_tree "$free_pid"
+            wait "$free_pid" 2>/dev/null || true
+            echo "peer-review: opencode timed out after ${limit}s (frontier took ${took}s)" \
+                >>"$multi_base.opencode.err"
+            echo 124 >"$multi_base.opencode.status"
+            break
+        fi
+        sleep 1
     done
-    wait
+    wait "$free_pid" 2>/dev/null || true
     for target in "$peer_cli" opencode; do cat "$multi_base.$target.err" >&2; done
     python3 - "$multi_base" "$peer_cli" opencode <<'PY'
 import json, sys
