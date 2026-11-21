@@ -125,6 +125,8 @@ the serving family; `--peer` selects the target CLI directly.
 OpenCode's catalog identifies its provider but not the underlying model family,
 so its result reports `peer_family: "unknown"`. If the top-ranked model is
 region-blocked, the launcher tries the next scored free model.
+`PEER_REVIEW_OPENCODE_EXCLUDE` (comma-separated model IDs) removes models from
+default selection.
 
 Artificial Analysis data is fetched in bulk only when the available free-model
 set changes and is cached under `catalog/free-models.json` inside the local
