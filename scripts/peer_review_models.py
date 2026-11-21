@@ -304,8 +304,8 @@ def main() -> int:
             return 0
         excluded = {
             model.removeprefix("opencode/")
-            for item in args.exclude
-            for model in item.split(",")
+            for item in [*args.exclude, os.environ.get("PEER_REVIEW_OPENCODE_EXCLUDE", "")]
+            for model in item.split(",") if model
         }
         selected = best_model(cache["models"], excluded)
         if selected is None:

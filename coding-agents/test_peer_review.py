@@ -837,6 +837,27 @@ fi
         self.assertEqual(peers[0]["peer_cli"], "codex")
         self.assertIn("timed out", peers[1]["error"])
 
+    def test_excluded_free_model_is_skipped_by_default_selection(self) -> None:
+        catalog = {"data": [
+            {"id": f"{n}-free", "name": f"{n.title()} Free", "providerID": "opencode",
+             "type": "chat", "status": "active", "enabled": True,
+             "cost": [{"input": 0, "output": 0, "cache": {"read": 0, "write": 0}}]}
+            for n in ("top", "next")]}
+        stub = OPENCODE_STUB.replace(OPENCODE_CATALOG, json.dumps(catalog))
+        cache = {**FREE_CACHE,
+                 "availability": [{"id": f"{n}-free", "name": f"{n.title()} Free"}
+                                  for n in ("next", "top")],
+                 "model_ids": ["next-free", "top-free"],
+                 "models": [{"id": "top-free", "display_name": "Top Free", "intelligence_index": 30},
+                            {"id": "next-free", "display_name": "Next Free", "intelligence_index": 20}]}
+        proc, _, _ = self.run_launcher(
+            ["--peer", "opencode", "brief"],
+            {"PEER_REVIEW_OPENCODE_EXCLUDE": "opencode/top-free"},
+            opencode_stub=stub, opencode_aa_cache=cache,
+        )
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        self.assertEqual(json.loads(proc.stdout)["peer_model"], "opencode/next-free")
+
     def test_failed_frontier_peer_exits_nonzero_but_keeps_free_answer(self) -> None:
         proc, _, _ = self.run_launcher(
             ["brief"], {}, codex_stub="exit 1\n", opencode_stub=OPENCODE_STUB,
