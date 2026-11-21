@@ -204,8 +204,8 @@ esac
 
 peer_cli="${peer_override:-$default_peer}"
 case "$peer_cli" in
-    claude) peer_model="${peer_model:-claude-opus-5-5}" ;;
-    codex) peer_model="${peer_model:-gpt-6.1-sol}" ;;
+    claude) peer_model="${peer_model:-claude-sonnet-5-5}" ;;
+    codex) peer_model="${peer_model:-gpt-6-luna}" ;;
     opencode) ;;
     *) fail "unknown peer CLI: $peer_cli (want opencode|claude|codex)" ;;
 esac
