@@ -184,8 +184,10 @@ def fetch_aa_catalog() -> dict:
             raise ModelCatalogError(
                 f"Artificial Analysis request failed (HTTP {exc.code})"
             ) from None
-        except (URLError, TimeoutError, ValueError, OSError):
-            raise ModelCatalogError("Artificial Analysis request failed") from None
+        except (URLError, TimeoutError, ValueError, OSError) as exc:
+            raise ModelCatalogError(
+                f"Artificial Analysis request failed ({type(exc).__name__})"
+            ) from None
         entries.extend(payload.get("data", []))
         pagination = payload.get("pagination", {})
         total_pages = pagination.get("total_pages", 1)
@@ -277,6 +279,18 @@ def main() -> int:
             cached = _read_cache(cache_path)
             if cached and cached.get("availability") == _availability(available):
                 cache, refreshed = cached, False
+            elif cached and args.action == "resolve":
+                # Availability changed but AA is unreachable: reuse stale scores.
+                scores = {m["id"]: m for m in cached["models"]}
+                stale = [scores.get(m["id"]) or {
+                    "id": m["id"], "display_name": m["name"], "aa_name": None,
+                    "aa_slug": None, "intelligence_index": None,
+                } for m in available]
+                cache = {**cached, "models": sorted(
+                    stale, key=lambda m: (m["intelligence_index"] is None,
+                                          -(m["intelligence_index"] or 0)))}
+                refreshed = False
+                print(f"peer-review: {exc}; using stale cached scores", file=sys.stderr)
             elif args.action == "list":
                 print(json.dumps(_catalog_output(None, available, False), indent=2))
                 print(f"peer-review: {exc}", file=sys.stderr)
