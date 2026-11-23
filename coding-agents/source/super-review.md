@@ -16,7 +16,7 @@ Comprehend a change, fan out fresh-context reviewers, check production-readiness
 **Two entry points.**
 
 - **Standalone** (the user invoked it): run every step. Read-only — edit only when the user picks a fix at the checkpoint.
-- **Called by a workflow** (ic, modernize, takeover, batch-ready): the caller supplies worktree, base, intent, plan, invariants, verification evidence and non-goals. Skip steps 1–2 except to fill gaps, skip the checkpoint, and return the findings, map, production report and its follow-ups. The caller fixes under its own authority and reruns the affected reviewers.
+- **Called by a workflow** (ic, modernize, takeover, batch-ready): the caller supplies worktree, base, intent, plan, invariants, verification evidence and non-goals. Skip steps 1–2 except to fill gaps, skip the checkpoint, and return the findings, map, production report and its follow-ups. The caller fixes under its own authority and follows the post-fix rule below.
 
 **Scale to the change.** A typo gets `reviewer` alone and a one-line verdict. When you skip a step, say so in one line.
 
@@ -65,7 +65,13 @@ Build it in-thread from step 2 (or the caller's invariants), updated to what the
 
 ## 6. Checkpoint (standalone only) — the user decides fix-vs-note
 
-Present: the architectural map, the synthesized findings (🔴/🟡/🟢, simplicity block separate), the production report. Then **wait**. Per finding the user picks **fix now** (only when the branch is local: apply, re-run the affected reviewer, update the map if an invariant moved) or **note** (report is the deliverable; offer to post PR comments — confirm before posting).
+Present: the architectural map, the synthesized findings (🔴/🟡/🟢, simplicity block separate), the production report. Then **wait**. Per finding the user picks **fix now** (only when the branch is local: apply the fix, follow the post-fix rule below, and update the map if an invariant moved) or **note** (report is the deliverable; offer to post PR comments — confirm before posting).
+
+## Post-fix follow-through
+
+- The fixer (caller in workflow mode; super-review in standalone mode after the user chooses a fix) reruns checks and reviewers affected by the fix directly or through dependencies, and reassesses affected invariants. This does not relax caller requirements; `deliver` still reruns production-readiness on the final diff after any fix.
+- If one repair to a finding or failing check leaves the reviewer reporting the same finding or the check showing the same expected-versus-observed result, and adds no new cause evidence, switch to a different plausible hypothesis. If none remains, report the blocker to the caller in workflow mode or the user in standalone mode, with expected and observed results and the approaches tried.
+- Retain earlier evidence only for unaffected scope and state what it covered. In standalone mode, update the map and finding dispositions; in workflow mode, the caller updates its synthesis with rerun evidence and any affected map entries or dispositions.
 
 ## Principles
 
