@@ -23,6 +23,10 @@ A green test asserting broken behavior is worse than no test: it certifies the b
 
 Test through the public API with realistic inputs; assert observable outcomes — return values, persisted state, rendered output, emitted requests. Not internal state, not mock-call counts (unless the call is itself the contract, e.g. "never calls the admin endpoint as non-admin"). A behavior-preserving refactor must keep the test green; a behavior change must break at least one test.
 
+When an observable behavior change needs automated coverage, write a focused
+test of its documented contract first and confirm it fails for the expected
+reason. Use the repository's harness; don't invent tests when none applies.
+
 ## Fit the suite
 
 Use the repo's existing harness — its runner, layout, fixtures and factories — before writing helpers of your own. Test at the level the behavior lives: unit for logic, integration when it crosses a component or process boundary. One test per distinct behavior; parametrize variants rather than copying. Don't test trivial glue, plain accessors, or the framework.

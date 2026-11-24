@@ -8,7 +8,6 @@ Ansible role (`ansible/roles/coding_agents/`).
 
 ```
 source/<name>.md        canonical, opencode-flavored frontmatter (hand-edit here)
-skills/<name>/          canonical multi-file skills; supporting files stay adjacent
 build.py                renders per-tool variants under generated/ (gitignored)
 generated/              built each ansible run — do not edit
 configs/<tool>/         curated global settings, synced to ~/.<tool> (see below)
@@ -20,26 +19,29 @@ variant (Claude Code / Codex / Pi) so interactive workflows can run in the main
 thread. `mode: skill` sources are *pure* skills — guidance the main agent loads
 while doing the work itself (e.g. `writing-tests`) — and emit no agent files;
 the ansible role also skips them for opencode, which has no skill concept.
-The multi-file skills in `skills/` are symlinked directly to Claude Code,
-Codex, and Pi so their relative references and scripts remain available.
+## Workflow sources and overlap
 
-## Upstream-derived workflow skills
+The local workflows are the source of truth; upstream releases are reading
+material, not update targets. An earlier review compared Superpowers v7.0.2,
+but its parallel skill set was removed in favor of the existing workflows.
+[`source/systematic-debugging.md`](source/systematic-debugging.md) is the
+only retained standalone guide from that review.
+The managed Claude plugin is disabled.
 
-`skills/<name>/` contains the workflow skill set adapted from
-[obra/superpowers v7.0.2](https://github.com/obra/superpowers/tree/v7.0.2/skills),
-upstream commit [`22f0b46`](https://github.com/obra/superpowers/commit/22f0b46).
-The upstream MIT license is kept at [`skills/LICENSE`](skills/LICENSE).
-These tracked copies are canonical: plugin releases are review input only,
-and `superpowers@claude-plugins-official` is disabled in the managed Claude
-settings. Some inherited skill and scratch-directory names remain for
-continuity; their contents and updates are owned here. To update them, compare
-a chosen upstream release, adapt the changes to the shared agent instructions,
-and review the full diff before syncing.
+Keep behavior with its existing owner: design discovery in [`grill-me`](source/grill-me.md),
+issue-to-PR work in [`ic`](source/ic.md), test practice in [`writing-tests`](source/writing-tests.md),
+and review/delivery in [`super-review`](source/super-review.md) and [`deliver`](source/deliver.md).
+Brainstorming, planning, delegation, review requests, and branch handling stay
+inside those workflows and the shared instructions. The useful test-first
+sequence now lives in `writing-tests`; `systematic-debugging` remains separate
+for unfamiliar failures outside IC.
+Before adding a separate skill, check whether it duplicates one of these or
+the shared instructions. Fold useful missing details into the existing owner;
+keep a standalone skill only when it has a distinct trigger and adds behavior
+those workflows do not cover. Don't create scratch paths just to match upstream.
 
-Keep supporting files next to their `SKILL.md`. Adapted skills use plain local
-skill names in cross-references and repository documentation conventions.
-This repository ignores root `/.superpowers/` scratch. Durable plans and
-design notes follow each repository's documentation conventions.
+Keep workflow guidance in the existing local skills; do not mirror upstream
+skill inventories.
 
 ## Grill Me: decision discovery and implementation
 
@@ -285,13 +287,11 @@ The July 2026 discussion led to a focused reviewer set, independent peer
 checks at consequential decision points, and simpler orchestration. Those
 choices now live in [`ic`](source/ic.md), [`super-review`](source/super-review.md),
 [`grill-me`](source/grill-me.md), and the shared peer-review instructions.
-Later reviews of test guidance are reflected in [`test-driven-development`](skills/test-driven-development/SKILL.md)
-and [`writing-tests`](source/writing-tests.md).
+Later reviews of test guidance are reflected in [`writing-tests`](source/writing-tests.md).
 The November 2026 discussion about moving reusable guidance out of the global
 prompt while keeping workflow purposes distinct is reflected in
-[`using-superpowers`](skills/using-superpowers/SKILL.md),
-[`brainstorming`](skills/brainstorming/SKILL.md), and
-[`writing-plans`](skills/writing-plans/SKILL.md).
+[`configs/shared/AGENTS.md`](configs/shared/AGENTS.md), [`grill-me`](source/grill-me.md),
+and [`ic`](source/ic.md).
 
 These sources inform the workflow design; local instructions remain
 authoritative:
@@ -307,10 +307,6 @@ authoritative:
 
 Add ONE file — `source/<name>.md` — and apply it the same way as an edit (below).
 Never hand-edit anything under `generated/`; it is rebuilt from source every run.
-
-For a skill that needs adjacent references, prompts, or scripts, use a directory
-under `skills/<name>/` with `SKILL.md` at its root. Keep relative files beside
-it; Ansible links the directory directly into Claude Code, Codex, and Pi.
 
 `<name>` (letters, numbers, hyphens) becomes the agent/skill name. The file is
 opencode-flavored: YAML frontmatter + a markdown body that IS the agent's prompt.
@@ -361,9 +357,7 @@ symlink appeared in `~/.claude/skills/<name>/` (and `~/.codex/skills/<name>/`).
    ```
 3. Test in your tool.
 
-For a multi-file skill, edit its canonical directory under `skills/`, then
-apply the `coding_agents` role so all supported skill directories point back to
-the repo. Claude plugin skills are disabled; do not copy from the plugin cache.
+Claude plugin skills are disabled; do not copy from the plugin cache.
 
 The Ansible task runs `build.py`, then symlinks every variant into the right
 global directory (`~/.config/opencode/agents/`, `~/.claude/agents/`,

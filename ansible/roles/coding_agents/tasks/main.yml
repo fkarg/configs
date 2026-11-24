@@ -380,47 +380,6 @@
   loop_control:
     label: "{{ item.path | basename }}"
 
-- name: Discover repository-owned skill directories
-  find:
-    paths: "{{ coding_agents_source_dir }}/skills"
-    file_type: directory
-    depth: 1
-  register: ca_repo_skills
-  tags: [codex, claude, pi]
-
-- name: Symlink repository-owned skills to Claude Code
-  file:
-    src: "{{ item.path }}"
-    dest: "~/.claude/skills/{{ item.path | basename }}"
-    state: link
-    force: true
-  loop: "{{ ca_repo_skills.files }}"
-  loop_control:
-    label: "{{ item.path | basename }}"
-  tags: [claude]
-
-- name: Symlink repository-owned skills to Codex
-  file:
-    src: "{{ item.path }}"
-    dest: "~/.codex/skills/{{ item.path | basename }}"
-    state: link
-    force: true
-  loop: "{{ ca_repo_skills.files }}"
-  loop_control:
-    label: "{{ item.path | basename }}"
-  tags: [codex]
-
-- name: Symlink repository-owned skills to Pi
-  file:
-    src: "{{ item.path }}"
-    dest: "~/.pi/agent/skills/{{ item.path | basename }}"
-    state: link
-    force: true
-  loop: "{{ ca_repo_skills.files }}"
-  loop_control:
-    label: "{{ item.path | basename }}"
-  tags: [pi]
-
 - name: Discover generated Pi agents
   find:
     paths: "{{ coding_agents_source_dir }}/generated/pi/agents"
