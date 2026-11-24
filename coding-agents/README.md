@@ -43,6 +43,10 @@ those workflows do not cover. Don't create scratch paths just to match upstream.
 Keep workflow guidance in the existing local skills; do not mirror upstream
 skill inventories.
 
+Mutation testing beyond the focused mutation checks in `writing-tests` may be
+useful for test suites, but its runtime and maintenance cost need evaluation;
+defer broader adoption until there is a concrete case for it.
+
 ## Grill Me: decision discovery and implementation
 
 [`source/grill-me.md`](source/grill-me.md) is the canonical pure skill for

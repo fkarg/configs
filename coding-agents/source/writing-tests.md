@@ -35,6 +35,7 @@ Use the repo's existing harness — its runner, layout, fixtures and factories �
 
 - **Boundaries:** test one unit inside and one unit outside every edge — expiry at exactly t+ttl, a cap at max and max+1, empty/one/many.
 - **Discriminating fixtures:** give every entry distinct values so first-wins vs last-wins, sorted vs insertion-order actually produce different assertions.
+- **Independent expectations:** derive expected values from the contract using hand-checked literals or fixtures, not the implementation or helpers under test; otherwise the same mistake can make both sides agree.
 - **Exact assertions:** full expected values/shapes, not truthy/defined/length-only.
 - **Give the bug a window:** for races, debounce, "never does X" claims — create the opportunity for the wrong behavior, then assert it didn't happen.
 - **Vacuity self-check:** for each test, name the single-line mutation (flipped comparison, removed guard, dropped await) that would make it fail. Can't name one → the test asserts nothing; strengthen or delete it. For load-bearing logic, actually apply a mutation or two and watch tests go red.
