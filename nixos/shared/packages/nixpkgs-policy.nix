@@ -7,12 +7,6 @@
   # paths pulled into this desktop configuration.
   nixpkgs.overlays = [
     (final: prev: {
-      # Go 1.27 changed gzip output, breaking kubecfg's hardcoded test digest.
-      # Backport https://github.com/kubecfg/kubecfg/commit/922bba97becd2fcf8862d1c1d66157eb5c99c54a
-      kubecfg = prev.kubecfg.overrideAttrs (old: {
-        patches = (old.patches or [ ]) ++ [ ./patches/kubecfg-testpush-manifest-digest.patch ];
-      });
-
       # zstd-sys uses pkg-config, but ccusage doesn't declare the library.
       ccusage = prev.ccusage.overrideAttrs (old: {
         buildInputs = (old.buildInputs or [ ]) ++ [ final.zstd ];
