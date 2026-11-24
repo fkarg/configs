@@ -385,6 +385,38 @@
     requires = [ "jolly-select-displayport.service" ];
     after = [ "jolly-select-displayport.service" ];
   };
+
+  # PBP input switching can leave Hyprland without its DisplayPort output even
+  # after the monitor brings the signal back. Check the expected output while
+  # the Hyprland session is running, and reload only when it is missing or has
+  # fallen back from the configured ultrawide mode. Avoid re-modesetting a
+  # healthy output every interval (the monitor is also jolly's USB KVM hub).
+  systemd.user.services.jolly-monitor-refresh = {
+    description = "Recover jolly's missing DisplayPort output";
+    partOf = [ "hyprland-session.target" ];
+    path = [ pkgs.hyprland pkgs.jq ];
+    script = ''
+      set -euo pipefail
+      monitors=$(hyprctl monitors all -j)
+      if jq -e 'any(.[]; .name == "DP-1" and .width == 5120 and .height == 1440 and .disabled == false)' <<< "$monitors" >/dev/null; then
+        exit 0
+      fi
+
+      echo "jolly-monitor-refresh: DP-1 missing or not at 5120x1440; reloading Hyprland config" >&2
+      hyprctl reload
+    '';
+  };
+  systemd.user.timers.jolly-monitor-refresh = {
+    description = "Periodically check jolly's DisplayPort output";
+    wantedBy = [ "hyprland-session.target" ];
+    partOf = [ "hyprland-session.target" ];
+    timerConfig = {
+      OnActiveSec = "5min";
+      OnUnitActiveSec = "5min";
+      Unit = "jolly-monitor-refresh.service";
+    };
+  };
+
   programs.ssh.startAgent = lib.mkForce false;
   programs.ssh.askPassword = lib.mkForce "${pkgs.seahorse}/libexec/seahorse/ssh-askpass";
 
