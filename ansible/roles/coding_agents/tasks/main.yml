@@ -380,21 +380,46 @@
   loop_control:
     label: "{{ item.path | basename }}"
 
-- name: Expose Claude Code plugin skills to Codex (e.g. superpowers)
-  shell: |
-    src=$(ls -dt "$HOME"/{{ item }}/ 2>/dev/null | head -1)
-    [ -z "$src" ] && exit 0
-    for d in "$src"*/; do
-      [ -e "${d}SKILL.md" ] || continue
-      ln -sfn "$d" "$HOME/.codex/skills/$(basename "$d")"
-    done
-  args:
-    # POSIX sh only — NixOS ships /bin/sh but no /bin/bash. Keep this script
-    # free of bashisms so it runs on NixOS, macOS, and stock Linux alike.
-    executable: /bin/sh
-  loop: "{{ ca_codex_plugin_skill_globs }}"
-  changed_when: false
+- name: Discover repository-owned skill directories
+  find:
+    paths: "{{ coding_agents_source_dir }}/skills"
+    file_type: directory
+    depth: 1
+  register: ca_repo_skills
+  tags: [codex, claude, pi]
+
+- name: Symlink repository-owned skills to Claude Code
+  file:
+    src: "{{ item.path }}"
+    dest: "~/.claude/skills/{{ item.path | basename }}"
+    state: link
+    force: true
+  loop: "{{ ca_repo_skills.files }}"
+  loop_control:
+    label: "{{ item.path | basename }}"
+  tags: [claude]
+
+- name: Symlink repository-owned skills to Codex
+  file:
+    src: "{{ item.path }}"
+    dest: "~/.codex/skills/{{ item.path | basename }}"
+    state: link
+    force: true
+  loop: "{{ ca_repo_skills.files }}"
+  loop_control:
+    label: "{{ item.path | basename }}"
   tags: [codex]
+
+- name: Symlink repository-owned skills to Pi
+  file:
+    src: "{{ item.path }}"
+    dest: "~/.pi/agent/skills/{{ item.path | basename }}"
+    state: link
+    force: true
+  loop: "{{ ca_repo_skills.files }}"
+  loop_control:
+    label: "{{ item.path | basename }}"
+  tags: [pi]
 
 - name: Discover generated Pi agents
   find:

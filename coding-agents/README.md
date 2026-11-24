@@ -8,6 +8,7 @@ Ansible role (`ansible/roles/coding_agents/`).
 
 ```
 source/<name>.md        canonical, opencode-flavored frontmatter (hand-edit here)
+skills/<name>/          canonical multi-file skills; supporting files stay adjacent
 build.py                renders per-tool variants under generated/ (gitignored)
 generated/              built each ansible run — do not edit
 configs/<tool>/         curated global settings, synced to ~/.<tool> (see below)
@@ -19,6 +20,26 @@ variant (Claude Code / Codex / Pi) so interactive workflows can run in the main
 thread. `mode: skill` sources are *pure* skills — guidance the main agent loads
 while doing the work itself (e.g. `writing-tests`) — and emit no agent files;
 the ansible role also skips them for opencode, which has no skill concept.
+The multi-file skills in `skills/` are symlinked directly to Claude Code,
+Codex, and Pi so their relative references and scripts remain available.
+
+## Upstream-derived workflow skills
+
+`skills/<name>/` contains the workflow skill set adapted from
+[obra/superpowers v7.0.2](https://github.com/obra/superpowers/tree/v7.0.2/skills),
+upstream commit [`22f0b46`](https://github.com/obra/superpowers/commit/22f0b46).
+The upstream MIT license is kept at [`skills/LICENSE`](skills/LICENSE).
+These tracked copies are canonical: plugin releases are review input only,
+and `superpowers@claude-plugins-official` is disabled in the managed Claude
+settings. Some inherited skill and scratch-directory names remain for
+continuity; their contents and updates are owned here. To update them, compare
+a chosen upstream release, adapt the changes to the shared agent instructions,
+and review the full diff before syncing.
+
+Keep supporting files next to their `SKILL.md`. Adapted skills use plain local
+skill names in cross-references and repository documentation conventions.
+This repository ignores root `/.superpowers/` scratch. Durable plans and
+design notes follow each repository's documentation conventions.
 
 ## Grill Me: decision discovery and implementation
 
@@ -256,10 +277,40 @@ matter, and literal-minded models over-apply them.
   cost without it. Give the *why* in a clause when it isn't obvious.
 - **Prune.** When editing, cut what no longer pulls its weight.
 
-## Creating a new agent or skill
+## Workflow references and decision history
+
+This repository records durable choices made in prior workflow discussions.
+The tracked instructions linked below are the durable record.
+The July 2026 discussion led to a focused reviewer set, independent peer
+checks at consequential decision points, and simpler orchestration. Those
+choices now live in [`ic`](source/ic.md), [`super-review`](source/super-review.md),
+[`grill-me`](source/grill-me.md), and the shared peer-review instructions.
+Later reviews of test guidance are reflected in [`test-driven-development`](skills/test-driven-development/SKILL.md)
+and [`writing-tests`](source/writing-tests.md).
+The November 2026 discussion about moving reusable guidance out of the global
+prompt while keeping workflow purposes distinct is reflected in
+[`using-superpowers`](skills/using-superpowers/SKILL.md),
+[`brainstorming`](skills/brainstorming/SKILL.md), and
+[`writing-plans`](skills/writing-plans/SKILL.md).
+
+These sources inform the workflow design; local instructions remain
+authoritative:
+
+- [Harness, Loop, Graph: The 3 Layers That Decide If Your AI Agent Works](https://x.com/0xWhitemon/status/2119430401701621865) is practical writing about separating the agent environment, feedback checks, and workflow coordination.
+- [Effective context engineering for AI agents](https://www.anthropic.com/research/effective-context-engineering-for-ai-agents) discusses concise, task-relevant context and progressive retrieval.
+- Official skill references: [OpenAI's skill authoring guide](https://developers.openai.com/plugins/build/skills), [Codex skills documentation](https://developers.openai.com/codex/skills), and [Anthropic's skill authoring best practices](https://platform.claude.com/docs/en/agents-and-tools/agent-skills/best-practices).
+- [When AIs Judge AIs](https://arxiv.org/abs/2508.02994) surveys agent-as-a-judge methods; [Bias in the Loop](https://arxiv.org/abs/2604.16790) examines judging bias. They motivate treating peer output as evidence to assess, not authority.
+- [T2J-BENCH](https://arxiv.org/abs/2605.29054) evaluates repository migrations against execution-grounded behavior, supporting observable checks over self-reported completion.
+- [Superpowers releases](https://github.com/obra/superpowers/releases) and Jesse Vincent's [Superpowers 2](https://blog.fsck.com/2025/10/12/superpowers-20-came-out-yesterday-and-might-already-be-obsolete/), [Superpowers 4](https://blog.fsck.com/2025/12/18/superpowers-4/), [Superpowers 5](https://blog.fsck.com/2026/03/09/superpowers-5/), and [Superpowers 5.1](https://blog.fsck.com/2026/05/04/superpowers-5.1/) posts track upstream changes; upstream wording is not authoritative here.
+
+## Creating a new agent or single-file skill
 
 Add ONE file — `source/<name>.md` — and apply it the same way as an edit (below).
 Never hand-edit anything under `generated/`; it is rebuilt from source every run.
+
+For a skill that needs adjacent references, prompts, or scripts, use a directory
+under `skills/<name>/` with `SKILL.md` at its root. Keep relative files beside
+it; Ansible links the directory directly into Claude Code, Codex, and Pi.
 
 `<name>` (letters, numbers, hyphens) becomes the agent/skill name. The file is
 opencode-flavored: YAML frontmatter + a markdown body that IS the agent's prompt.
@@ -309,6 +360,10 @@ symlink appeared in `~/.claude/skills/<name>/` (and `~/.codex/skills/<name>/`).
    ansible-playbook ansible/site.yml -l <host> --tags coding_agents
    ```
 3. Test in your tool.
+
+For a multi-file skill, edit its canonical directory under `skills/`, then
+apply the `coding_agents` role so all supported skill directories point back to
+the repo. Claude plugin skills are disabled; do not copy from the plugin cache.
 
 The Ansible task runs `build.py`, then symlinks every variant into the right
 global directory (`~/.config/opencode/agents/`, `~/.claude/agents/`,

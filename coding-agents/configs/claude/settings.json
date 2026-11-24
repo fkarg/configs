@@ -181,7 +181,7 @@
     "pyright-lsp@claude-plugins-official": false,
     "rust-analyzer-lsp@claude-plugins-official": true,
     "safety-net@safety-net-dev": true,
-    "superpowers@claude-plugins-official": true,
+    "superpowers@claude-plugins-official": false,
     "typescript-lsp@claude-plugins-official": true
   },
   "extraKnownMarketplaces": {

@@ -13,9 +13,3 @@ ca_claudex_releases:
   Linux-x86_64:
     suffix: linux_amd64
     sha256: 9154f460a5684ae82d74f3643d7b3f9c8961659d33058458c9edc044f5f761ba
-
-# Claude Code plugin skills to also expose to Codex (which uses the same
-# SKILL.md format). Each entry is a glob under $HOME pointing at a plugin's
-# skills directory; the version path is wildcarded and the newest match wins.
-ca_codex_plugin_skill_globs:
-  - ".claude/plugins/cache/claude-plugins-official/superpowers/*/skills"
