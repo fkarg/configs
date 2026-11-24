@@ -115,6 +115,9 @@ stdenv.mkDerivation {
   # orcad-template is uploaded to remote hosts and verified against its bundled
   # hashes. Keep it byte-for-byte intact, including its foreign-libc binaries.
   dontAutoPatchelf = true;
+  # Koffi bundles separate glibc and musl addons. Jolly uses glibc; leave the
+  # unused musl addon untouched while keeping other missing dependencies fatal.
+  autoPatchelfIgnoreMissingDeps = [ "libc.musl-x86_64.so.1" ];
   postFixup = ''
     mapfile -d "" -t patchPaths < <(
       find "$out/share/orca-ide" -mindepth 1 -maxdepth 1 ! -name resources -print0
