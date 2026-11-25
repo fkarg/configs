@@ -387,10 +387,10 @@
   };
 
   # PBP input switching can leave Hyprland without its DisplayPort output even
-  # after the monitor brings the signal back. Check the expected output while
-  # the Hyprland session is running, and reload only when it is missing or has
-  # fallen back from the configured ultrawide mode. Avoid re-modesetting a
-  # healthy output every interval (the monitor is also jolly's USB KVM hub).
+  # after the monitor brings the signal back. Reload only when DP-1 is missing
+  # or disabled; Ctrl+Shift+F10 reapplies its preferred mode, which may vary
+  # between monitor layouts. Avoid re-modesetting a healthy output every
+  # interval (the monitor is also jolly's USB KVM hub).
   systemd.user.services.jolly-monitor-refresh = {
     description = "Recover jolly's missing DisplayPort output";
     partOf = [ "hyprland-session.target" ];
@@ -398,7 +398,7 @@
     script = ''
       set -euo pipefail
       monitors=$(hyprctl monitors all -j)
-      if jq -e 'any(.[]; .name == "DP-1" and .width == 5120 and .height == 1440 and .disabled == false)' <<< "$monitors" >/dev/null; then
+      if jq -e 'any(.[]; .name == "DP-1" and .disabled == false)' <<< "$monitors" >/dev/null; then
         exit 0
       fi
 

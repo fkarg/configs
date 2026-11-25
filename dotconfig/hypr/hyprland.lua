@@ -552,6 +552,13 @@ hl.bind(mainMod .. " + CTRL + V", hl.dsp.exec_cmd(clipboard))
 -- hardware.i2c is re-enabled on this host — see nixos/machines/jolly.nix.
 hl.bind("CTRL + SHIFT + F12", hl.dsp.exec_cmd("~/.config/hypr/kvm-switch.sh"))
 
+-- Re-apply the DisplayPort monitor's preferred advertised mode after changing
+-- its input/layout. This only changes the Wayland output mode; it does not
+-- control the monitor's MultiView setting.
+hl.bind("CTRL + SHIFT + F10", function()
+    hl.monitor({ output = "DP-1", mode = "preferred", position = "auto", scale = 1.07 })
+end)
+
 -- Resize submap: SUPER+O enters resize mode, then N/G/M/D or arrows resize the
 -- active window until Return or Escape resets back to normal binds.
 -- (resize deltas keep the old resizeactive convention: +y grows downward)
