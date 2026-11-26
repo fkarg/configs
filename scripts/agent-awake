@@ -19,9 +19,9 @@
 #   manual [on|off|toggle]   hold without an agent (bar widget toggle)
 #   status     JSON for the bar widget
 #
-# Safety cutoffs (temperature sustained for CUTOFF_SAMPLES polls, battery while
-# discharging, or no readable temperature at all) release every lock, manual
-# included, and refuse new ones for CUTOFF_COOLDOWN_MINUTES.
+# Safety cutoffs (temperature sustained for CUTOFF_SAMPLES polls, or battery
+# while discharging) release every lock, manual included, and refuse new ones
+# for CUTOFF_COOLDOWN_MINUTES.
 #
 # Wired up by the coding_agents role: Claude hooks in configs/claude/settings.json,
 # Codex hooks in configs/codex/hooks.json. A no-op on macOS, where adrafinil runs.
@@ -42,11 +42,10 @@ self="$(readlink -f "$0")"
 # Prints why holding is unsafe right now; prints nothing when it is fine.
 cutoff_reason() {
     local max=-1 t z b cap
-    for z in /sys/class/thermal/thermal_zone*/temp; do
+    for z in /sys/class/thermal/thermal_zone*/temp /sys/class/hwmon/hwmon*/temp*_input; do
         t=$(cat "$z" 2>/dev/null) || continue
         [ "$t" -gt "$max" ] 2>/dev/null && max=$t
     done
-    if [ "$max" -lt 0 ]; then echo "no readable temperature sensor"; return; fi
     if [ "$max" -ge $((MAX_TEMP_C * 1000)) ]; then echo "temperature $((max / 1000))°C"; return; fi
     for b in /sys/class/power_supply/*; do
         [ "$(cat "$b/type" 2>/dev/null)" = Battery ] || continue

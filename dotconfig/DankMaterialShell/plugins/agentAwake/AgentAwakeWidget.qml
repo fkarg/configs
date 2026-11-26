@@ -55,6 +55,22 @@ PluginComponent {
                 width: parent.width
                 spacing: Theme.spacingXS
 
+                Row {
+                    spacing: Theme.spacingS
+
+                    DankActionButton {
+                        iconName: root.manual ? "bedtime" : "coffee"
+                        tooltipText: root.manual ? "Release manual stay-awake" : "Keep awake"
+                        onClicked: Proc.runCommand("agentAwake.toggle", [root.bin, "manual", "toggle"], () => root.refresh(), 0)
+                    }
+
+                    StyledText {
+                        anchors.verticalCenter: parent.verticalCenter
+                        color: Theme.surfaceText
+                        text: root.manual ? "Release manual stay-awake" : "Keep awake"
+                    }
+                }
+
                 Repeater {
                     model: root.sessions
 
