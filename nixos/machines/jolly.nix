@@ -10,6 +10,7 @@
     ../shared/hardware/mediatek-mt7927.nix
     ../shared/policy/upgrade-notify.nix
     ../shared/programs/stably-orca.nix
+    ../shared/programs/t3code.nix
     ../shared/programs/steam-defaults.nix
   ];
 
